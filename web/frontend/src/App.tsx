@@ -3,6 +3,7 @@ import About from "./About";
 import Login from "./login";
 import Lobby from "./lobby";
 import Waiting from "./waiting";
+import Game from "./game";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="login" element={<Login />} />
         <Route path="lobby" element={<Lobby />} />
         <Route path="waiting/:tableId" element={<Waiting />} />
+        <Route path="game/:tableId" element={<Game />} />
         <Route path="*" element={<NoMatch />} />
       </Route>
     </Routes>
