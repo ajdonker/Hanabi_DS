@@ -4,47 +4,46 @@ import "./lobby.css";
 
 type Table = {
   id: string;
-  name: string;
   players: number;
   maxPlayers: number;
 };
 
 const INITIAL_TABLES: Table[] = [
-  { id: "table-alpha", name: "Table Alpha", players: 2, maxPlayers: 5 },
-  { id: "table-beta", name: "Table Beta", players: 3, maxPlayers: 5 },
-  { id: "table-gamma", name: "Table Gamma", players: 1, maxPlayers: 5 },
+  { id: "table-alpha", players: 2, maxPlayers: 4 },
+  { id: "table-beta", players: 3, maxPlayers: 5 },
+  { id: "table-gamma", players: 1, maxPlayers: 2 },
 ];
 
 export default function Lobby() {
   const navigate = useNavigate();
   const [tables, setTables] = useState<Table[]>(INITIAL_TABLES);
-  const [newTableName, setNewTableName] = useState("");
+  const [playerCountInput, setPlayerCountInput] = useState("4");
   const [message, setMessage] = useState("");
 
   function joinTable(table: Table) {
-    navigate(`/waiting/${table.id}`, { state: { tableName: table.name } });
+    navigate(`/waiting/${table.id}`, { state: { tableSize: table.maxPlayers } });
   }
 
   function createTable(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmed = newTableName.trim();
-    if (!trimmed) {
-      setMessage("Please enter a table name.");
+    const requestedPlayers = Number(playerCountInput);
+
+    if (!Number.isInteger(requestedPlayers) || requestedPlayers < 2) {
+      setMessage("Please enter a valid number of players (minimum 2).");
       return;
     }
 
     setMessage("");
     const createdTable: Table = {
       id: `table-${Date.now()}`,
-      name: trimmed,
       players: 1,
-      maxPlayers: 5,
+      maxPlayers: requestedPlayers,
     };
 
     setTables((current) => [createdTable, ...current]);
-    setNewTableName("");
+    setPlayerCountInput("4");
     navigate(`/waiting/${createdTable.id}`, {
-      state: { tableName: createdTable.name },
+      state: { tableSize: createdTable.maxPlayers },
     });
   }
 
@@ -57,11 +56,12 @@ export default function Lobby() {
 
       <form className="lobby-create" onSubmit={createTable}>
         <input
-          type="text"
-          placeholder="New table name"
-          value={newTableName}
+          type="number"
+          min={2}
+          placeholder="Number of players"
+          value={playerCountInput}
           onChange={(event) => {
-            setNewTableName(event.target.value);
+            setPlayerCountInput(event.target.value);
             if (message) {
               setMessage("");
             }
@@ -79,7 +79,7 @@ export default function Lobby() {
             type="button"
             onClick={() => joinTable(table)}
           >
-            <h3>{table.name}</h3>
+            <h3>Table {table.id.replace("table-", "")}</h3>
             <p>
               Players: {table.players}/{table.maxPlayers}
             </p>

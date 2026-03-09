@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./waiting.css";
 
 type WaitingState = {
-  tableName?: string;
+  tableSize?: number;
 };
 
 export default function Waiting() {
@@ -11,8 +11,7 @@ export default function Waiting() {
   const { tableId } = useParams();
   const location = useLocation();
   const state = location.state as WaitingState | null;
-  const tableName = state?.tableName ?? `Table ${tableId ?? ""}`;
-  const tableSize = 4;
+  const tableSize = state?.tableSize ?? 4;
   const [acceptedPlayers, setAcceptedPlayers] = useState(0);
   const [status, setStatus] = useState("Click Accept when you are ready.");
   const [isAccepted, setIsAccepted] = useState(false);
@@ -46,15 +45,17 @@ export default function Waiting() {
 
   useEffect(() => {
     if (acceptedPlayers === tableSize) {
-      navigate(`/game/${tableId ?? ""}`, { state: { tableName } });
+      navigate(`/game/${tableId ?? ""}`, { state: { tableSize } });
     }
-  }, [acceptedPlayers, navigate, tableId, tableName, tableSize]);
+  }, [acceptedPlayers, navigate, tableId, tableSize]);
 
   return (
     <section className="waiting-page">
       <h2>Waiting Room</h2>
-      <p>You joined: {tableName}</p>
-      <p>Accepted players: {acceptedPlayers}/4</p>
+      <p>You joined: Table {tableId ?? ""}</p>
+      <p>
+        Accepted players: {acceptedPlayers}/{tableSize}
+      </p>
       <p>{status}</p>
       <div className="waiting-actions">
         <button type="button" onClick={handleAccept}>
