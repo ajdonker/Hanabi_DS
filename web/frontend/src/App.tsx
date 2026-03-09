@@ -1,6 +1,8 @@
 import { Routes, Route, Outlet, Link } from "react-router-dom";
 import About from "./About";
 import Login from "./login";
+import Lobby from "./lobby";
+import Waiting from "./waiting";
 
 export default function App() {
   return (
@@ -10,6 +12,8 @@ export default function App() {
         <Route path="about" element={<About />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="login" element={<Login />} />
+        <Route path="lobby" element={<Lobby />} />
+        <Route path="waiting/:tableId" element={<Waiting />} />
         <Route path="*" element={<NoMatch />} />
       </Route>
     </Routes>
@@ -33,6 +37,9 @@ function Layout() {
           </li>
           <li>
             <Link to="/login">Login</Link>
+          </li>
+          <li>
+            <Link to="/lobby">Lobby</Link>
           </li>
         </ul>
       </nav>
