@@ -4,11 +4,7 @@ export default function About() {
   const [username, setUsername] = useState("Alice");
 
   function changeUsername() {
-    console.log("dale");
-    
-    let a:number = 1;
-    a = "2"
-    setUsername(a);
+    setUsername("Bob");
   }
 
   return (
@@ -17,14 +13,10 @@ export default function About() {
 
       <div>Username: {username}</div>
 
-      <button onClick={changeUsername}>
-        Change Username
-      </button>
+      <button onClick={changeUsername}>Change Username</button>
       {username === "Bob" && (
-        <div style={{ color: "green" }}>
-            I love Bob ❤️
-        </div>
-    )}
+        <div style={{ color: "green" }}>I love Bob</div>
+      )}
     </div>
   );
 }

@@ -1,29 +1,25 @@
 import { Routes, Route, Outlet, Link } from "react-router-dom";
 import About from "./About";
+import Login from "./login";
+
 export default function App() {
   return (
-    <div>
-      <h1>Hanabi</h1>
-
-
-
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="about" element={<About />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="*" element={<NoMatch />} />
-        </Route>
-      </Routes>
-    </div>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route path="about" element={<About />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="login" element={<Login />} />
+        <Route path="*" element={<NoMatch />} />
+      </Route>
+    </Routes>
   );
 }
 
 function Layout() {
   return (
     <div>
-      {/* A "layout route" is a good place to put markup you want to
-          share across all the pages on your site, like navigation. */}
+      <h1>Hanabi</h1>
       <nav>
         <ul>
           <li>
@@ -36,35 +32,22 @@ function Layout() {
             <Link to="/dashboard">Dashboard</Link>
           </li>
           <li>
-            <Link to="/nothing-here">Nothing Here</Link>
+            <Link to="/login">Login</Link>
           </li>
         </ul>
       </nav>
-
       <hr />
-
-      {/* An <Outlet> renders whatever child route is currently active,
-          so you can think about this <Outlet> as a placeholder for
-          the child routes we defined above. */}
       <Outlet />
     </div>
   );
 }
 
 function Home() {
-  return (
-    <div>
-      <h2>H22ome</h2>
-    </div>
-  );
+  return <h2>Home</h2>;
 }
 
 function Dashboard() {
-  return (
-    <div>
-      <h2>Dashboard</h2>
-    </div>
-  );
+  return <h2>Dashboard</h2>;
 }
 
 function NoMatch() {
