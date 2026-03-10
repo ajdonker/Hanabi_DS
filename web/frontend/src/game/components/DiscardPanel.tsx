@@ -56,7 +56,6 @@ export default function DiscardPanel({
 
   return (
     <aside className={`discard-panel ${className}`.trim()}>
-      <h3>Discard Table</h3>
       <table className="discard-grid">
         <thead>
           <tr>

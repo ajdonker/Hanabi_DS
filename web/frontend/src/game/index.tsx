@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import "./game.css";
 import ActionBar from "./components/ActionBar";
 import DiscardPanel from "./components/DiscardPanel";
@@ -12,27 +12,7 @@ type GameState = {
   tableSize?: number;
 };
 
-function getImpression(score: number): string {
-  if (score <= 5) {
-    return "Horrible";
-  }
-  if (score <= 10) {
-    return "Mediocre";
-  }
-  if (score <= 15) {
-    return "Honorable";
-  }
-  if (score <= 20) {
-    return "Excellent";
-  }
-  if (score <= 24) {
-    return "Amazing";
-  }
-  return "Legendary";
-}
-
 export default function Game() {
-  const { tableId } = useParams();
   const location = useLocation();
   const state = location.state as GameState | null;
   const tableSize = state?.tableSize ?? 4;
@@ -41,11 +21,10 @@ export default function Game() {
     id: index + 1,
     name: `Player ${index + 1}`,
   }));
-  const safeTableId = tableId ?? "";
   const fireworkValues = [2, 1, 3, 0, 0];
   const teamScore = fireworkValues.reduce((sum, value) => sum + value, 0);
   const hints = 6;
-  const fuses = 2;
+  const misfires = 2;
   const deckCount = 34;
   const discardByColor: DiscardTableData = {
     Green: { ones: 2, twos: 1, threes: 0 },
@@ -54,36 +33,71 @@ export default function Game() {
     Blue: { ones: 2, twos: 0, threes: 2 },
     Yellow: { ones: 1, twos: 1, threes: 0 },
   };
-  const currentPlayer = players[0] ?? { id: 0, name: "Player 1" };
-  const leftPlayer = players[1] ?? { id: 101, name: "Seat Left" };
-  const topPlayer = players[2] ?? { id: 102, name: "Seat Top" };
-  const rightPlayer = players[3] ?? { id: 103, name: "Seat Right" };
+  const currentPlayer = players[0] ?? { id: 1, name: "Player 1" };
+  let topPlayer: Player | undefined;
+  let leftPlayer: Player | undefined;
+  let rightPlayer: Player | undefined;
+
+  if (tableSize <= 2) {
+    topPlayer = players[1];
+  } else if (tableSize === 3) {
+    topPlayer = players[1];
+    leftPlayer = players[2];
+  } else {
+    leftPlayer = players[1];
+    topPlayer = players[2];
+    rightPlayer = players[3];
+  }
+
+  const activePlayer = topPlayer?.name ?? currentPlayer.name;
+  const tableClass = tableSize <= 2 ? "players-2" : tableSize === 3 ? "players-3" : "players-4";
 
   return (
     <section className="game-page">
-      <GameHeader tableId={safeTableId} tableSize={tableSize} />
+      <GameHeader activePlayer={activePlayer} />
 
-      <div className="game-table">
-        <PlayerHand
-          player={leftPlayer}
-          orientation="vertical"
-          className="seat-left"
-        />
-        <PlayerHand player={topPlayer} orientation="horizontal" className="seat-top" />
-        <PlayerHand
-          player={rightPlayer}
-          orientation="vertical"
-          className="seat-right"
-        />
+      <div className={`game-table ${tableClass}`.trim()}>
+        {leftPlayer && (
+          <PlayerHand
+            player={leftPlayer}
+            orientation="vertical"
+            cardRotationDeg={-90}
+            nameSide="right"
+            nameRotationDeg={90}
+            hoverShift="right"
+            className="seat-left"
+          />
+        )}
+        {topPlayer && (
+          <PlayerHand
+            player={topPlayer}
+            orientation="horizontal"
+            hoverShift="down"
+            className="seat-top"
+          />
+        )}
+        {rightPlayer && (
+          <PlayerHand
+            player={rightPlayer}
+            orientation="vertical"
+            cardRotationDeg={90}
+            nameSide="left"
+            nameRotationDeg={-90}
+            hoverShift="left"
+            className="seat-right"
+          />
+        )}
 
         <main className="center-zone">
           <FireworksPanel colors={colors} values={fireworkValues} />
+          <div className="deck-count-out">{deckCount}</div>
         </main>
 
         <PlayerHand
           player={currentPlayer}
           isCurrentPlayer
           orientation="horizontal"
+          hoverShift="up"
           className="seat-bottom"
         />
         <DiscardPanel className="discard-bottom-left" discardByColor={discardByColor} />
@@ -92,11 +106,8 @@ export default function Game() {
           teamScore={teamScore}
           maxScore={25}
           hints={hints}
-          maxHints={8}
-          fuses={fuses}
-          maxFuses={3}
-          deckCount={deckCount}
-          impression={getImpression(teamScore)}
+          misfires={misfires}
+          players={players}
         />
       </div>
 

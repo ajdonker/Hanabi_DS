@@ -1,50 +1,45 @@
+import type { Player } from "../types";
+
 type TeamStatusPanelProps = {
   teamScore: number;
   maxScore: number;
   hints: number;
-  maxHints: number;
-  fuses: number;
-  maxFuses: number;
-  deckCount: number;
-  impression: string;
+  misfires: number;
+  players: Player[];
 };
 
 export default function TeamStatusPanel({
   teamScore,
   maxScore,
   hints,
-  maxHints,
-  fuses,
-  maxFuses,
-  deckCount,
-  impression,
+  misfires,
+  players,
 }: TeamStatusPanelProps) {
   return (
     <aside className="team-status-panel">
-      <h3>Team Status</h3>
-      <div className="status-row">
-        <span>Score</span>
-        <strong>
-          {teamScore}/{maxScore}
-        </strong>
+      <div className="token-board">
+        <div className="hint-row">
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <i key={idx} className={idx < hints ? "on" : "off"} />
+          ))}
+          <strong>{hints}</strong>
+        </div>
+        <div className="status-meta">
+          <span>
+            Score {teamScore}/{maxScore}
+          </span>
+          <span>Misfires {misfires}</span>
+        </div>
       </div>
-      <div className="status-row">
-        <span>Hints</span>
-        <strong>
-          {hints}/{maxHints}
-        </strong>
+
+      <div className="player-list">
+        {players.map((player) => (
+          <div key={player.id} className="player-row">
+            <span>{player.name}</span>
+            <strong>0 ★</strong>
+          </div>
+        ))}
       </div>
-      <div className="status-row">
-        <span>Misfires</span>
-        <strong>
-          {fuses}/{maxFuses}
-        </strong>
-      </div>
-      <div className="status-row">
-        <span>Deck</span>
-        <strong>{deckCount}</strong>
-      </div>
-      <p className="status-impression">{impression}</p>
     </aside>
   );
 }

@@ -4,6 +4,7 @@ export type Player = {
 };
 
 export type CardColor = "Green" | "White" | "Red" | "Blue" | "Yellow";
+export type CardValue = 1 | 2 | 3 | 4 | 5;
 
 export type DiscardCounts = {
   ones: number;
