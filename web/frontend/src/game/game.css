@@ -1,0 +1,303 @@
+.game-page {
+  padding: 0.6rem;
+  color: #161616;
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12)),
+    repeating-linear-gradient(
+      90deg,
+      #d8bc90 0,
+      #d8bc90 48px,
+      #d2b382 48px,
+      #d2b382 96px
+    );
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.7rem;
+}
+
+.tutorial-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+}
+
+.tutorial-text {
+  font-size: 1rem;
+}
+
+.game-table {
+  display: grid;
+  grid-template-columns: 130px 1fr 130px 220px;
+  grid-template-rows: auto auto auto;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.seat-left {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.seat-top {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+}
+
+.seat-right {
+  grid-column: 3;
+  grid-row: 1 / span 3;
+}
+
+.center-zone {
+  grid-column: 2;
+  grid-row: 2;
+  display: block;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 0.7rem;
+}
+
+.seat-bottom {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: center;
+}
+
+.discard-bottom-left {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.team-status-panel {
+  grid-column: 4;
+  grid-row: 1 / span 3;
+  background: #ead8bd;
+  border: 2px solid #b08958;
+  border-radius: 12px;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.team-status-panel h3 {
+  margin: 0 0 0.2rem;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  background: #f7efe2;
+  border: 1px solid #c7ab7d;
+  border-radius: 8px;
+  padding: 0.4rem 0.55rem;
+  font-weight: 700;
+}
+
+.status-impression {
+  margin: 0.2rem 0 0;
+  background: #2b1f3f;
+  color: #fff;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 700;
+  padding: 0.35rem 0.45rem;
+}
+
+.player-hand {
+  background: #1f1b4b;
+  border: 2px solid #050507;
+  border-radius: 10px;
+  padding: 0.4rem;
+  color: #fff;
+}
+
+.player-hand.vertical .hand-cards {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.player-hand.horizontal .hand-cards {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.player-name {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.hand-cards {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.fireworks-panel {
+  width: 100%;
+  height: 100%;
+  background: rgba(34, 26, 76, 0.92);
+  border: 2px solid #090916;
+  border-radius: 12px;
+  padding: 0.7rem;
+  color: #fff;
+}
+
+.fireworks-panel h3 {
+  margin: 0 0 0.55rem;
+}
+
+.firework-lanes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(58px, 1fr));
+  gap: 0.55rem;
+}
+
+.firework-lane {
+  width: 100%;
+  height: 170px;
+  border-radius: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.5rem 0.45rem;
+  font-weight: 700;
+}
+
+.firework-lane.red {
+  background: #7f1d1d;
+}
+
+.firework-lane.blue {
+  background: #1e3a8a;
+}
+
+.firework-lane.green {
+  background: #14532d;
+}
+
+.firework-lane.yellow {
+  background: #854d0e;
+}
+
+.firework-lane.white {
+  background: #6b7280;
+}
+
+.discard-panel {
+  background: #f8fafc;
+  border: 2px solid #64748b;
+  border-radius: 10px;
+  padding: 0.6rem;
+  min-width: 230px;
+}
+
+.discard-panel h3 {
+  margin: 0 0 0.45rem;
+}
+
+.discard-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.discard-grid th,
+.discard-grid td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.35rem;
+  text-align: center;
+}
+
+.discard-grid th {
+  background: #e2e8f0;
+  font-weight: 700;
+}
+
+.discard-color {
+  text-align: left;
+  font-weight: 700;
+  background: #f1f5f9;
+}
+
+.card-back,
+.card-face {
+  width: 46px;
+  height: 64px;
+  border-radius: 8px;
+}
+
+.card-back {
+  background:
+    radial-gradient(circle at 30% 30%, #38bdf8, #1e293b 65%),
+    repeating-linear-gradient(45deg, #312e81 0, #312e81 7px, #4338ca 7px, #4338ca 14px);
+  border: 1px solid #312e81;
+}
+
+.card-face {
+  border: 1px solid #3f3f46;
+  background: #f8fafc;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.action-bar {
+  margin-top: 0.75rem;
+  padding: 0.55rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.action-bar button {
+  border: 2px solid #5b4422;
+  border-radius: 9px;
+  padding: 0.55rem 1rem;
+  font-weight: 700;
+  color: #2e2214;
+  background: #f4d6a2;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .game-table {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .seat-left,
+  .seat-top,
+  .seat-right,
+  .center-zone,
+  .seat-bottom,
+  .discard-bottom-left,
+  .team-status-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .center-zone {
+    display: block;
+  }
+
+  .player-hand.vertical .hand-cards {
+    display: flex;
+  }
+}
