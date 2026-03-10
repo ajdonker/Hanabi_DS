@@ -6,9 +6,6 @@ type FireworksPanelProps = {
 export default function FireworksPanel({ colors, values }: FireworksPanelProps) {
   return (
     <section className="fireworks-panel">
-      <div className="deck-stack">
-        <div className="deck-card-skin" />
-      </div>
       <div className="firework-lanes">
         {colors.map((color, index) => (
           <article

@@ -2,6 +2,8 @@
   --player-card-width: 64px;
   --player-card-height: 108px;
   --firework-card-width: 70px;
+  --firework-lane-height: 172px;
+  --fireworks-panel-pad-top: 0.75rem;
   --side-column-width: 132px;
   --right-panel-width: 260px;
   padding: 0.45rem 0.55rem 0.6rem;
@@ -63,6 +65,7 @@
 .seat-left {
   grid-column: 1;
   grid-row: 1 / span 3;
+  justify-self: start;
   align-self: center;
   transform: translateY(0.85rem);
 }
@@ -76,6 +79,7 @@
 .seat-right {
   grid-column: 3;
   grid-row: 1 / span 3;
+  justify-self: end;
   align-self: center;
   transform: translateY(0.85rem);
 }
@@ -84,14 +88,9 @@
   grid-column: 2;
   grid-row: 2;
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  gap: 0.35rem;
+  gap: 0.9rem;
   justify-self: center;
-  background: url("../../images/table-background.webp") center / cover no-repeat;
-  border-radius: 4px;
-  padding: 0.75rem 0.9rem;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
 .seat-bottom {
@@ -215,7 +214,7 @@
 .player-hand.vertical .hand-cards {
   display: flex;
   flex-direction: column;
-  gap: 0.12rem;
+  gap: 0.08rem;
 }
 
 .player-hand.horizontal .hand-cards {
@@ -234,7 +233,6 @@
   margin: 0 auto 0.2rem;
   padding: 0.12rem 0.5rem;
   text-align: center;
-  background: #000;
   border-radius: 2px;
   color: #ff2f62;
 }
@@ -277,6 +275,12 @@
   transition: transform 0.12s ease;
 }
 
+.seat-left .card-hover-wrap,
+.seat-right .card-hover-wrap {
+  width: var(--player-card-height);
+  justify-content: center;
+}
+
 .card-hover-wrap.hover-up:hover {
   transform: translateY(-8px);
 }
@@ -294,15 +298,24 @@
 }
 
 .fireworks-panel {
+  display: block;
+  background: url("../../images/table-background.webp") center / cover no-repeat;
+  background-position: 20px 50px;
+  border-radius: 4px;
+  padding: var(--fireworks-panel-pad-top) 2.3rem 2.9rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.deckcount {
   display: flex;
-  align-items: flex-end;
-  gap: 0.9rem;
+  align-items: center;
+  margin-top: var(--fireworks-panel-pad-top);
 }
 
 .deck-stack {
   position: relative;
   width: var(--player-card-width);
-  height: var(--player-card-height);
+  height: var(--firework-lane-height);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(2, 6, 23, 0.35);
@@ -315,13 +328,14 @@
 }
 
 .deck-count-out {
-  margin-left: 0.1rem;
+  position: absolute;
+  left: 50%;
+  bottom: 0.32rem;
+  transform: translateX(-50%);
   min-width: 2.4rem;
   text-align: center;
   color: #0f172a;
-  background: #9ca3af;
   border-radius: 6px;
-  border: 1px solid #64748b;
   font-size: 2rem;
   font-weight: 800;
   line-height: 1;
@@ -336,9 +350,8 @@
 .firework-lane {
   box-sizing: border-box;
   width: var(--firework-card-width);
-  height: 172px;
+  height: var(--firework-lane-height);
   border-radius: 10px;
-  border: 4px solid rgba(255, 255, 255, 0.38);
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -354,23 +367,28 @@
 }
 
 .firework-lane.red {
-  background: #7f1d1d;
+  border: 6px solid #ed0037;
+  background-color: #4b0000;
 }
 
 .firework-lane.blue {
-  background: #0e7490;
+  border: 6px solid #12acea;
+  background-color: #006d92;
 }
 
 .firework-lane.green {
-  background: #166534;
+  border: 6px solid #38ae78;
+  background-color: #246749;
 }
 
 .firework-lane.yellow {
-  background: #854d0e;
+  border: 6px solid #feea65;
+  background-color: #7a6f33;
 }
 
 .firework-lane.white {
-  background: #6b7280;
+  border: 6px solid #fff;
+  background-color: #909090;
 }
 
 .discard-panel {
@@ -432,11 +450,11 @@
   }
 
   .game-table.players-4 {
-    grid-template-columns: 108px 1fr 108px;
+    grid-template-columns: 132px 1fr 132px;
   }
 
   .game-table.players-3 {
-    grid-template-columns: 108px 1fr;
+    grid-template-columns: 132px 1fr;
   }
 
   .game-table.players-2 {

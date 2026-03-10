@@ -7,6 +7,7 @@ type CardProps = {
   value: CardValue;
   faceDown?: boolean;
   rotationDeg?: number;
+  numberRotationDeg?: number;
 };
 
 const COLOR_ROW_INDEX: Record<CardColor, number> = {
@@ -26,6 +27,7 @@ export default function Card({
   value,
   faceDown = false,
   rotationDeg = 0,
+  numberRotationDeg = 0,
 }: CardProps) {
   const xPos = toSpritePercent(value - 1, 4);
   const yPos = toSpritePercent(COLOR_ROW_INDEX[color], 6);
@@ -53,7 +55,10 @@ export default function Card({
       />
       <div
         className="card-section card-number"
-        style={{ backgroundPosition: `${xPos} ${yPos}` }}
+        style={{
+          backgroundPosition: `${xPos} ${yPos}`,
+          transform: numberRotationDeg ? `rotate(${numberRotationDeg}deg)` : undefined,
+        }}
       />
     </div>
   );

@@ -8,6 +8,7 @@ type PlayerHandProps = {
   orientation?: "horizontal" | "vertical";
   className?: string;
   cardRotationDeg?: number;
+  numberRotationDeg?: number;
   nameSide?: "top" | "left" | "right";
   nameRotationDeg?: number;
   hoverShift?: "up" | "down" | "left" | "right" | "none";
@@ -31,6 +32,7 @@ export default function PlayerHand({
   orientation = "horizontal",
   className = "",
   cardRotationDeg = 0,
+  numberRotationDeg,
   nameSide = "top",
   nameRotationDeg = 0,
   hoverShift = "none",
@@ -39,6 +41,8 @@ export default function PlayerHand({
   const playerLabel = isCurrentPlayer ? "You" : player.name;
   const nameStyle =
     nameRotationDeg !== 0 ? { transform: `rotate(${nameRotationDeg}deg)` } : undefined;
+  const effectiveCardRotation = isCurrentPlayer ? 0 : cardRotationDeg;
+  const effectiveNumberRotation = numberRotationDeg ?? -effectiveCardRotation;
 
   const cards = (
     <div className="hand-cards">
@@ -51,7 +55,8 @@ export default function PlayerHand({
               color={demoCard.color}
               value={demoCard.value}
               faceDown={isCurrentPlayer}
-              rotationDeg={isCurrentPlayer ? 0 : cardRotationDeg}
+              rotationDeg={effectiveCardRotation}
+              numberRotationDeg={effectiveNumberRotation}
             />
           </div>
         );

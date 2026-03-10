@@ -36,11 +36,11 @@
   height: 40%;
   background-image: url("../../../images/cards-numbers.webp");
   opacity: 1;
-  filter: saturate(1.35) contrast(1.25);
   border-radius: 10px;
+  transform-origin: center;
 }
 
 .hanabi-card.rotated-card {
   transform-origin: center;
-  margin-block: -9px;
+  margin-block: calc((var(--player-card-width) - var(--player-card-height)) / 2);
 }

@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import "./game.css";
 import ActionBar from "./components/ActionBar";
+import Deckcount from "./components/Deckcount";
 import DiscardPanel from "./components/DiscardPanel";
 import FireworksPanel from "./components/FireworksPanel";
 import GameHeader from "./components/GameHeader";
@@ -89,8 +90,8 @@ export default function Game() {
         )}
 
         <main className="center-zone">
+          <Deckcount deckCount={deckCount} />
           <FireworksPanel colors={colors} values={fireworkValues} />
-          <div className="deck-count-out">{deckCount}</div>
         </main>
 
         <PlayerHand
