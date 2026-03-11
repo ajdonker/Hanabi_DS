@@ -1,44 +1,31 @@
-import type { Player } from "../types";
-
 type TeamStatusPanelProps = {
-  teamScore: number;
-  maxScore: number;
   hints: number;
-  misfires: number;
-  players: Player[];
 };
 
-export default function TeamStatusPanel({
-  teamScore,
-  maxScore,
-  hints,
-  misfires,
-  players,
-}: TeamStatusPanelProps) {
+export default function TeamStatusPanel({ hints }: TeamStatusPanelProps) {
+  const maxHints = 8;
+  const visibleHints = Math.max(0, Math.min(maxHints, hints));
+  const reserveHints = Math.max(0, maxHints - visibleHints);
+
   return (
     <aside className="team-status-panel">
       <div className="token-board">
-        <div className="hint-row">
-          {Array.from({ length: 8 }).map((_, idx) => (
-            <i key={idx} className={idx < hints ? "on" : "off"} />
+        <div className="token-reserve" aria-label="Reserve clue tokens">
+          {Array.from({ length: reserveHints }).map((_, idx) => (
+            <span key={idx} className="clue-token" />
           ))}
-          <strong>{hints}</strong>
         </div>
-        <div className="status-meta">
-          <span>
-            Score {teamScore}/{maxScore}
-          </span>
-          <span>Misfires {misfires}</span>
-        </div>
-      </div>
-
-      <div className="player-list">
-        {players.map((player) => (
-          <div key={player.id} className="player-row">
-            <span>{player.name}</span>
-            <strong>0 ★</strong>
+        <div className="token-clues" aria-label="Available clue tokens">
+          <div className="clue-grid">
+            {Array.from({ length: visibleHints }).map((_, idx) => (
+              <span key={idx} className="clue-token">
+                {idx === visibleHints - 1 && visibleHints > 0 && (
+                  <strong className="clue-count">{visibleHints}</strong>
+                )}
+              </span>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </aside>
   );

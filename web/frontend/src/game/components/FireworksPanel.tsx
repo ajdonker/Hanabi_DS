@@ -1,9 +1,16 @@
 type FireworksPanelProps = {
   colors: string[];
   values: number[];
+  misfires: number;
+  maxMisfires?: number;
 };
 
-export default function FireworksPanel({ colors, values }: FireworksPanelProps) {
+export default function FireworksPanel({
+  colors,
+  values,
+  misfires,
+  maxMisfires = 3,
+}: FireworksPanelProps) {
   return (
     <section className="fireworks-panel">
       <div className="firework-lanes">
@@ -17,6 +24,9 @@ export default function FireworksPanel({ colors, values }: FireworksPanelProps) 
             <strong>{values[index] ?? 0}</strong>
           </article>
         ))}
+      </div>
+      <div className="fireworks-misfires">
+        {misfires}/{maxMisfires} misfires
       </div>
     </section>
   );

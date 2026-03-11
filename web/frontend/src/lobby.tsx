@@ -51,7 +51,7 @@ export default function Lobby() {
     <section className="lobby-page">
       <div className="lobby-header">
         <h2>Lobby</h2>
-        <p>Choose a table card to join, or create a new table.</p>
+        <p>Choose a game card to join, or create a new game.</p>
       </div>
 
       <form className="lobby-create" onSubmit={createTable}>
@@ -67,7 +67,7 @@ export default function Lobby() {
             }
           }}
         />
-        <button type="submit">Create Table</button>
+        <button type="submit">Create Game</button>
       </form>
       {message && <p className="lobby-message">{message}</p>}
 
@@ -79,7 +79,7 @@ export default function Lobby() {
             type="button"
             onClick={() => joinTable(table)}
           >
-            <h3>Table {table.id.replace("table-", "")}</h3>
+            <h3>Game {table.id.replace("table-", "")}</h3>
             <p>
               Players: {table.players}/{table.maxPlayers}
             </p>

@@ -39,8 +39,11 @@ export default function PlayerHand({
 }: PlayerHandProps) {
   const handClasses = `player-hand ${orientation} ${className}`.trim();
   const playerLabel = isCurrentPlayer ? "You" : player.name;
+  const nameColorClass = isCurrentPlayer ? "you" : `player-${player.id}`;
   const nameStyle =
-    nameRotationDeg !== 0 ? { transform: `rotate(${nameRotationDeg}deg)` } : undefined;
+    nameSide === "top" && nameRotationDeg !== 0
+      ? { transform: `rotate(${nameRotationDeg}deg)` }
+      : undefined;
   const effectiveCardRotation = isCurrentPlayer ? 0 : cardRotationDeg;
   const effectiveNumberRotation = numberRotationDeg ?? -effectiveCardRotation;
 
@@ -68,7 +71,7 @@ export default function PlayerHand({
     <article className={`${handClasses} name-${nameSide}`.trim()}>
       {nameSide === "top" ? (
         <>
-          <h3 className="player-name top" style={nameStyle}>
+          <h3 className={`player-name top ${nameColorClass}`.trim()} style={nameStyle}>
             {playerLabel}
           </h3>
           {cards}
@@ -76,13 +79,16 @@ export default function PlayerHand({
       ) : (
         <div className={`player-hand-main ${nameSide}`.trim()}>
           {nameSide === "left" && (
-            <h3 className="player-name side" style={nameStyle}>
+            <h3 className={`player-name side side-left ${nameColorClass}`.trim()} style={nameStyle}>
               {playerLabel}
             </h3>
           )}
           {cards}
           {nameSide === "right" && (
-            <h3 className="player-name side" style={nameStyle}>
+            <h3
+              className={`player-name side side-right ${nameColorClass}`.trim()}
+              style={nameStyle}
+            >
               {playerLabel}
             </h3>
           )}

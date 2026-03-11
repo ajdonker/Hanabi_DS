@@ -23,16 +23,15 @@ export default function Game() {
     name: `Player ${index + 1}`,
   }));
   const fireworkValues = [2, 1, 3, 0, 0];
-  const teamScore = fireworkValues.reduce((sum, value) => sum + value, 0);
-  const hints = 6;
+  const hints = 4;
   const misfires = 2;
   const deckCount = 34;
   const discardByColor: DiscardTableData = {
-    Green: { ones: 2, twos: 1, threes: 0 },
-    White: { ones: 1, twos: 2, threes: 1 },
-    Red: { ones: 0, twos: 1, threes: 1 },
-    Blue: { ones: 2, twos: 0, threes: 2 },
-    Yellow: { ones: 1, twos: 1, threes: 0 },
+    Green: { 1: 2, 2: 1, 3: 0, 4: 0, 5: 0 },
+    White: { 1: 1, 2: 2, 3: 1, 4: 0, 5: 0 },
+    Red: { 1: 0, 2: 1, 3: 1, 4: 1, 5: 0 },
+    Blue: { 1: 2, 2: 0, 3: 2, 4: 0, 5: 1 },
+    Yellow: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 0 },
   };
   const currentPlayer = players[0] ?? { id: 1, name: "Player 1" };
   let topPlayer: Player | undefined;
@@ -91,7 +90,7 @@ export default function Game() {
 
         <main className="center-zone">
           <Deckcount deckCount={deckCount} />
-          <FireworksPanel colors={colors} values={fireworkValues} />
+          <FireworksPanel colors={colors} values={fireworkValues} misfires={misfires} />
         </main>
 
         <PlayerHand
@@ -103,13 +102,7 @@ export default function Game() {
         />
         <DiscardPanel className="discard-bottom-left" discardByColor={discardByColor} />
 
-        <TeamStatusPanel
-          teamScore={teamScore}
-          maxScore={25}
-          hints={hints}
-          misfires={misfires}
-          players={players}
-        />
+        <TeamStatusPanel hints={hints} />
       </div>
 
       <ActionBar />

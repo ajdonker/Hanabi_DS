@@ -15,7 +15,7 @@ export default function Login() {
     <section className="login-page">
       <div className="login-card">
         <h2>Login</h2>
-        <p className="login-subtitle">Sign in to continue to Hanabi.</p>
+        <p className="login-subtitle">Sign in to play Hanabi.</p>
         <form className="login-form" onSubmit={handleSubmit}>
           <input
             type="text"
