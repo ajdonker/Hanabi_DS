@@ -50,6 +50,7 @@
   grid-template-rows: auto auto auto auto;
   gap: 0.65rem 0.9rem;
   align-items: start;
+  margin-top: 1.5rem;
 }
 
 .game-table.players-4 {
@@ -76,6 +77,7 @@
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
+  transform: translateY(-24px);
 }
 
 .seat-right {
@@ -99,6 +101,7 @@
   grid-column: 2;
   grid-row: 3;
   justify-self: center;
+  transform: translateY(24px);
 }
 
 .discard-bottom-left {
@@ -230,6 +233,14 @@
   border-radius: 2px;
 }
 
+.player-name.bottom {
+  width: fit-content;
+  margin: 0.2rem auto 0;
+  padding: 0.12rem 0.5rem;
+  text-align: center;
+  border-radius: 2px;
+}
+
 .player-name.side {
   margin: 0;
   white-space: nowrap;
@@ -288,8 +299,17 @@
 }
 
 .card-hover-wrap {
+  position: relative;
   display: inline-flex;
   transition: transform 0.12s ease;
+}
+
+.card-hover-wrap.selectable-card {
+  cursor: pointer;
+}
+
+.card-hover-wrap.selectable-card:hover {
+  filter: brightness(1.07);
 }
 
 .seat-left .card-hover-wrap,
@@ -312,6 +332,214 @@
 
 .card-hover-wrap.hover-left:hover {
   transform: translateX(-8px);
+}
+
+.card-hint-area {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  --hint-overlap: 6px;
+  box-sizing: border-box;
+  border: 1px solid rgba(15, 23, 42, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.35rem;
+}
+
+.card-hint-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #020617;
+}
+
+.card-hint-area.hint-pos-top {
+  left: 0;
+  bottom: calc(100% - var(--hint-overlap));
+  width: 100%;
+  height: 28px;
+  border-radius: 10px 10px 0 0;
+  border-bottom: 0;
+}
+
+.card-hint-area.hint-pos-bottom {
+  left: 0;
+  top: calc(100% - var(--hint-overlap));
+  width: 100%;
+  height: 28px;
+  border-radius: 0 0 10px 10px;
+  border-top: 0;
+}
+
+.card-hint-area.hint-pos-right {
+  left: calc(100% - var(--hint-overlap));
+  top: 0;
+  height: 100%;
+  width: 30px;
+  border-radius: 0 10px 10px 0;
+  border-left: 0;
+}
+
+.card-hint-area.hint-pos-left {
+  right: calc(100% - var(--hint-overlap));
+  top: 0;
+  height: 100%;
+  width: 30px;
+  border-radius: 10px 0 0 10px;
+  border-right: 0;
+}
+
+.card-hint-area.hint-pos-top .card-hint-value {
+  transform: translateY(calc(var(--hint-overlap) / -2));
+}
+
+.card-hint-area.hint-pos-bottom .card-hint-value {
+  transform: translateY(calc(var(--hint-overlap) / 2));
+}
+
+.card-hint-area.hint-pos-right .card-hint-value {
+  transform: translateX(calc(var(--hint-overlap) / 2));
+}
+
+.card-hint-area.hint-pos-left .card-hint-value {
+  transform: translateX(calc(var(--hint-overlap) / -2));
+}
+
+.card-hover-wrap .hanabi-card {
+  z-index: 1;
+}
+
+.card-hint-area.hint-red {
+  background: #ed0037;
+}
+
+.card-hint-area.hint-blue {
+  background: #12acea;
+}
+
+.card-hint-area.hint-green {
+  background: #38ae78;
+}
+
+.card-hint-area.hint-yellow {
+  background: #feea65;
+}
+
+.card-hint-area.hint-white {
+  background: #ffffff;
+}
+
+.card-hint-area.hint-neutral {
+  background: #a6acb6;
+}
+
+.card-hint-popup {
+  position: fixed;
+  z-index: 16;
+  box-sizing: border-box;
+  width: 220px;
+  background: #f3f4f6;
+  color: #0f172a;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.22);
+  padding: 0.72rem 0.82rem;
+}
+
+.card-hint-line {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.card-hint-line + .card-hint-line {
+  margin-top: 0.45rem;
+}
+
+.card-hint-action {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  white-space: nowrap;
+  padding: 0.18rem 0.15rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.card-hint-action:hover {
+  background: rgba(148, 163, 184, 0.22);
+}
+
+.card-hint-action:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.card-hint-color {
+  font-weight: 900;
+}
+
+.card-hint-color.red {
+  color: #dc2626;
+}
+
+.card-hint-color.blue {
+  color: #0ea5e9;
+}
+
+.card-hint-color.green {
+  color: #16a34a;
+}
+
+.card-hint-color.yellow {
+  color: #ca8a04;
+}
+
+.card-hint-color.white {
+  color: #334155;
+}
+
+.card-action-popup {
+  position: fixed;
+  z-index: 16;
+  box-sizing: border-box;
+  width: 212px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.22);
+  padding: 0.68rem 0.78rem;
+}
+
+.card-action-button {
+  width: 100%;
+  border: 0;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 0.42rem 0.55rem;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.card-action-button + .card-action-button {
+  margin-top: 0.36rem;
+}
+
+.card-action-button:hover:not(:disabled) {
+  background: #eef2ff;
+}
+
+.card-action-button:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
 }
 
 .fireworks-panel {
@@ -337,6 +565,7 @@
   display: flex;
   align-items: center;
   margin-top: var(--fireworks-panel-pad-top);
+  transform: translateX(12px);
 }
 
 .deck-stack {
@@ -460,42 +689,23 @@
 }
 
 .discard-color-swatch.green {
-  background: #38ae78;
+  background: #2dae7d;
 }
 
 .discard-color-swatch.white {
-  background: #f8fafc;
+  background: #fffdfc;
 }
 
 .discard-color-swatch.red {
-  background: #ed0037;
+  background: #e80039;
 }
 
 .discard-color-swatch.blue {
-  background: #12acea;
+  background: #06aeec;
 }
 
 .discard-color-swatch.yellow {
-  background: #feea65;
-}
-
-.action-bar {
-  margin-top: -6rem;
-  padding: 0.2rem 0.55rem 0.45rem;
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.action-bar button {
-  border: 1px solid #5b4422;
-  border-radius: 8px;
-  padding: 0.48rem 0.95rem;
-  font-weight: 700;
-  color: #2e2214;
-  background: #f4d6a2;
-  cursor: pointer;
+  background: #fbed65;
 }
 
 @media (max-width: 1600px) {
@@ -540,6 +750,22 @@
   .clue-count {
     font-size: 1.3rem;
   }
+
+  .card-hint-popup {
+    width: 214px;
+  }
+
+  .card-hint-line {
+    font-size: 1rem;
+  }
+
+  .card-action-popup {
+    width: 208px;
+  }
+
+  .card-action-button {
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 900px) {
@@ -570,6 +796,11 @@
     transform: none;
   }
 
+  .seat-top,
+  .seat-bottom {
+    transform: none;
+  }
+
   .player-hand.vertical .hand-cards {
     flex-direction: row;
     gap: 0.08rem;
@@ -586,5 +817,15 @@
   .team-status-panel {
     top: 0.08rem;
     right: 0.12rem;
+  }
+
+  .card-hint-popup {
+    width: 206px;
+    padding: 0.56rem 0.62rem;
+  }
+
+  .card-action-popup {
+    width: 198px;
+    padding: 0.54rem 0.62rem;
   }
 }
