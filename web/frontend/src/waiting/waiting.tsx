@@ -15,6 +15,8 @@ export default function Waiting() {
   const [acceptedPlayers, setAcceptedPlayers] = useState(0);
   const [status, setStatus] = useState("Click Accept when you are ready.");
   const [isAccepted, setIsAccepted] = useState(false);
+  const progressPercent =
+    tableSize > 0 ? Math.round((acceptedPlayers / tableSize) * 100) : 0;
 
   function handleAccept() {
     if (isAccepted) {
@@ -51,19 +53,41 @@ export default function Waiting() {
 
   return (
     <section className="waiting-page">
-      <h2>Waiting Room</h2>
-      <p>You joined: Table {tableId ?? ""}</p>
-      <p>
-        Accepted players: {acceptedPlayers}/{tableSize}
-      </p>
-      <p>{status}</p>
-      <div className="waiting-actions">
-        <button type="button" onClick={handleAccept}>
-          Accept
-        </button>
-        <button type="button" onClick={handleDecline}>
-          Decline
-        </button>
+      <div className="waiting-card">
+        <h2>You are going to play Hanabi</h2>
+        <p className="waiting-table-label">
+          <strong>{tableId ?? "table"}</strong>
+        </p>
+
+        <div className="waiting-progress">
+          <div className="waiting-progress-meta">
+            <span>Accepted players</span>
+            <span>
+              {acceptedPlayers}/{tableSize}
+            </span>
+          </div>
+          <div
+            className="waiting-progress-track"
+          >
+            <div
+              className="waiting-progress-fill"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <p className={`waiting-status ${isAccepted ? "is-accepted" : "is-pending"}`}>
+          {status}
+        </p>
+
+        <div className="waiting-actions">
+          <button type="button" className="accept-button" onClick={handleAccept} disabled={isAccepted}>
+            {isAccepted ? "Accepted" : "Accept"}
+          </button>
+          <button type="button" className="decline-button" onClick={handleDecline}>
+            Decline
+          </button>
+        </div>
       </div>
     </section>
   );

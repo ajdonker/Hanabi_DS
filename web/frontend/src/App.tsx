@@ -1,7 +1,7 @@
 import { Routes, Route, Outlet, Link } from "react-router-dom";
 import Login from "./login/login";
 import Lobby from "./lobby/lobby";
-import Waiting from "./waiting";
+import Waiting from "./waiting/waiting";
 import Game from "./game";
 
 export default function App() {
