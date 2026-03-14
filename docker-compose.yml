@@ -1,0 +1,21 @@
+services:
+  redis-master:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+
+  redis-replica:
+    image: redis:7
+    command: ["redis-server", "--slaveof", "redis-master", "6379"]
+    depends_on:
+      - redis-master
+
+  server:
+    build: .
+    image: hanabi-server
+    depends_on:
+      - redis-master
+    environment:
+      REDIS_HOST: redis-master
+      REDIS_PORT: "6379"
+    ports: ["12345:12345"]
