@@ -1,5 +1,5 @@
 import { Routes, Route, Outlet, Link } from "react-router-dom";
-import Login from "./login";
+import Login from "./login/login";
 import Lobby from "./lobby";
 import Waiting from "./waiting";
 import Game from "./game";
