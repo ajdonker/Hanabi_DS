@@ -4,10 +4,9 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: 72vh;
+  height: 100vh;
   display: grid;
   place-items: center;
-  padding: clamp(1.2rem, 2.6vw, 2.4rem);
   background:
     radial-gradient(120% 80% at 5% 8%, rgba(254, 249, 195, 0.9) 0%, transparent 58%),
     radial-gradient(90% 70% at 100% 100%, rgba(186, 230, 253, 0.85) 0%, transparent 52%),

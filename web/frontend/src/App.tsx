@@ -1,6 +1,6 @@
 import { Routes, Route, Outlet, Link } from "react-router-dom";
 import Login from "./login/login";
-import Lobby from "./lobby";
+import Lobby from "./lobby/lobby";
 import Waiting from "./waiting";
 import Game from "./game";
 
@@ -20,21 +20,7 @@ export default function App() {
 
 function Layout() {
   return (
-    <div>
-      <h1>Hanabi</h1>
-      <nav>
-        <ul>
-          <li>
-            <Link to="/login">Login</Link>
-          </li>
-          <li>
-            <Link to="/lobby">Lobby</Link>
-          </li>
-        </ul>
-      </nav>
-      <hr />
-      <Outlet />
-    </div>
+    <Outlet />
   );
 }
 
