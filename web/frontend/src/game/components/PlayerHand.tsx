@@ -51,10 +51,11 @@ export default function PlayerHand({
   const handClasses = `player-hand ${orientation} ${className}`.trim();
   const playerLabel = isCurrentPlayer ? "You" : player.name;
   const nameColorClass = isCurrentPlayer ? "you" : `player-${player.id}`;
-  const nameStyle =
-    (nameSide === "top" || nameSide === "bottom") && nameRotationDeg !== 0
+  const nameStyle = 
+    (nameSide === "left" || nameSide === "right") && nameRotationDeg !== 0
       ? { transform: `rotate(${nameRotationDeg}deg)` }
       : undefined;
+    
   const effectiveCardRotation = isCurrentPlayer ? 0 : cardRotationDeg;
   const effectiveNumberRotation = numberRotationDeg ?? -effectiveCardRotation;
   const cardsData = handCards;

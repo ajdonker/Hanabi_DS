@@ -118,7 +118,6 @@ function getDemoHand(playerId: number): HandCard[] {
 
 export default function Game() {
   const location = useLocation();
-  const state = location.state as GameState | null;
   const tableSize = 4;
   const colors = ["Red", "Blue", "Green", "Yellow", "White"];
   const players: Player[] = Array.from({ length: tableSize }, (_, index) => ({
@@ -164,7 +163,7 @@ export default function Game() {
     rightPlayer = players[3];
   }
 
-  const activePlayer = topPlayer?.name ?? currentPlayer.name;
+  const activePlayer = topPlayer?.name ?? currentPlayer.name; // todo in real game state, active player can be any of the players, not just top player. Adjust accordingly when integrating with real backend data
   const currentPlayerCards = handCardsByPlayer.get(currentPlayer.id) ?? [];
   const topPlayerCards = topPlayer ? handCardsByPlayer.get(topPlayer.id) ?? [] : [];
   const leftPlayerCards = leftPlayer ? handCardsByPlayer.get(leftPlayer.id) ?? [] : [];
@@ -372,7 +371,7 @@ export default function Game() {
             orientation="vertical"
             cardRotationDeg={-90}
             nameSide="left"
-            nameRotationDeg={90}
+            nameRotationDeg={180}
             hoverShift="right"
             popupPlacement="right-of-card"
             onCardSelect={handleOtherCardSelect}
@@ -400,7 +399,7 @@ export default function Game() {
             orientation="vertical"
             cardRotationDeg={90}
             nameSide="right"
-            nameRotationDeg={-90}
+            nameRotationDeg={0}
             hoverShift="left"
             popupPlacement="left-of-card"
             onCardSelect={handleOtherCardSelect}
