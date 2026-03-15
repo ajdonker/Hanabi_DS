@@ -237,22 +237,8 @@ export default function Game() {
   };
 
   const handleCurrentCardSelect = ({ color, value, cardIndex, anchorRect }: CardSelectPayload) => {
-    const preferredLeft = anchorRect.left + anchorRect.width / 2 - ACTION_POPUP_WIDTH / 2;
-    const left = clamp(
-      preferredLeft,
-      POPUP_MARGIN,
-      window.innerWidth - ACTION_POPUP_WIDTH - POPUP_MARGIN,
-    );
-    const preferredTop =
-      anchorRect.top - ACTION_POPUP_HEIGHT - POPUP_GAP;
-    const top =
-      preferredTop >= POPUP_MARGIN
-        ? preferredTop
-        : clamp(
-            anchorRect.bottom + POPUP_GAP,
-            POPUP_MARGIN,
-            window.innerHeight - ACTION_POPUP_HEIGHT - POPUP_MARGIN,
-          );
+    const left = anchorRect.left + anchorRect.width / 2 - ACTION_POPUP_WIDTH / 2;
+    const top = anchorRect.top - ACTION_POPUP_HEIGHT - POPUP_GAP;
 
     setSelectedOwnCard({
       color,
