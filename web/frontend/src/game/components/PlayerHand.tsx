@@ -50,12 +50,10 @@ export default function PlayerHand({
 }: PlayerHandProps) {
   const handClasses = `player-hand ${orientation} ${className}`.trim();
   const playerLabel = isCurrentPlayer ? "You" : player.name;
-  const nameColorClass = isCurrentPlayer ? "you" : `player-${player.id}`;
   const nameStyle = 
     (nameSide === "left" || nameSide === "right") && nameRotationDeg !== 0
       ? { transform: `rotate(${nameRotationDeg}deg)` }
       : undefined;
-    
   const effectiveCardRotation = isCurrentPlayer ? 0 : cardRotationDeg;
   const effectiveNumberRotation = numberRotationDeg ?? -effectiveCardRotation;
   const cardsData = handCards;
@@ -156,32 +154,32 @@ export default function PlayerHand({
   );
 
   return (
-    <article className={`${handClasses} name-${nameSide}`.trim()}>
+    <article className={`${handClasses}`.trim()}>
       {nameSide === "top" || nameSide === "bottom" ? (
         <>
           {nameSide === "top" && (
-            <h3 className={`player-name top ${nameColorClass}`.trim()} style={nameStyle}>
+            <h3 className={`player-name side-top`} style={nameStyle}>
               {playerLabel}
             </h3>
           )}
           {renderedCards}
           {nameSide === "bottom" && (
-            <h3 className={`player-name bottom ${nameColorClass}`.trim()} style={nameStyle}>
+            <h3 className={`player-name side-bottom`} style={nameStyle}>
               {playerLabel}
             </h3>
           )}
         </>
       ) : (
-        <div className={`player-hand-main ${nameSide}`.trim()}>
+        <div className={`player-hand-main`}>
           {nameSide === "left" && (
-            <h3 className={`player-name side side-left ${nameColorClass}`.trim()} style={nameStyle}>
+            <h3 className={`player-name side-left`} style={nameStyle}>
               {playerLabel}
             </h3>
           )}
           {renderedCards}
           {nameSide === "right" && (
             <h3
-              className={`player-name side side-right ${nameColorClass}`.trim()}
+              className={`player-name side-right`}
               style={nameStyle}
             >
               {playerLabel}

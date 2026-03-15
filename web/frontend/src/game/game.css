@@ -242,67 +242,36 @@
   font-weight: 700;
 }
 
-.player-name.top {
+.player-name.side-top {
   width: fit-content;
   margin: 0 auto 0.2rem;
   padding: 0.12rem 0.5rem;
   text-align: center;
   border-radius: 2px;
+  color: #ef4444;
 }
 
-.player-name.bottom {
+.player-name.side-bottom {
   width: fit-content;
   margin: 0.2rem auto 0;
   padding: 0.12rem 0.5rem;
   text-align: center;
   border-radius: 2px;
+  color: #22c55e;
 }
 
-.player-name.side {
-  margin: 0;
-  white-space: nowrap;
-  width: auto;
-  min-width: 0;
-  overflow: visible;
-  text-align: center;
-  align-self: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  background: transparent;
-}
-
-.player-name.side.side-left {
+.player-name.side-left {
   writing-mode: vertical-lr;
   text-orientation: mixed;
   margin-right: var(--side-name-extra-gap);
-}
-
-.player-name.side.side-right {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  margin-left: var(--side-name-extra-gap);
-}
-
-.player-name.player-3 {
-  color: #ef4444;
-}
-
-.player-name.player-2 {
   color: #0ea5e9;
 }
 
-.player-name.player-4 {
+.player-name.side-right {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  margin-left: var(--side-name-extra-gap);
   color: #facc15;
-}
-
-.player-name.side.side-left.player-4 {
-  transform: rotate(180deg);
-}
-
-.player-name.you {
-  color: #22c55e;
 }
 
 .player-hand-main {
@@ -806,14 +775,6 @@
   .player-hand.vertical .hand-cards {
     flex-direction: row;
     gap: 0.08rem;
-  }
-
-  .player-name.side {
-    writing-mode: horizontal-tb;
-    min-width: auto;
-    width: auto;
-    margin-left: 0;
-    margin-right: 0;
   }
 
   .team-status-panel {
