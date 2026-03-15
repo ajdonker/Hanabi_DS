@@ -10,12 +10,12 @@ export default function TeamStatusPanel({ hints }: TeamStatusPanelProps) {
   return (
     <aside className="team-status-panel">
       <div className="token-board">
-        <div className="token-reserve" aria-label="Reserve clue tokens">
+        <div className="token-reserve">
           {Array.from({ length: reserveHints }).map((_, idx) => (
             <span key={idx} className="clue-token" />
           ))}
         </div>
-        <div className="token-clues" aria-label="Available clue tokens">
+        <div className="token-clues">
           <div className="clue-grid">
             {Array.from({ length: visibleHints }).map((_, idx) => (
               <span key={idx} className="clue-token">

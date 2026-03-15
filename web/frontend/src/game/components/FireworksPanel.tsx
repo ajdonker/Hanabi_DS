@@ -18,7 +18,6 @@ export default function FireworksPanel({
           <article
             key={color}
             className={`firework-lane ${color.toLowerCase()}`}
-            aria-label={color}
             title={color}
           >
             <strong>{values[index] ?? 0}</strong>

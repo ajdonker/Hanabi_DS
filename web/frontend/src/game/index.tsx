@@ -47,62 +47,36 @@ const HINT_POPUP_WIDTH = 200;
 const HINT_POPUP_HEIGHT = 82;
 const ACTION_POPUP_WIDTH = 200;
 const ACTION_POPUP_HEIGHT = 82;
-const POPUP_MARGIN = 8;
 const POPUP_GAP = 10;
 const HINT_API_ENDPOINT = "/api/hanabi/hint";
 const PLAY_CARD_API_ENDPOINT = "/api/hanabi/play";
 const DISCARD_CARD_API_ENDPOINT = "/api/hanabi/discard";
 const CARD_COLORS: CardColor[] = ["Red", "White", "Yellow", "Green", "Blue"];
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
 function computePopupPosition(
   anchorRect: DOMRect,
   popupWidth: number,
   popupHeight: number,
-  placement: "auto" | "right" | "left" = "auto",
+  placement: "below" | "right" | "left" = "below",
 ): { left: number; top: number } {
   if (placement === "right") {
-    const left = clamp(
-      anchorRect.right + POPUP_GAP,
-      POPUP_MARGIN,
-      window.innerWidth - popupWidth - POPUP_MARGIN,
-    );
-    const centeredTop = anchorRect.top + (anchorRect.height - popupHeight) / 2;
-    const top = clamp(centeredTop, POPUP_MARGIN, window.innerHeight - popupHeight - POPUP_MARGIN);
+    const left = anchorRect.right + POPUP_GAP;
+    const top = anchorRect.top + (anchorRect.height - popupHeight) / 2;
 
     return { left, top };
   }
 
   if (placement === "left") {
-    const left = clamp(
-      anchorRect.left - popupWidth - POPUP_GAP,
-      POPUP_MARGIN,
-      window.innerWidth - popupWidth - POPUP_MARGIN,
-    );
-    const centeredTop = anchorRect.top + (anchorRect.height - popupHeight) / 2;
-    const top = clamp(centeredTop, POPUP_MARGIN, window.innerHeight - popupHeight - POPUP_MARGIN);
+    const left = anchorRect.left - popupWidth - POPUP_GAP;
+    const top = anchorRect.top + (anchorRect.height - popupHeight) / 2;
 
     return { left, top };
   }
+  // for "below" placement
+  const left = anchorRect.left + (anchorRect.width - popupWidth) / 2;
+  const top = anchorRect.bottom + POPUP_GAP;
 
-  const preferredLeft = anchorRect.left + anchorRect.width / 2 - popupWidth / 2;
-  const left = clamp(
-    preferredLeft,
-    POPUP_MARGIN,
-    window.innerWidth - popupWidth - POPUP_MARGIN,
-  );
-
-  const topBelow = anchorRect.bottom + POPUP_GAP;
-  const fitsBelow = topBelow + popupHeight <= window.innerHeight - POPUP_MARGIN;
-  const topAbove = anchorRect.top - popupHeight - POPUP_GAP;
-
-  return {
-    left,
-    top: fitsBelow ? topBelow : Math.max(POPUP_MARGIN, topAbove),
-  };
+  return { left, top };
 }
 
 function getDemoCard(playerId: number, cardIndex: number): HandCard {
@@ -337,8 +311,7 @@ export default function Game() {
 
       if (
         target.closest(".card-hint-popup") ||
-        target.closest(".card-action-popup") ||
-        target.closest("[data-hint-card='true']")
+        target.closest(".card-action-popup")
       ) {
         return;
       }

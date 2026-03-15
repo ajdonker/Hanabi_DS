@@ -29,7 +29,6 @@ export default function DiscardPanel({
               <td className="discard-color">
                 <div
                   className={`discard-color-swatch ${color.toLowerCase()}`.trim()}
-                  aria-label={color}
                   title={color}
                 />
               </td>

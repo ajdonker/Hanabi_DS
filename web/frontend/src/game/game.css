@@ -290,11 +290,11 @@
   transition: transform 0.12s ease;
 }
 
-.card-hover-wrap.selectable-card {
+.card-hover-wrap{
   cursor: pointer;
 }
 
-.card-hover-wrap.selectable-card:hover {
+.card-hover-wrap:hover {
   filter: brightness(1.07);
 }
 

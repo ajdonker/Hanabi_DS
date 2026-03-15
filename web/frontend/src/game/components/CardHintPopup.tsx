@@ -36,7 +36,7 @@ export default function CardHintPopup({
   const singularValueWord = VALUE_WORDS[value].single.toUpperCase();
 
   return (
-    <aside className="card-hint-popup" style={{ left, top }} role="dialog" aria-label="Card hint">
+    <aside className="card-hint-popup" style={{ left, top }} role="dialog">
       <button
         type="button"
         className="card-hint-line card-hint-action"

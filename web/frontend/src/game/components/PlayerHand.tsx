@@ -9,7 +9,7 @@ export type CardSelectPayload = {
   value: CardValue;
   sameColorCount: number;
   sameValueCount: number;
-  popupPlacement: "auto" | "right" | "left";
+  popupPlacement: "below" | "right" | "left";
   player: Player;
   cardIndex: number;
   anchorRect: DOMRect;
@@ -29,7 +29,7 @@ type PlayerHandProps = {
   popupPlacement?: "auto" | "right-of-card" | "left-of-card";
   hintPosition?: "top" | "bottom" | "left" | "right";
   cardHintsByCard?: Record<number, CardHintMarkers>;
-  onCardSelect?: (payload: CardSelectPayload) => void;
+  onCardSelect: (payload: CardSelectPayload) => void;
 };
 
 export default function PlayerHand({
@@ -66,14 +66,9 @@ export default function PlayerHand({
         const hintColorClass = cardHints?.colorHint
           ? `hint-${cardHints.colorHint.toLowerCase()}`
           : "hint-neutral";
-        const canSelectCard = Boolean(onCardSelect);
         const sameColorCount = cardsData.filter((card) => card.color === demoCard.color).length;
         const sameValueCount = cardsData.filter((card) => card.value === demoCard.value).length;
         const handleSelect = (anchorRect: DOMRect) => {
-          if (!onCardSelect) {
-            return;
-          }
-
           onCardSelect({
             color: demoCard.color,
             value: demoCard.value,
@@ -84,7 +79,7 @@ export default function PlayerHand({
                 ? "right"
                 : popupPlacement === "left-of-card"
                   ? "left"
-                  : "auto",
+                  : "below",
             player,
             cardIndex: idx,
             anchorRect,
@@ -116,22 +111,14 @@ export default function PlayerHand({
           return new DOMRect(rect.left - tx, rect.top - ty, rect.width, rect.height);
         };
         const handleCardClick = (event: MouseEvent<HTMLDivElement>) => {
-          if (!canSelectCard) {
-            return;
-          }
-
           handleSelect(getStableAnchorRect(event.currentTarget));
         };
 
         return (
           <div
             key={idx}
-            className={`card-hover-wrap hover-${hoverShift} ${
-              canSelectCard ? "selectable-card" : ""
-            }`.trim()}
+            className={`card-hover-wrap hover-${hoverShift}`.trim()}
             onClick={handleCardClick}
-            tabIndex={canSelectCard ? 0 : undefined}
-            data-hint-card={canSelectCard ? "true" : undefined}
           >
             {hasCardHint && (
               <div
