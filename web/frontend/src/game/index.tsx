@@ -93,7 +93,7 @@ function getDemoHand(playerId: number): HandCard[] {
 export default function Game() {
   const location = useLocation();
   const tableSize = 4;
-  const colors = ["Red", "Blue", "Green", "Yellow", "White"];
+  
   const players: Player[] = Array.from({ length: tableSize }, (_, index) => ({
     id: index + 1,
     name: `Player ${index + 1}`,
@@ -382,7 +382,7 @@ export default function Game() {
 
         <main className="center-zone">
           <Deckcount deckCount={deckCount} />
-          <FireworksPanel colors={colors} values={fireworkValues} misfires={misfires} />
+          <FireworksPanel values={fireworkValues} misfires={misfires} />
         </main>
 
         <PlayerHand

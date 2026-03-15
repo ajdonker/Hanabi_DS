@@ -1,16 +1,15 @@
 type FireworksPanelProps = {
-  colors: string[];
   values: number[];
   misfires: number;
   maxMisfires?: number;
 };
 
 export default function FireworksPanel({
-  colors,
   values,
   misfires,
   maxMisfires = 3,
 }: FireworksPanelProps) {
+  const colors = ["Red", "Blue", "Green", "Yellow", "White"];
   return (
     <section className="fireworks-panel">
       <div className="firework-lanes">
@@ -18,9 +17,8 @@ export default function FireworksPanel({
           <article
             key={color}
             className={`firework-lane ${color.toLowerCase()}`}
-            title={color}
           >
-            <strong>{values[index] ?? 0}</strong>
+            <strong>{values[index]}</strong>
           </article>
         ))}
       </div>
