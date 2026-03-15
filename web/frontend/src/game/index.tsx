@@ -43,10 +43,10 @@ type SelectedOwnCardAction = {
   top: number;
 };
 
-const HINT_POPUP_WIDTH = 220;
-const HINT_POPUP_HEIGHT = 110;
-const ACTION_POPUP_WIDTH = 212;
-const ACTION_POPUP_HEIGHT = 124;
+const HINT_POPUP_WIDTH = 200;
+const HINT_POPUP_HEIGHT = 82;
+const ACTION_POPUP_WIDTH = 200;
+const ACTION_POPUP_HEIGHT = 82;
 const POPUP_MARGIN = 8;
 const POPUP_GAP = 10;
 const HINT_API_ENDPOINT = "/api/hanabi/hint";
@@ -119,12 +119,13 @@ function getDemoHand(playerId: number): HandCard[] {
 export default function Game() {
   const location = useLocation();
   const state = location.state as GameState | null;
-  const tableSize = state?.tableSize ?? 4;
+  const tableSize = 4;
   const colors = ["Red", "Blue", "Green", "Yellow", "White"];
   const players: Player[] = Array.from({ length: tableSize }, (_, index) => ({
     id: index + 1,
     name: `Player ${index + 1}`,
   }));
+  console.log(players)
   const fireworkValues = [2, 1, 3, 0, 0];
   const hints = 4;
   const misfires = 2;
@@ -143,10 +144,11 @@ export default function Game() {
   const [cardHintsByPlayer, setCardHintsByPlayer] = useState<
     Record<number, Record<number, CardHintMarkers>>
   >({});
-  const currentPlayer = players[0] ?? { id: 1, name: "Player 1" };
+  const currentPlayer = players[0];
   const handCardsByPlayer = new Map<number, HandCard[]>(
     players.map((player) => [player.id, getDemoHand(player.id)]),
   );
+  console.log(handCardsByPlayer)
   let topPlayer: Player | undefined;
   let leftPlayer: Player | undefined;
   let rightPlayer: Player | undefined;
@@ -154,8 +156,8 @@ export default function Game() {
   if (tableSize <= 2) {
     topPlayer = players[1];
   } else if (tableSize === 3) {
-    topPlayer = players[1];
-    leftPlayer = players[2];
+    leftPlayer = players[1];
+    topPlayer = players[2];
   } else {
     leftPlayer = players[1];
     topPlayer = players[2];
@@ -235,7 +237,22 @@ export default function Game() {
   };
 
   const handleCurrentCardSelect = ({ color, value, cardIndex, anchorRect }: CardSelectPayload) => {
-    const { left, top } = computePopupPosition(anchorRect, ACTION_POPUP_WIDTH, ACTION_POPUP_HEIGHT);
+    const preferredLeft = anchorRect.left + anchorRect.width / 2 - ACTION_POPUP_WIDTH / 2;
+    const left = clamp(
+      preferredLeft,
+      POPUP_MARGIN,
+      window.innerWidth - ACTION_POPUP_WIDTH - POPUP_MARGIN,
+    );
+    const preferredTop =
+      anchorRect.top - ACTION_POPUP_HEIGHT - POPUP_GAP;
+    const top =
+      preferredTop >= POPUP_MARGIN
+        ? preferredTop
+        : clamp(
+            anchorRect.bottom + POPUP_GAP,
+            POPUP_MARGIN,
+            window.innerHeight - ACTION_POPUP_HEIGHT - POPUP_MARGIN,
+          );
 
     setSelectedOwnCard({
       color,

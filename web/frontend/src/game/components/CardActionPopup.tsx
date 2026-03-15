@@ -9,7 +9,7 @@ type CardActionPopupProps = {
   onPlay: () => void;
   onDiscard: () => void;
 };
-
+// todo _colr and _value are not used, consider removing them
 export default function CardActionPopup({
   color: _color,
   value: _value,
@@ -23,8 +23,6 @@ export default function CardActionPopup({
     <aside
       className="card-action-popup"
       style={{ left, top }}
-      role="dialog"
-      aria-label="Card action options"
     >
       <button
         type="button"

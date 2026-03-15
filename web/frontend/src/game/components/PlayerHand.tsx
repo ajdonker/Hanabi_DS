@@ -123,16 +123,6 @@ export default function PlayerHand({
 
           handleSelect(getStableAnchorRect(event.currentTarget));
         };
-        const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-          if (!canSelectCard) {
-            return;
-          }
-
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            handleSelect(getStableAnchorRect(event.currentTarget));
-          }
-        };
 
         return (
           <div
@@ -141,22 +131,12 @@ export default function PlayerHand({
               canSelectCard ? "selectable-card" : ""
             }`.trim()}
             onClick={handleCardClick}
-            onKeyDown={handleCardKeyDown}
-            role={canSelectCard ? "button" : undefined}
             tabIndex={canSelectCard ? 0 : undefined}
             data-hint-card={canSelectCard ? "true" : undefined}
-            aria-label={
-              canSelectCard
-                ? `Card ${idx + 1}, ${demoCard.color} ${demoCard.value}. Click to ${
-                    isCurrentPlayer ? "show actions" : "show hint"
-                  }.`
-                : undefined
-            }
           >
             {hasCardHint && (
               <div
                 className={`card-hint-area hint-pos-${hintPosition} ${hintColorClass}`.trim()}
-                aria-hidden="true"
               >
                 <span className="card-hint-value">{cardHints?.numberHint ?? ""}</span>
               </div>

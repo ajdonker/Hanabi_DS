@@ -8,10 +8,11 @@
   --side-column-width: 132px;
   --right-panel-width: 260px;
   position: relative;
-  padding: 0.45rem 0.55rem 0.6rem;
   color: #101010;
-  min-height: 100vh;
   background: url("../../images/back-main-games.webp") center / cover no-repeat;
+  width: 100vw;
+  height: 100vh; 
+  box-sizing: border-box;
 }
 
 .game-header {
@@ -48,7 +49,7 @@
 .game-table {
   display: grid;
   grid-template-rows: auto auto auto auto;
-  gap: 0.65rem 0.9rem;
+  gap: 2rem 0.9rem;
   align-items: start;
   margin-top: 1.5rem;
 }
@@ -101,13 +102,13 @@
   grid-column: 2;
   grid-row: 3;
   justify-self: center;
-  transform: translateY(24px);
+  transform: translateY(36px);
 }
 
 .discard-bottom-left {
   grid-column: 1;
-  grid-row: 4;
-  transform: translateY(-3.35rem);
+  grid-row: 3;
+  transform: translateX(1rem) translateY(3.5rem);
 }
 
 .team-status-panel {
@@ -139,6 +140,22 @@
 .game-table.players-2 .seat-bottom,
 .game-table.players-2 .discard-bottom-left {
   grid-column: 1;
+}
+
+.game-table.players-2 .seat-top {
+  grid-row: 1;
+  align-self: end;
+  transform: translateY(-10px);
+}
+
+.game-table.players-2 .center-zone {
+  grid-row: 2;
+}
+
+.game-table.players-2 .seat-bottom {
+  grid-row: 3;
+  align-self: start;
+  transform: translateY(10px);
 }
 
 .game-table.players-2 .team-status-panel {
@@ -438,24 +455,24 @@
   position: fixed;
   z-index: 16;
   box-sizing: border-box;
-  width: 220px;
+  width: 200px;
   background: #f3f4f6;
   color: #0f172a;
   border: 2px solid #cbd5e1;
   border-radius: 12px;
   box-shadow: 0 16px 30px rgba(2, 6, 23, 0.22);
-  padding: 0.72rem 0.82rem;
+  padding: 11px 13px;
 }
 
 .card-hint-line {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 20px;
 }
 
 .card-hint-line + .card-hint-line {
-  margin-top: 0.45rem;
+  margin-top: 4px;
 }
 
 .card-hint-action {
@@ -464,7 +481,7 @@
   background: transparent;
   text-align: left;
   white-space: nowrap;
-  padding: 0.18rem 0.15rem;
+  padding: 3px 3px;
   border-radius: 8px;
   cursor: pointer;
 }
@@ -506,13 +523,13 @@
   position: fixed;
   z-index: 16;
   box-sizing: border-box;
-  width: 212px;
+  width: 200px;
   background: #ffffff;
   color: #0f172a;
   border: 2px solid #cbd5e1;
   border-radius: 12px;
   box-shadow: 0 16px 30px rgba(2, 6, 23, 0.22);
-  padding: 0.68rem 0.78rem;
+  padding: 11px 13px;
 }
 
 .card-action-button {
@@ -520,17 +537,18 @@
   border: 0;
   background: #ffffff;
   border-radius: 8px;
-  padding: 0.42rem 0.55rem;
+  padding: 3px 3px;
   text-align: left;
   white-space: nowrap;
-  font-size: 0.95rem;
+  font-size: 16px;
+  line-height: 20px;
   font-weight: 700;
   color: #0f172a;
   cursor: pointer;
 }
 
 .card-action-button + .card-action-button {
-  margin-top: 0.36rem;
+  margin-top: 4px;
 }
 
 .card-action-button:hover:not(:disabled) {
@@ -652,7 +670,7 @@
   border: 1px solid #0b0720;
   border-radius: 8px;
   padding: 0.38rem;
-  min-width: 236px;
+  width: 236px;
 }
 
 .discard-grid {
@@ -750,22 +768,6 @@
   .clue-count {
     font-size: 1.3rem;
   }
-
-  .card-hint-popup {
-    width: 214px;
-  }
-
-  .card-hint-line {
-    font-size: 1rem;
-  }
-
-  .card-action-popup {
-    width: 208px;
-  }
-
-  .card-action-button {
-    font-size: 0.9rem;
-  }
 }
 
 @media (max-width: 900px) {
@@ -817,15 +819,5 @@
   .team-status-panel {
     top: 0.08rem;
     right: 0.12rem;
-  }
-
-  .card-hint-popup {
-    width: 206px;
-    padding: 0.56rem 0.62rem;
-  }
-
-  .card-action-popup {
-    width: 198px;
-    padding: 0.54rem 0.62rem;
   }
 }
