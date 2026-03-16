@@ -18,3 +18,35 @@ export type CardHintMarkers = {
 export type DiscardCounts = Record<CardValue, number>;
 
 export type DiscardTableData = Record<CardColor, DiscardCounts>;
+
+export type FlyingCard = {
+  color: CardColor;
+  value: CardValue;
+  fromRect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+  toRect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+  state: "idle" | "moving" | "fading";
+};
+
+export type SelectedOwnCardAction = {
+  color: CardColor;
+  value: CardValue;
+  cardIndex: number;
+  left: number;
+  top: number;
+  anchorRect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+};

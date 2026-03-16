@@ -3,6 +3,8 @@ import { useLocation } from "react-router-dom";
 import "./game.css";
 import CardActionPopup from "./components/CardActionPopup";
 import CardHintPopup from "./components/CardHintPopup";
+import Card from "./components/Card";
+import FlyingCardComponent from "./components/FlyingCard";
 import Deckcount from "./components/Deckcount";
 import DiscardPanel from "./components/DiscardPanel";
 import FireworksPanel from "./components/FireworksPanel";
@@ -10,6 +12,7 @@ import GameHeader from "./components/GameHeader";
 import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
+import { toRectShape, animateOwnCardAction} from "./animate";
 import type {
   CardColor,
   CardHintMarkers,
@@ -17,6 +20,8 @@ import type {
   DiscardTableData,
   HandCard,
   Player,
+  FlyingCard,
+  SelectedOwnCardAction
 } from "./types";
 
 type GameState = {
@@ -35,13 +40,6 @@ type SelectedCardHint = {
   top: number;
 };
 
-type SelectedOwnCardAction = {
-  color: CardColor;
-  value: CardValue;
-  cardIndex: number;
-  left: number;
-  top: number;
-};
 
 const HINT_POPUP_WIDTH = 200;
 const HINT_POPUP_HEIGHT = 82;
@@ -92,13 +90,13 @@ function getDemoHand(playerId: number): HandCard[] {
 
 export default function Game() {
   const location = useLocation();
-  const tableSize = 4;
-  
+  const state = location.state as GameState | null;
+  const tableSize = Math.max(2, Math.min(4, state?.tableSize ?? 4));
+
   const players: Player[] = Array.from({ length: tableSize }, (_, index) => ({
     id: index + 1,
     name: `Player ${index + 1}`,
   }));
-  console.log(players)
   const fireworkValues = [2, 1, 3, 0, 0];
   const hints = 4;
   const misfires = 2;
@@ -112,6 +110,7 @@ export default function Game() {
   };
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
   const [selectedOwnCard, setSelectedOwnCard] = useState<SelectedOwnCardAction | null>(null);
+  const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [isSendingHint, setIsSendingHint] = useState(false);
   const [isSendingOwnCardAction, setIsSendingOwnCardAction] = useState(false);
   const [cardHintsByPlayer, setCardHintsByPlayer] = useState<
@@ -121,7 +120,6 @@ export default function Game() {
   const handCardsByPlayer = new Map<number, HandCard[]>(
     players.map((player) => [player.id, getDemoHand(player.id)]),
   );
-  console.log(handCardsByPlayer)
   let topPlayer: Player | undefined;
   let leftPlayer: Player | undefined;
   let rightPlayer: Player | undefined;
@@ -219,9 +217,12 @@ export default function Game() {
       cardIndex,
       left,
       top,
+      anchorRect: toRectShape(anchorRect),
     });
     setSelectedHint(null);
   };
+
+  
 
   const submitHint = async (hintType: "color" | "number") => {
     if (!selectedHint || isSendingHint) {
@@ -264,11 +265,14 @@ export default function Game() {
       return;
     }
 
+    const ownCardAction = selectedOwnCard;
     const endpoint =
       actionType === "play" ? PLAY_CARD_API_ENDPOINT : DISCARD_CARD_API_ENDPOINT;
 
     try {
       setIsSendingOwnCardAction(true);
+      setSelectedOwnCard(null);
+      const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
       await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -277,13 +281,23 @@ export default function Game() {
         body: JSON.stringify({
           actionType,
           playerId: currentPlayer.id,
-          color: selectedOwnCard.color,
-          value: selectedOwnCard.value,
-          cardIndex: selectedOwnCard.cardIndex,
+          color: ownCardAction.color,
+          value: ownCardAction.value,
+          cardIndex: ownCardAction.cardIndex,
         }),
       });
+      await playAnimationPromise;
+      // todo if drop wrong card, revise
+      console.log("in try block, after play animation");
+      if (actionType == "play") {
+        // todo show some error message to user
+        const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
+        await discardAnimationPromise;
+      }
     } catch (error) {
+      console.log("in catch block, before animation");
       console.error("Failed to send own card action to backend:", error);
+      
     } finally {
       setIsSendingOwnCardAction(false);
       setSelectedOwnCard(null);
@@ -434,6 +448,7 @@ export default function Game() {
           }}
         />
       )}
+      {flyingCard && <FlyingCardComponent {...flyingCard} />}
     </section>
   );
 }
