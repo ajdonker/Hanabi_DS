@@ -47,7 +47,7 @@
 .game-table {
   display: grid;
   grid-template-rows: auto auto auto auto;
-  gap: 2rem 0.9rem;
+  gap: 3.5rem 0.9rem;
   align-items: start;
   margin-top: 1.5rem;
 }
@@ -106,7 +106,7 @@
 .discard-bottom-left {
   grid-column: 1;
   grid-row: 3;
-  transform: translateX(1rem) translateY(3.5rem);
+  transform: translateX(1rem) translateY(4rem);
 }
 
 .team-status-panel {

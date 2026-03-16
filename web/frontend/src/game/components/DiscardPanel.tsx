@@ -1,4 +1,5 @@
 import type { CardColor, CardValue, DiscardTableData } from "../types";
+import { colors } from "../config";
 
 type DiscardPanelProps = {
   discardByColor: DiscardTableData;
@@ -9,7 +10,6 @@ export default function DiscardPanel({
   discardByColor,
   className = "",
 }: DiscardPanelProps) {
-  const colors: CardColor[] = ["Green", "White", "Red", "Blue", "Yellow"]; // todo: consider defining this in a single place and importing it where needed
   const values: CardValue[] = [1, 2, 3, 4, 5];
 
   return (

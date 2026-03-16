@@ -117,6 +117,7 @@ export default function Game() {
   };
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
   const [selectedOwnCard, setSelectedOwnCard] = useState<SelectedOwnCardAction | null>(null);
+  const [selectedOhterCard, setSelectedOhterCard] = useState<SelectedOwnCardAction | null>(null);
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [handCardsByPlayer, setHandCardsByPlayer] = useState<Record<number, HandCard[]>>(() =>
     createDemoHandsByPlayer(players),
@@ -210,6 +211,14 @@ export default function Game() {
       left,
       top,
     });
+    setSelectedOhterCard({
+      color,
+      value,
+      cardIndex,
+      left,
+      top,
+      anchorRect: toRectShape(anchorRect),
+    })
     setSelectedOwnCard(null);
   };
 
@@ -302,6 +311,41 @@ export default function Game() {
       await playAnimationPromise;
       // todo if drop wrong card, revise
       console.log("in try block, after play animation");
+      if (actionType == "play") {
+        // todo show some error message to user
+        const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
+        await discardAnimationPromise;
+      }
+    } catch (error) {
+      console.log("in catch block, before animation");
+      console.error("Failed to send own card action to backend:", error);
+      
+    } finally {
+      setIsSendingOwnCardAction(false);
+      setSelectedOwnCard(null);
+    }
+  };
+
+  const testPlayOrDiscard = async (actionType: "play" | "discard") => {
+
+    const ownCardAction = selectedOhterCard;
+    if (!ownCardAction) {
+      return;
+    }
+    [ownCardAction.anchorRect.width, ownCardAction.anchorRect.height] = [ownCardAction.anchorRect.height, ownCardAction.anchorRect.width];
+    try {
+      setHandCardsByPlayer((current) => {
+        const ownCards = current[2] ?? [];
+        return {
+          ...current,
+          [2]: ownCards.filter((_, index) => index !== ownCardAction.cardIndex),
+        };
+      });
+      setSelectedOhterCard(null);
+      const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
+      
+      await playAnimationPromise;
+
       if (actionType == "play") {
         // todo show some error message to user
         const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
@@ -443,6 +487,12 @@ export default function Game() {
           }}
           onSelectNumber={() => {
             void submitHint("number");
+          }}
+          onPlay={() => {
+            void testPlayOrDiscard("play");
+          }}
+          onDiscard={() => {
+            void testPlayOrDiscard("discard");
           }}
         />
       )}
