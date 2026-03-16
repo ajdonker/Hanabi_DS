@@ -361,6 +361,21 @@ export default function Game() {
     }
   };
 
+  const handleTestDrawCard = () => {
+    setHandCardsByPlayer((current) => {
+      const ownCards = current[2] ?? [];
+      const newCard: HandCard = {
+        color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
+        value: (Math.floor(Math.random() * 5) + 1) as CardValue,
+      };
+      // todo for different players, sometines unshift, sometimes push,
+      return {
+        ...current,
+        [2]: [ ...ownCards, newCard],
+      };
+    });
+  }
+
   useEffect(() => {
     if (!selectedHint && !selectedOwnCard) {
       return;
@@ -452,8 +467,10 @@ export default function Game() {
         )}
 
         <main className="center-zone">
+          <button onClick={handleTestDrawCard}>Draw Card</button>
           <Deckcount deckCount={deckCount} />
           <FireworksPanel values={fireworkValues} misfires={misfires} />
+          
         </main>
 
         <PlayerHand
