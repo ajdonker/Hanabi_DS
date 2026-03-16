@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import "./game.css";
 import CardActionPopup from "./components/CardActionPopup";
 import CardHintPopup from "./components/CardHintPopup";
-import Card from "./components/Card";
 import FlyingCardComponent from "./components/FlyingCard";
 import Deckcount from "./components/Deckcount";
 import DiscardPanel from "./components/DiscardPanel";
@@ -105,16 +104,16 @@ export default function Game() {
     name: `Player ${index + 1}`,
   }));
   const currentPlayer = players[0];
-  const fireworkValues = [2, 1, 3, 0, 0];
+  const fireworkValues: CardValue[] = [2, 1, 0, 4, 5];
   const hints = 4;
   const misfires = 2;
   const deckCount = 34;
   const discardByColor: DiscardTableData = {
-    Green: { 1: 2, 2: 1, 3: 0, 4: 0, 5: 0 },
-    White: { 1: 1, 2: 2, 3: 1, 4: 0, 5: 0 },
-    Red: { 1: 0, 2: 1, 3: 1, 4: 1, 5: 0 },
-    Blue: { 1: 2, 2: 0, 3: 2, 4: 0, 5: 1 },
-    Yellow: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 0 },
+    Red : { 0: 0, 1: 2, 2: 1, 3: 0, 4: 0, 5: 0 },
+    Blue : { 0: 0, 1: 1, 2: 2, 3: 1, 4: 0, 5: 0 },
+    Green: { 0: 0, 1: 0, 2: 1, 3: 1, 4: 1, 5: 0 },
+    Yellow: { 0: 0, 1: 1, 2: 1, 3: 0, 4: 1, 5: 0 },
+    White: { 0: 0, 1: 2, 2: 0, 3: 2, 4: 0, 5: 1 },
   };
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
   const [selectedOwnCard, setSelectedOwnCard] = useState<SelectedOwnCardAction | null>(null);

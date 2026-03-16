@@ -1,5 +1,8 @@
+import { colors } from "../config";
+import type { CardValue } from "../types";
+import Card from "./Card";
 type FireworksPanelProps = {
-  values: number[];
+  values: CardValue[];
   misfires: number;
   maxMisfires?: number;
 };
@@ -9,7 +12,7 @@ export default function FireworksPanel({
   misfires,
   maxMisfires = 3,
 }: FireworksPanelProps) {
-  const colors = ["Red", "Blue", "Green", "Yellow", "White"];
+  
   return (
     <section className="fireworks-panel">
       <div className="firework-lanes">
@@ -18,7 +21,12 @@ export default function FireworksPanel({
             key={color}
             className={`firework-lane ${color.toLowerCase()}`}
           >
-            <strong>{values[index]}</strong>
+            {values[index] > 0 && <Card
+              color={color}
+              value={values[index]}
+              rotationDeg={180}
+              numberRotationDeg={180}
+            />}
           </article>
         ))}
       </div>
