@@ -88,6 +88,13 @@ function getDemoHand(playerId: number): HandCard[] {
   return Array.from({ length: 5 }, (_, cardIndex) => getDemoCard(playerId, cardIndex));
 }
 
+function createDemoHandsByPlayer(players: Player[]): Record<number, HandCard[]> {
+  return players.reduce<Record<number, HandCard[]>>((hands, player) => {
+    hands[player.id] = getDemoHand(player.id);
+    return hands;
+  }, {});
+}
+
 export default function Game() {
   const location = useLocation();
   const state = location.state as GameState | null;
@@ -97,6 +104,7 @@ export default function Game() {
     id: index + 1,
     name: `Player ${index + 1}`,
   }));
+  const currentPlayer = players[0];
   const fireworkValues = [2, 1, 3, 0, 0];
   const hints = 4;
   const misfires = 2;
@@ -111,15 +119,14 @@ export default function Game() {
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
   const [selectedOwnCard, setSelectedOwnCard] = useState<SelectedOwnCardAction | null>(null);
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
+  const [handCardsByPlayer, setHandCardsByPlayer] = useState<Record<number, HandCard[]>>(() =>
+    createDemoHandsByPlayer(players),
+  );
   const [isSendingHint, setIsSendingHint] = useState(false);
   const [isSendingOwnCardAction, setIsSendingOwnCardAction] = useState(false);
   const [cardHintsByPlayer, setCardHintsByPlayer] = useState<
     Record<number, Record<number, CardHintMarkers>>
   >({});
-  const currentPlayer = players[0];
-  const handCardsByPlayer = new Map<number, HandCard[]>(
-    players.map((player) => [player.id, getDemoHand(player.id)]),
-  );
   let topPlayer: Player | undefined;
   let leftPlayer: Player | undefined;
   let rightPlayer: Player | undefined;
@@ -136,17 +143,17 @@ export default function Game() {
   }
 
   const activePlayer = topPlayer?.name ?? currentPlayer.name; // todo in real game state, active player can be any of the players, not just top player. Adjust accordingly when integrating with real backend data
-  const currentPlayerCards = handCardsByPlayer.get(currentPlayer.id) ?? [];
-  const topPlayerCards = topPlayer ? handCardsByPlayer.get(topPlayer.id) ?? [] : [];
-  const leftPlayerCards = leftPlayer ? handCardsByPlayer.get(leftPlayer.id) ?? [] : [];
-  const rightPlayerCards = rightPlayer ? handCardsByPlayer.get(rightPlayer.id) ?? [] : [];
+  const currentPlayerCards = handCardsByPlayer[currentPlayer.id] ?? [];
+  const topPlayerCards = topPlayer ? handCardsByPlayer[topPlayer.id] ?? [] : [];
+  const leftPlayerCards = leftPlayer ? handCardsByPlayer[leftPlayer.id] ?? [] : [];
+  const rightPlayerCards = rightPlayer ? handCardsByPlayer[rightPlayer.id] ?? [] : [];
   const tableClass = tableSize <= 2 ? "players-2" : tableSize === 3 ? "players-3" : "players-4";
   const applyHintToMatchingCards = (
     targetPlayerId: number,
     hintType: "color" | "number",
     hintValue: CardColor | CardValue,
   ) => {
-    const targetCards = handCardsByPlayer.get(targetPlayerId) ?? [];
+    const targetCards = handCardsByPlayer[targetPlayerId] ?? [];
 
     setCardHintsByPlayer((current) => {
       const existingHintsForPlayer = current[targetPlayerId] ?? {};
@@ -271,6 +278,13 @@ export default function Game() {
 
     try {
       setIsSendingOwnCardAction(true);
+      setHandCardsByPlayer((current) => {
+        const ownCards = current[currentPlayer.id] ?? [];
+        return {
+          ...current,
+          [currentPlayer.id]: ownCards.filter((_, index) => index !== ownCardAction.cardIndex),
+        };
+      });
       setSelectedOwnCard(null);
       const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
       await fetch(endpoint, {
