@@ -35,7 +35,7 @@ export default function Card({
     transform: rotationDeg ? `rotate(${rotationDeg}deg)` : undefined,
   };
 
-  if (faceDown) {
+  if (false) {
     return (
       <div
         className={`hanabi-card face-down ${rotationDeg ? "rotated-card" : ""}`.trim()}

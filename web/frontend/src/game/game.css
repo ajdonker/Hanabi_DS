@@ -231,7 +231,7 @@
 
 .player-hand.horizontal .hand-cards {
   display: flex;
-  gap: 0.08rem;
+  gap: 1px;
 }
 
 .player-name {
@@ -534,6 +534,7 @@
   will-change: transform, opacity;
   opacity: 1;
   transition: transform 420ms cubic-bezier(0.2, 0.72, 0.18, 1), opacity 180ms ease;
+  transform-origin: center;
 }
 
 .flying-own-card.is-fading {

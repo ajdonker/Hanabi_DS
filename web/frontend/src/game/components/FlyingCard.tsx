@@ -19,7 +19,7 @@ export default function FlyingCard(flyingCard: FlyingCard) {
               flyingCard.state === "moving" || flyingCard.state === "fading"
                 ? `translate(${flyingCard.toRect.left - flyingCard.fromRect.left}px, ${
                     flyingCard.toRect.top - flyingCard.fromRect.top
-                  }px)`
+                  }px) rotate(${flyingCard.rotationDeg ?? 0}deg)`
                 : "translate(0px, 0px)",
           }}
         >

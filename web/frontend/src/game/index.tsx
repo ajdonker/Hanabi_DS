@@ -11,7 +11,7 @@ import GameHeader from "./components/GameHeader";
 import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
-import { toRectShape, animateOwnCardAction} from "./animate";
+import { toRectShape, animateOwnCardAction, drawCardToPlayerHand } from "./animate";
 import type {
   CardColor,
   CardHintMarkers,
@@ -20,7 +20,8 @@ import type {
   HandCard,
   Player,
   FlyingCard,
-  SelectedOwnCardAction
+  SelectedOwnCardAction,
+  Direction
 } from "./types";
 
 type GameState = {
@@ -78,7 +79,7 @@ function computePopupPosition(
 
 function getDemoCard(playerId: number, cardIndex: number): HandCard {
   const color = CARD_COLORS[(playerId + cardIndex) % CARD_COLORS.length];
-  const value = (((playerId + cardIndex) % 5) + 1) as CardValue;
+  const value = (((cardIndex) % 5) + 1) as CardValue;
 
   return { color, value };
 }
@@ -361,20 +362,40 @@ export default function Game() {
     }
   };
 
-  const handleTestDrawCard = () => {
+  const handleTestDrawCard = async (playerId: number) => {
+    let playerDirection: Direction;
+    if (playerId == topPlayer?.id) {
+      playerDirection = 'top';
+    } else if (playerId === leftPlayer?.id) {
+      playerDirection = 'left';
+    } else if (playerId === rightPlayer?.id) {
+      playerDirection = 'right';
+    } else {
+      playerDirection = 'bottom';
+    }
+
+    const newCard: HandCard = {
+      color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
+      value: (Math.floor(Math.random() * 5) + 1) as CardValue,
+    };
+
+    await drawCardToPlayerHand(newCard, playerDirection, setFlyingCard);
+
     setHandCardsByPlayer((current) => {
-      const ownCards = current[2] ?? [];
-      const newCard: HandCard = {
-        color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
-        value: (Math.floor(Math.random() * 5) + 1) as CardValue,
-      };
-      // todo for different players, sometines unshift, sometimes push,
+      const ownCards = current[playerId] ?? [];
+      let newCards: HandCard[];
+      if (playerDirection === 'bottom' || playerDirection === 'left') {
+        newCards = [newCard, ...ownCards];
+        
+      } else {
+        newCards = [...ownCards, newCard];
+      }
       return {
         ...current,
-        [2]: [ ...ownCards, newCard],
+        [playerId]: newCards,
       };
     });
-  }
+  };
 
   useEffect(() => {
     if (!selectedHint && !selectedOwnCard) {
@@ -467,7 +488,7 @@ export default function Game() {
         )}
 
         <main className="center-zone">
-          <button onClick={handleTestDrawCard}>Draw Card</button>
+          <button onClick={() => handleTestDrawCard(1)}>Draw Card</button>
           <Deckcount deckCount={deckCount} />
           <FireworksPanel values={fireworkValues} misfires={misfires} />
           
