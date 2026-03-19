@@ -541,9 +541,10 @@
   opacity: 0;
 }
 
-.flying-own-card .hanabi-card {
+.flying-own-card .hanabi-card.rotated-card {
   width: 100%;
   height: 100%;
+  margin: 0;
 }
 
 .fireworks-panel {

@@ -12,6 +12,7 @@ import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
 import { toRectShape, animateOwnCardAction, drawCardToPlayerHand } from "./animate";
+import { CARD_WIDTH, CARD_HEIGHT } from "./config";
 import type {
   CardColor,
   CardHintMarkers,
@@ -333,7 +334,8 @@ export default function Game() {
     if (!ownCardAction) {
       return;
     }
-    [ownCardAction.anchorRect.width, ownCardAction.anchorRect.height] = [ownCardAction.anchorRect.height, ownCardAction.anchorRect.width];
+    ownCardAction.anchorRect.width = CARD_WIDTH;
+    ownCardAction.anchorRect.height = CARD_HEIGHT;
     try {
       setHandCardsByPlayer((current) => {
         const ownCards = current[2] ?? [];
@@ -488,7 +490,7 @@ export default function Game() {
         )}
 
         <main className="center-zone">
-          <button onClick={() => handleTestDrawCard(1)}>Draw Card</button>
+          <button onClick={() => handleTestDrawCard(4)}>Draw Card</button>
           <Deckcount deckCount={deckCount} />
           <FireworksPanel values={fireworkValues} misfires={misfires} />
           

@@ -39,7 +39,7 @@ function resolveOwnCardTargetRect(
       const laneRect = laneElement.getBoundingClientRect();
       return {
         left: laneRect.left + 6,
-        top: laneRect.top + 28,
+        top: laneRect.top + 6,
         width: sourceRect.width,
         height: sourceRect.height,
       };
@@ -98,6 +98,7 @@ function resolvePlayerDrawTargetRect(
     let newTop: number;
     let newWidth = 0;
     let newHeight = 0;
+    const offset = (CARD_HEIGHT - CARD_WIDTH) / 2;
     if (direction === "bottom") {
       newLeft = lastRect.left - CARD_WIDTH - CARD_GAP;
       newTop = lastRect.top;
@@ -109,13 +110,13 @@ function resolvePlayerDrawTargetRect(
       newWidth = CARD_WIDTH;
       newHeight = CARD_HEIGHT;
     } else if (direction === "left") {
-      newLeft = lastRect.left;
-      newTop = lastRect.top - CARD_WIDTH - CARD_GAP;
+      newLeft = lastRect.left + offset;
+      newTop = lastRect.top - CARD_WIDTH - CARD_GAP - offset;
       newWidth = CARD_HEIGHT;
       newHeight = CARD_WIDTH;
     } else {
-      newLeft = lastRect.left;
-      newTop = lastRect.top + CARD_GAP;
+      newLeft = lastRect.left + offset;
+      newTop = lastRect.bottom + CARD_GAP - offset;
       newWidth = CARD_HEIGHT;
       newHeight = CARD_WIDTH;
     }

@@ -23,7 +23,7 @@ export default function FlyingCard(flyingCard: FlyingCard) {
                 : "translate(0px, 0px)",
           }}
         >
-          <Card color={flyingCard.color} value={flyingCard.value} rotationDeg={180} numberRotationDeg={180} />
+          <Card color={flyingCard.color} value={flyingCard.value} rotationDeg={180} numberRotationDeg={180}/>
         </div>
       )
   );
