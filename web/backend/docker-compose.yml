@@ -1,0 +1,97 @@
+
+networks:
+  hanabi_net:
+    driver: bridge
+
+services:
+  redis-master:
+    image: redis:7
+    container_name: redis-master
+    user: root
+    entrypoint: >
+      sh -c "
+        chown -R redis:redis /etc/redis-config &&
+        exec redis-server /etc/redis-config/redis.conf
+      "
+    hostname: redis-master
+    command: ["redis-server", "/etc/redis-config/redis.conf"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - "./data/master:/data"
+      - "./config/redis-master:/etc/redis-config"
+    networks:
+      - hanabi_net
+
+  redis-replica:
+    image: redis:7
+    container_name: redis-replica
+    hostname: redis-replica
+    user: root
+    entrypoint: >
+      sh -c "
+        chown -R redis:redis /etc/redis-config &&
+        exec redis-server /etc/redis-config/redis.conf --slaveof redis-master 6379 --replica-announce-ip redis-replica
+      "
+    command:
+      - redis-server
+      - "/etc/redis-config/redis.conf"
+      - --slaveof
+      - redis-master
+      - "6379"
+      - "--replicaof"
+      - "redis-master"
+      - --replica-announce-ip
+      - redis-replica
+    ports:
+      - "6380:6379"
+    depends_on:
+      - redis-master
+    volumes:
+      - "./data/replica:/data"
+      - "./config/redis-replica:/etc/redis-config"
+    networks:
+      - hanabi_net
+
+  sentinel:
+    image: redis:7
+    user: root
+    container_name: sentinel
+    hostname: sentinel
+    entrypoint: >
+      sh -c "
+        chown -R redis:redis /etc/redis-config &&
+        exec redis-sentinel /etc/redis-config/redis.conf --sentinel
+      "
+    command:
+      - redis-sentinel
+      - "/etc/redis-config/redis.conf"
+      - "--sentinel"
+    ports:
+      - "26379:26379"
+    depends_on:
+      - redis-master
+      - redis-replica
+    volumes:
+      - "./config/redis-sentinel:/etc/redis-config"
+    networks:
+      - hanabi_net
+
+  # server:
+  #   build: .
+  #   image: hanabi-server
+  #   container_name: hanabi-server
+  #   hostname: hanabi-server
+  #   depends_on:
+  #     - sentinel
+  #   environment:
+  #     SENTINEL_NODES: "sentinel:26379"
+  #     SENTINEL_MASTER_NAME: "mymaster"
+  #   ports:
+  #     - "12345:12345"
+  #   networks:
+  #     - hanabi_net
+  # matchmaker:
+  #   build: .
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
