@@ -1,0 +1,46 @@
+.hanabi-card {
+  position: relative;
+  width: var(--player-card-width);
+  height: var(--player-card-height);
+  border-radius: 10px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  background: #24164a;
+  box-shadow: 0 1px 2px rgba(2, 6, 23, 0.35);
+}
+
+.hanabi-card.face-down {
+  background: url("../../../images/default.webp") center / cover no-repeat;
+}
+
+.hanabi-card.face-up {
+  border: 0;
+}
+
+.card-section {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 500% 700%;
+}
+
+.card-background {
+  background-image: url("../../../images/cards.webp");
+  filter: saturate(1.1) contrast(1.05);
+  transform: rotate(180deg);
+  transform-origin: center;
+}
+
+.card-number {
+  inset: auto 0 0 0;
+  height: 43%;
+  background-image: url("../../../images/cards-numbers.webp");
+  opacity: 1;
+  border-radius: 10px;
+  transform-origin: center;
+}
+
+.hanabi-card.rotated-card {
+  transform-origin: center;
+  margin-block: calc((var(--player-card-width) - var(--player-card-height)) / 2);
+}

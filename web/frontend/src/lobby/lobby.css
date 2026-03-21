@@ -1,0 +1,155 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap");
+
+.lobby-page {
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow:
+    0 24px 44px rgba(15, 23, 42, 0.1),
+    0 10px 24px rgba(30, 41, 59, 0.06);
+  height: 100vh;
+  box-sizing: border-box;
+  width: 100vw;
+  padding: 3rem;
+}
+
+.lobby-header {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.lobby-header h2 {
+  margin: 0;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-size: clamp(2rem, 5.2vw, 2.9rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.lobby-header p {
+  margin: 0.55rem 0 0;
+  max-width: 45ch;
+  font-family: "Sora", "Segoe UI", sans-serif;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.lobby-create {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(6px);
+}
+
+.lobby-create input {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0.72rem 0.9rem;
+  font-family: "Sora", "Segoe UI", sans-serif;
+  font-size: 1rem;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.92);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.lobby-create input::placeholder {
+  color: #94a3b8;
+}
+
+.lobby-create input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
+}
+
+.lobby-create button {
+  border: 0;
+  border-radius: 12px;
+  padding: 0.72rem 1.25rem;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.26);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.lobby-create button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.3);
+}
+
+.lobby-create button:active {
+  transform: translateY(0);
+}
+
+.lobby-create button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.7) brightness(0.95);
+  box-shadow: 0 8px 14px rgba(37, 99, 235, 0.2);
+  transform: none;
+}
+
+.lobby-message {
+  margin: 0 0 1rem;
+  padding: 0.62rem 0.82rem;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  font-family: "Sora", "Segoe UI", sans-serif;
+  font-weight: 600;
+  color: #b91c1c;
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.lobby-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.95rem;
+}
+
+.lobby-card {
+  text-align: left;
+  border: 1px solid rgba(191, 219, 254, 0.75);
+  border-radius: 16px;
+  background: linear-gradient(165deg, #f8fbff 0%, #eff6ff 100%);
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.lobby-card h3 {
+  margin: 0 0 0.4rem;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.lobby-card p {
+  margin: 0 0 0.5rem;
+  font-family: "Sora", "Segoe UI", sans-serif;
+  color: #334155;
+}
+
+.lobby-card span {
+  font-family: "Sora", "Segoe UI", sans-serif;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+.lobby-card:hover {
+  border-color: #93c5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.14);
+}
