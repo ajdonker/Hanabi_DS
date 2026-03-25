@@ -1,22 +1,28 @@
+from web.backend.server.game_logic import cards
+from web.backend.server.game_logic import Deck
+
 class Board() :
-    def __init__(self, deck, piles, discards, token, misfires):
+    def __init__(self, deck : Deck, piles : dict, discards : list, token : int, misfires : int):
         self.deck = deck
         self.piles = piles
         self.discards = discards
         self.token = token
         self.misfires = misfires
-    
-    def canPlay(self, card):
-        pass
 
-    def play(Card):
-        pass
+    def addDiscard(self, card): 
+        self.discards.append(card)
+        
+        if(self.token != 8): #change as constant (?)
+            self.token = self.token + 1
 
-    def calculateScore(self):
-        pass
+    def updatePiles(self, card): #when a card is correctly played, the board is updated
+        value = card.number
+        color = card.color
 
-    def addToDiscard(self, card):
-        pass
+        self.piles[color] = value
+
+    def calculateScore(self): #calculate the score based on the piles in the board
+        return sum(self.piles.values())
 
 class Game:
     def __init__(self, id, board, players, currentTurn, state):
