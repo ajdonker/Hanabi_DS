@@ -27,10 +27,10 @@ class Card():
         return self.color
 
 class HandCard():
-    def __init__(self, card:Card, number:Number, color:Color):
+    def __init__(self, card:Card, hintNumber:Number, hintColor:Color):
         self.card = card
-        self.hintColor = color
-        self.hintNumber = number
+        self.hintColor = hintColor
+        self.hintNumber = hintNumber
 
 class Deck():
     def __init__(self):
