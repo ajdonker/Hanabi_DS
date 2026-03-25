@@ -2,6 +2,7 @@
 networks:
   hanabi_net:
     driver: bridge
+    name: backend_hanabi_net
 
 services:
   redis-master:
@@ -31,18 +32,8 @@ services:
     entrypoint: >
       sh -c "
         chown -R redis:redis /etc/redis-config &&
-        exec redis-server /etc/redis-config/redis.conf --slaveof redis-master 6379 --replica-announce-ip redis-replica
+        exec redis-server /etc/redis-config/redis.conf --replicaof redis-master 6379 --replica-announce-ip redis-replica
       "
-    command:
-      - redis-server
-      - "/etc/redis-config/redis.conf"
-      - --slaveof
-      - redis-master
-      - "6379"
-      - "--replicaof"
-      - "redis-master"
-      - --replica-announce-ip
-      - redis-replica
     ports:
       - "6380:6379"
     depends_on:
@@ -91,7 +82,27 @@ services:
   #     - "12345:12345"
   #   networks:
   #     - hanabi_net
-  # matchmaker:
-  #   build: .
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
+  
+
+  # service used to fail using sentinel. might try whether depends_on would fix that 
+  matchmaker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: matchmaker
+    command: python -m matchmaker.matchmaker
+    ports:
+      - "9000:9000"
+    environment:
+      REDIS_HOST: "redis-master"
+      REDIS_PORT: "6379"
+      DOCKER_NETWORK: "backend_hanabi_net"
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      - redis-master
+      - redis-replica
+      - sentinel
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - hanabi_net

@@ -1,11 +1,12 @@
 import socket,json,threading,uuid,docker,os,time
-
+from database.GameRepo import GameRepository
+import redis
 HOST = "0.0.0.0"
 PORT = 9000
 LOBBY_SIZE = 2
 QUEUE_SIZE = 5 # refuse conns after this many in q 
 MAX_LOAD = 5 # max no of servers connected at the same time
-SERVER_TIMEOUT_TIME = 1000000 # after this time server container automatically cleaned up 
+SERVER_TIMEOUT_TIME = 3600 # after this time server container automatically cleaned up 
 
 class WaitingPlayer: # contains only the data needed to keep in check waiting players in q 
     def __init__(self, player_id, name, conn):
@@ -19,7 +20,7 @@ class GameInformation: # to keep active games, manage their state ON/OFF
         self.container_name = container_name
         self.host = host
         self.port = port
-        self.players = players   # list of WaitingPlayer or player ids
+        self.players = players   # list of str
         self.status = "running"
         self.timestamp = timestamp
 
@@ -28,19 +29,28 @@ class Matchmaker:
         self.lobby_size = lobby_size
         self.waiting_players = [] 
         self.active_games = {}
-        self.active_player_names = {}
+        self.active_player_names = {} 
         self.lock = threading.Lock()
         self.docker_client = docker.from_env()
+        def make_redis():
+            return redis.Redis(
+                host=os.getenv("REDIS_HOST", "redis-master"),
+                port=int(os.getenv("REDIS_PORT", "6379")),
+                decode_responses=True
+            )
+        self.redis_factory = make_redis
+        self.redis = self.redis_factory()
+        self.repo = GameRepository(self.redis, self.redis_factory)
 
     def add_player_to_pool(self, player):
         with self.lock:
             print(f"[MATCHMAKER] before append: {len(self.waiting_players)} waiting")
             if len(self.waiting_players) >= QUEUE_SIZE:
-                return "QUEUE FULL"
+                return "QUEUE_FULL"
             if player.name in self.active_player_names:
                 return "NAME_TAKEN"
             self.waiting_players.append(player)
-            self.active_player_names[player.name] = {"status": "waiting","game_id": None}
+            self.active_player_names[player.name] = {"status": "waiting","game_id":None}
             print(f"[MATCHMAKER] {player.name} joined queue ({len(self.waiting_players)}/{self.lobby_size})")
             if len(self.waiting_players) >= self.lobby_size:
                 players = self.waiting_players[:self.lobby_size]
@@ -68,16 +78,24 @@ class Matchmaker:
                 "SENTINEL_MASTER_NAME": os.getenv("SENTINEL_MASTER_NAME", "mymaster"),
             },
             ports={"12345/tcp": None},      # publish to a random free host port
-            network="proekt_hanabi_hanabi_net",
+            network=os.getenv("DOCKER_NETWORK", "backend_hanabi_net"),
             restart_policy={"Name": "unless-stopped"},
         )
         time.sleep(1)
         container.reload()
+        for p in player_names:
+            self.repo.save_player_game_mapping(p, game_id)
 
+        self.repo.save_game_players(game_id, player_names)
         port_info = container.attrs["NetworkSettings"]["Ports"]["12345/tcp"]
         if not port_info:
-            raise RuntimeError("Container started but port 12345 was not published")
-
+            print("[MATCHMAKER] full attrs ports:", port_info)
+            try:
+                print("[MATCHMAKER] container logs:")
+                print(container.logs().decode())
+            except Exception as e:
+                print("[MATCHMAKER] could not read logs:", e)
+            raise RuntimeError("Container started but port 12345/tcp was not published")
         host = port_info[0]["HostIp"]
         if host == "0.0.0.0":
             host = "127.0.0.1"
@@ -86,8 +104,9 @@ class Matchmaker:
         return host, port, container_name
     
 
-    def create_game(self,players):
-        game_id = str(uuid.uuid4())[:8] # 8 bit id for the game 
+    def create_game(self,players,game_id=None):
+        if game_id is None:
+            game_id = str(uuid.uuid4())[:8] 
         for p in players:
             self.active_player_names[p.name] = {"status": "active","game_id": game_id}
         player_names = [p.name for p in players]
@@ -102,6 +121,7 @@ class Matchmaker:
         )
         self.active_games[game_id] = game
         return game
+    
     def notify_players(self,game):
         for idx,player in enumerate(game.players):
             msg = {
@@ -219,14 +239,25 @@ def handle_client(conn, addr, matchmaker):
             conn.close()
             return
         if msg_type == "RESUME_GAME":
-            name = msg.get("player")
-            #game_id = msg.get("game_id")
-            game = matchmaker.find_game_by_player(name)
-            if game is None:
-                err = {"type": "ERROR", "msg": "Game not found or player not assigned"}
+            game_id = matchmaker.repo.get_game_id_for_player(name)
+            if not game_id:
+                err = {"type": "ERROR", "msg": "No saved game found"}
                 conn.sendall((json.dumps(err) + "\n").encode())
                 conn.close()
                 return
+
+            state = matchmaker.repo.load_game(game_id)
+            if not state:
+                err = {"type": "ERROR", "msg": "Saved state missing"}
+                conn.sendall((json.dumps(err) + "\n").encode())
+                conn.close()
+                return
+
+            game = matchmaker.active_games.get(game_id)
+            if game is None:
+                players = matchmaker.repo.get_game_players(game_id)
+                wrapped_players = [WaitingPlayer(str(uuid.uuid4())[:8], name, None) for name in players]
+                game = matchmaker.create_game(wrapped_players,game_id)
 
             reply = {
                 "type": "MATCH_FOUND",
@@ -279,6 +310,7 @@ def cleanup_loop(matchmaker):
 
 def main():
     matchmaker = Matchmaker(lobby_size=LOBBY_SIZE)
+    matchmaker.cleanup_leftover_games()
     threading.Thread(
                 target=cleanup_loop,
                 args=(matchmaker,),
