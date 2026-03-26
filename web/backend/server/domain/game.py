@@ -45,13 +45,12 @@ class Game():
         self.playerTurn = playerTurn
         self.state = state
     
-    # game actions
-    def playCard(self, playerID : int, cardIndex: int):
+    #-------------------Game actions-------------------#
+    def playCard(self, username : int, cardIndex: int):
 
-        if(playerID != self.currentTurn): 
-            raise WrongTurnException() #to be catched in application layer
+        self.canPlay() #check if it's player correct turn
         
-        player = self.getPlayer(playerID)
+        player = self.getPlayer(username)
         card = player.getCard(cardIndex)
 
         board = self.board
@@ -81,13 +80,12 @@ class Game():
         #check gameover
 
 
-    def giveHint(self, playerIDFrom : int, playerIDTo : int, cardIndex : list[int], hintType : str, value : str  ):
+    def giveHint(self, usernameFrom : int, usernameTo : int, cardIndex : list[int], hintType : str, value : str  ):
         
-        if(playerIDFrom != self.currentTurn): 
-            raise WrongTurnException() #to be catched in application layer
+        self.canPlay()
          
-        playerFrom = self.getPlayer(playerIDFrom)
-        playerTo = self.getPlayer(playerIDTo)
+        playerFrom = self.getPlayer(usernameFrom)
+        playerTo = self.getPlayer(usernameTo)
         board = self.board
         
         playerToHand = playerTo.getHand()
@@ -101,12 +99,11 @@ class Game():
             raise UnknownHintTypeError()
 
 
-    def discardCard(self, playerID : int, cardIndex: int):
+    def discardCard(self, username : int, cardIndex: int):
                 
-        if(playerID != self.currentTurn): 
-            raise WrongTurnException() #to be catched in application layer
+        self.canPlay()
               
-        player = self.getPlayer(playerID)
+        player = self.getPlayer(username)
         card = player.getCard(cardIndex)
         board = self.board
 
@@ -124,18 +121,22 @@ class Game():
 
         #check gameover
 
-    #utils
+    #-------------------Utils-------------------#
 
     def changeTurn(self): #todo
         pass
         
-    def getPlayer(self, playerID): #gets a Player instance from his ID
+    def getPlayer(self, username): #gets a Player instance from his ID
         for player in self.players :
-            if player.playerID == playerID :
+            if player.username == username :
                 return player
 
         raise UnknownError()
 
+    def canPlay(self, username):
+        if(username != self.currentTurn): 
+            raise WrongTurnException() #to be catched in application layer (todo)
+    
     def checkGameOver(self):
         pass
     

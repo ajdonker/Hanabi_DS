@@ -31,11 +31,14 @@ class HandCard():
         self.card = card
         self.hintColor = hintColor
         self.hintNumber = hintNumber
+    
+    @property 
+    def card(self):
+        return self.card
 
 class Deck():
     def __init__(self):
-        self.cards = []
-        self.count = 50 # 5 suits with 10 cards each 
+        self.cards = [None]*50 
 
     def shuffle(self):
         random.shuffle(self.cards)
