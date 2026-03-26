@@ -27,14 +27,24 @@ class Card():
         return self.color
 
 class HandCard():
-    def __init__(self, card:Card, hintNumber:Number, hintColor:Color):
+    def __init__(self, card:Card):
         self.card = card
-        self.hintColor = hintColor
-        self.hintNumber = hintNumber
+        self.hintColor = Color | None
+        self.hintNumber = Color | None
     
     @property 
     def card(self):
         return self.card
+    
+    def setHintColor(self, color:Color):
+        self.hintColor = color
+
+    def setHintNumber(self, number:Number):
+        self.hintNumber = number
+
+    def removeHints(self):
+        self.hintColor = None
+        self.hintNumber = None
 
 class Deck():
     def __init__(self):
@@ -44,11 +54,11 @@ class Deck():
         random.shuffle(self.cards)
 
     def draw(self):
-        if self.cards:
+        if self.cards: #still cards in the deck
             self.count -= 1
             return self.cards.pop() 
-        else: 
+        else:  #no cards left
             return None # returns the top card if such exist
     
     def isEmpty(self):
-        return self.deck_count == 0
+        return self.cards.count == 0

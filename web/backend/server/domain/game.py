@@ -1,4 +1,4 @@
-from web.backend.server.domain.cards import Deck, HandCard
+from web.backend.server.domain.cards import Color, Deck, HandCard, Number
 from web.backend.server.domain.player import Player
 
 class Board() :
@@ -13,17 +13,24 @@ class Board() :
     def misfires(self):
         return self.misfires
 
+    @property
+    def token(self):
+        return self.token
+
     def addDiscard(self, card):
         self.discards.append(card)
         
-        if(self.token != 8): #change as constant (?)
-            self.token = self.token + 1
-
     def drawCard(self) -> HandCard :
         return self.deck.draw()
 
-    def updateToken(self):
-        pass
+    def updateToken(self, mode : str):
+        if(mode == '+'):
+            if(self.token != 8): self.token += 1
+        elif(mode == '-'):
+            if(self.token == 0): raise NoTokenException()
+            else : self.token -= 1
+        else :
+            pass #error
 
     def discardMisfire(self):
         self.misfires -= 1
@@ -38,25 +45,27 @@ class Board() :
         return sum(self.piles.values())
 
 class Game():
-    def __init__(self, gameID : int, board : Board, players : list[Player], playerTurn : int, state):
+    def __init__(self, gameID : int, board : Board, players : list[Player], playerTurn : int):
         self.gameID = gameID
         self.board = board
         self.players = players
         self.playerTurn = playerTurn
-        self.state = state
     
     #-------------------Game actions-------------------#
-    def playCard(self, username : int, cardIndex: int):
+    def playCard(self, username : str, cardIndex: int):
 
-        self.canPlay() #check if it's player correct turn
+        self.canPlay(username) #check if it's player correct turn
         
         player = self.getPlayer(username)
-        card = player.getCard(cardIndex)
+        card = player.getCardByID(cardIndex)
 
         board = self.board
         color = card.color
         value = card.value
         
+        player.removeCard(cardIndex)
+        card.removeHints()  #remove hint
+
         if(board.piles[color] == 5) : #Corresponding pile is already full
             board.addDiscard(card)
             board.discardMisfire()
@@ -65,54 +74,64 @@ class Game():
         if(value == board.piles[color] + 1) : #Card correctly placed
             board.updatePiles(card)
         else : # Wrong order --> mistake
+            board.addDiscard(card)
             board.discardMisfire()
             raise ErrorException()
         
-        #remove hint (?)
-
         #regardless the outcome of the action, the player must draw a card
         cardDrawn = board.drawCard() #update board
         player.addCard(cardDrawn)
 
+        #check gameover
+        
         #change turn
         self.changeTurn()
 
-        #check gameover
 
-
-    def giveHint(self, usernameFrom : int, usernameTo : int, cardIndex : list[int], hintType : str, value : str  ):
+    def giveHint(self, username : str, cardIndex : list[int], hintType : str, value : str):
         
-        self.canPlay()
+        self.canPlay(username, self.board)
          
-        playerFrom = self.getPlayer(usernameFrom)
-        playerTo = self.getPlayer(usernameTo)
-        board = self.board
-        
-        playerToHand = playerTo.getHand()
-        #todo logic of give hint
+        player = self.getPlayer(username)
+        board = self.board        
+        playerHand = player.getHand()
 
         if(hintType == "color"):
-            pass
+            hintColor = Color[value.upper()] #what if key it's not found ?
+            for idx in cardIndex:
+                playerHand[idx].setHintColor(hintColor)
+                
         elif(hintType == "number"):
-            pass
+            hintNumber = Number(int(value)) #what if the string doesn't contain a number ?
+            for idx in cardIndex:
+                playerHand[idx].setHintNumber(hintNumber)
+    
         else:
             raise UnknownHintTypeError()
+        
+        board.updateToken('-')
+        
+        #check gameover
 
+        #change turn
 
-    def discardCard(self, username : int, cardIndex: int):
+    def discardCard(self, username : str, cardIndex: int):
                 
         self.canPlay()
               
         player = self.getPlayer(username)
-        card = player.getCard(cardIndex)
+        card = player.getCardByID(cardIndex)
         board = self.board
 
-        #remove hint (?)
+        #remove hints
+        card.removeHints()
 
-        player.removeCard(card)
+        player.removeCard(cardIndex)
         board.addDiscard(card)
-        
-        #regardless the outcome of the action, the player must draw a card
+
+        #board update        
+        board.updateToken('+')
+
         cardDrawn = board.drawCard() #update board
         player.addCard(cardDrawn)
 
@@ -123,20 +142,23 @@ class Game():
 
     #-------------------Utils-------------------#
 
-    def changeTurn(self): #todo
-        pass
-        
-    def getPlayer(self, username): #gets a Player instance from his ID
+    def canPlay(self, username : str, board : Board | None):
+        if(username != self.currentTurn): 
+            raise WrongTurnException() #to be catched in application layer (todo)
+
+        elif(board.token == 0):
+            raise NoTokenException() #to be catched in application layer (todo)
+
+    def changeTurn(self):
+        self.playerTurn = (self.playerTurn + 1) % len(self.players) 
+        #return at the beginning of the list when is at the end
+
+    def getPlayer(self, username): #gets a Player instance from his username
         for player in self.players :
             if player.username == username :
                 return player
-
+        
         raise UnknownError()
 
-    def canPlay(self, username):
-        if(username != self.currentTurn): 
-            raise WrongTurnException() #to be catched in application layer (todo)
-    
-    def checkGameOver(self):
+    def checkGameOver(self): #todo
         pass
-    
