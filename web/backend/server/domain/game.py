@@ -49,7 +49,7 @@ class Game():
         self.gameID = gameID
         self.board = board
         self.players = players
-        self.playerTurn = playerTurn
+        self.playerTurn = playerTurn #index of players list
     
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int):
@@ -143,7 +143,7 @@ class Game():
     #-------------------Utils-------------------#
 
     def canPlay(self, username : str, board : Board | None):
-        if(username != self.currentTurn): 
+        if(username != self.playerTurn): 
             raise WrongTurnException() #to be catched in application layer (todo)
 
         elif(board.token == 0):
