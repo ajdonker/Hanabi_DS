@@ -20,7 +20,7 @@ class Board() :
     def addDiscard(self, card):
         self.discards.append(card)
         
-    def drawCard(self) -> HandCard :
+    def drawCard(self) -> HandCard | None :
         return self.deck.draw()
 
     def updateToken(self, mode : str):
@@ -30,7 +30,7 @@ class Board() :
             if(self.token == 0): raise NoTokenException()
             else : self.token -= 1
         else :
-            pass #error
+            raise UnknownErrorException()
 
     def discardMisfire(self):
         self.misfires -= 1
@@ -41,16 +41,23 @@ class Board() :
 
         self.piles[color] = value
 
+    #a gameover condition
+    def completedPiles(self):
+        if(self.calculateScore() == 25): return True        
+        #return all(height == Number.FIVE.value for height in self.piles.values())   
+
     def calculateScore(self): #calculate the score based on the piles in the board
         return sum(self.piles.values())
 
 class Game():
-    def __init__(self, gameID : int, board : Board, players : list[Player], playerTurn : int):
+    def __init__(self, gameID : int, board : Board, players : list[Player], playerTurn : str):
         self.gameID = gameID
         self.board = board
         self.players = players
-        self.playerTurn = playerTurn #index of players list
-    
+        self.turnOrder = [p.username for p in players] #list of usernames in the order of the turns
+        self.playerTurn = playerTurn 
+        self.finalTurn = False
+        
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int):
 
@@ -69,20 +76,21 @@ class Game():
         if(board.piles[color] == 5) : #Corresponding pile is already full
             board.addDiscard(card)
             board.discardMisfire()
-            raise ErrorException()  #to be catched in application layer
+            raise MisfireException()  #to be catched in application layer
 
         if(value == board.piles[color] + 1) : #Card correctly placed
             board.updatePiles(card)
         else : # Wrong order --> mistake
             board.addDiscard(card)
             board.discardMisfire()
-            raise ErrorException()
+            raise MisfireException()
+        
+        #check gameover
+        self.checkGameOver()
         
         #regardless the outcome of the action, the player must draw a card
         cardDrawn = board.drawCard() #update board
         player.addCard(cardDrawn)
-
-        #check gameover
         
         #change turn
         self.changeTurn()
@@ -107,16 +115,18 @@ class Game():
                 playerHand[idx].setHintNumber(hintNumber)
     
         else:
-            raise UnknownHintTypeError()
+            raise UnknownErrorException()
         
         board.updateToken('-')
         
         #check gameover
+        self.checkGameOver()
 
         #change turn
+        self.changeTurn()
 
     def discardCard(self, username : str, cardIndex: int):
-                
+                    
         self.canPlay()
               
         player = self.getPlayer(username)
@@ -133,12 +143,14 @@ class Game():
         board.updateToken('+')
 
         cardDrawn = board.drawCard() #update board
-        player.addCard(cardDrawn)
-
+        if cardDrawn != None:
+            player.addCard(cardDrawn)
+        
+        #check gameover
+        self.checkGameOver()
+        
         #change turn
         self.changeTurn()
-
-        #check gameover
 
     #-------------------Utils-------------------#
 
@@ -150,15 +162,24 @@ class Game():
             raise NoTokenException() #to be catched in application layer (todo)
 
     def changeTurn(self):
-        self.playerTurn = (self.playerTurn + 1) % len(self.players) 
-        #return at the beginning of the list when is at the end
-
+        currentPlayerIndex = self.turnOrder.index(self.playerTurn)
+        nextPlayerIndex = (currentPlayerIndex + 1) % len(self.players) #return at the beginning of the list when is at the end
+        self.playerTurn = self.turnOrder[nextPlayerIndex]
+        
     def getPlayer(self, username): #gets a Player instance from his username
         for player in self.players :
-            if player.username == username :
-                return player
-        
-        raise UnknownError()
+            if player.username == username :return player
+
+        #if player isn't found ?
+        raise UnknownErrorException()
 
     def checkGameOver(self): #todo
-        pass
+        
+        if(self.board.misfires == 0): #no misfires left
+            raise GameOverException()
+        elif(self.board.completedPiles): #all piles completed
+            raise GameOverException()
+        elif():#no cards left --> todo
+            raise GameOverException()
+        
+        

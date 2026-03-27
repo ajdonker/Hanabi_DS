@@ -1,4 +1,4 @@
-from game_logic.cards import Card,Color,Deck
+from domain.cards import Card,Color,Deck
 import json,uuid
 '''
 All of the game logic included in this file. Game state is created then managed here. 

@@ -5,6 +5,7 @@ class Player():
     def __init__(self, username:str, hand:list[HandCard]):
         self.username = username
         self.hand = hand
+        self.lastTurn = False #used for checking GameOver
 
     #getters
     @property
@@ -19,8 +20,12 @@ class Player():
     def removeCard(self, cardIndex : int):
         self.hand.pop(cardIndex)
 
-    def addCard(self, card : HandCard): 
-        self.hand.insert(0, HandCard) 
+    def addCard(self, card : HandCard):
+        
+        if(card is None):
+            self.lastTurn = True #it's player last turn
+        else:
+            self.hand.insert(0, HandCard) 
 
     #utils
     def getCardByID(self, cardIndex) -> HandCard:
