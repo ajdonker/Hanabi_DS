@@ -1,14 +1,12 @@
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getEventData, wsClient } from "../network/wsClient";
+import { PLAY_LOGIN_COMMAND } from "../network/commandTypes";
 import "./login.css";
 
-const LOGIN_API_ENDPOINT = "/api/hanabi/login";
-
-type LoginResponse = {
-  ok?: boolean;
-  status?: string;
-  result?: string;
-  message?: string;
+type PlayerLoggedEvent = {
+  playerId: string;
+  username: string;
 };
 
 export default function Login() {
@@ -31,41 +29,23 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       setMessage("");
+      const events = await wsClient.command<{ username: string }>(
+        PLAY_LOGIN_COMMAND,
+        { username: trimmed },
+      );
 
-      const response = await fetch(LOGIN_API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username: trimmed }),
-      });
-
-      if (!response.ok) {
-        setMessage("Login failed. Please try again.");
+      const result = getEventData<PlayerLoggedEvent>(events, "player_logged");
+      if (!result) {
+        setMessage("Login failed: invalid server response.");
         return;
       }
 
-      const contentType = response.headers.get("content-type") ?? "";
-      let isBackendOk = false;
-
-      if (contentType.includes("application/json")) {
-        const data = (await response.json()) as LoginResponse;
-        const status = (data.status ?? data.result ?? data.message ?? "").trim().toUpperCase();
-        isBackendOk = data.ok === true || status === "OK";
-      } else {
-        const text = (await response.text()).trim().toUpperCase();
-        isBackendOk = text === "OK";
-      }
-
-      if (isBackendOk) {
-        navigate("/lobby");
-        return;
-      }
-
-      setMessage("Login was rejected by backend.");
+      localStorage.setItem("hanabi.playerId", result.playerId);
+      localStorage.setItem("hanabi.username", result.username);
+      navigate("/lobby");
     } catch (error) {
       console.error("Failed to submit login:", error);
-      setMessage("Unable to reach backend.");
+      setMessage(error instanceof Error ? error.message : "Unable to reach backend.");
     } finally {
       setIsSubmitting(false);
     }
