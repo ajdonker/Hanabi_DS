@@ -1,7 +1,5 @@
 import socket, json, threading
 
-#HOST, PORT = '0.0.0.0', 12345
-#MATCHMAKER_HOST, MATCHMAKER_PORT = "127.0.0.1",9000
 class Client:
     def __init__(self,name,matchmaker_host="127.0.0.1",matchmaker_port=9000):
         '''First connect to matchmaker. Get server assigned. Then create file like reader from server msgs.'''

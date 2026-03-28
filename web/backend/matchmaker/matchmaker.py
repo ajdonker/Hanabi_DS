@@ -1,5 +1,6 @@
 import socket,json,threading,uuid,docker,os,time
-from database.GameRepo import GameRepository
+from database.GameRepo import RedisGameRepository
+from infrastructure.redis_provider import RedisProvider
 import redis
 HOST = "0.0.0.0"
 PORT = 9000
@@ -7,6 +8,8 @@ LOBBY_SIZE = 2
 QUEUE_SIZE = 5 # refuse conns after this many in q 
 MAX_LOAD = 5 # max no of servers connected at the same time
 SERVER_TIMEOUT_TIME = 3600 # after this time server container automatically cleaned up 
+SENTINEL_NODES  = os.getenv("SENTINEL_NODES", "sentinel:26379").split(",")
+SENTINEL_MASTER = os.getenv("SENTINEL_MASTER_NAME", "mymaster")
 
 class WaitingPlayer: # contains only the data needed to keep in check waiting players in q 
     def __init__(self, player_id, name, conn):
@@ -25,22 +28,22 @@ class GameInformation: # to keep active games, manage their state ON/OFF
         self.timestamp = timestamp
 
 class Matchmaker:
-    def __init__(self,lobby_size = 2):
+    def __init__(self,repo,lobby_size = 2):
         self.lobby_size = lobby_size
         self.waiting_players = [] 
         self.active_games = {}
         self.active_player_names = {} 
         self.lock = threading.Lock()
         self.docker_client = docker.from_env()
-        def make_redis():
-            return redis.Redis(
-                host=os.getenv("REDIS_HOST", "redis-master"),
-                port=int(os.getenv("REDIS_PORT", "6379")),
-                decode_responses=True
-            )
-        self.redis_factory = make_redis
-        self.redis = self.redis_factory()
-        self.repo = GameRepository(self.redis, self.redis_factory)
+        # def make_redis():
+        #     return redis.Redis(
+        #         host=os.getenv("REDIS_HOST", "redis-master"),
+        #         port=int(os.getenv("REDIS_PORT", "6379")),
+        #         decode_responses=True
+        #     )
+        # self.redis_factory = make_redis
+        #self.redis = self.redis_factory()
+        self.repo = repo
 
     def add_player_to_pool(self, player):
         with self.lock:
@@ -308,20 +311,13 @@ def cleanup_loop(matchmaker):
             print(f"[MATCHMAKER] cleanup loop error: {e}")
         time.sleep(5)   
 
-def main():
-    matchmaker = Matchmaker(lobby_size=LOBBY_SIZE)
-    matchmaker.cleanup_leftover_games()
-    threading.Thread(
-                target=cleanup_loop,
-                args=(matchmaker,),
-                daemon=True
-            ).start()
+def run_matchmaker_socket(matchmaker,host,port):
     try:
         with socket.socket() as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind((HOST, PORT))
+            s.bind((host, port))
             s.listen()
-            print(f"[MATCHMAKER] Listening on {HOST}:{PORT}")
+            print(f"[MATCHMAKER] Listening on {host}:{port}")
 
             while True:
                 conn, addr = s.accept()
@@ -333,7 +329,18 @@ def main():
     except KeyboardInterrupt:
         print(f"[MATCHMAKER] shutting down..")
     finally:
-        matchmaker.cleanup_leftover_games()            
+        matchmaker.cleanup_leftover_games() 
+def main():
+    redis_provider = RedisProvider()
+    repo = RedisGameRepository(redis_provider.get_master_client(),redis_provider.get_master_client)
+    matchmaker = Matchmaker(repo=repo,lobby_size=LOBBY_SIZE)
+    matchmaker.cleanup_leftover_games()
+    threading.Thread(
+                target=cleanup_loop,
+                args=(matchmaker,),
+                daemon=True
+            ).start()
+    run_matchmaker_socket(matchmaker,HOST,PORT)
 
 if __name__ == "__main__":
     main()

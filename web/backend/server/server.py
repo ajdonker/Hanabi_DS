@@ -1,15 +1,13 @@
-import redis,os
-import socket, threading, json,time
+import os,socket, threading, json
 from game_logic.state import GameState
-from game_logic.cards import Color
-from redis.sentinel import Sentinel
-from database.GameRepo import GameRepository
+from database.GameRepo import RedisGameRepository
+from commands.commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
+from infrastructure.redis_provider import RedisProvider
+
 HOST = '0.0.0.0'
 PORT = int(os.getenv("PORT","12345"))
 GAME_ID = os.getenv("GAME_ID", "testgame")
 PLAYERS_JSON = os.getenv("PLAYERS_JSON", '["Alice","Bob"]')
-SENTINEL_NODES  = os.getenv("SENTINEL_NODES", "sentinel:26379").split(",")
-SENTINEL_MASTER = os.getenv("SENTINEL_MASTER_NAME", "mymaster")
 ALLOWED_PLAYERS = json.loads(PLAYERS_JSON)
 TIMEOUT = 5000
 
@@ -18,11 +16,15 @@ class Server:
         self.game_id = game_id
         self.allowed_players = allowed_players
         self.expected_players = len(allowed_players)
-        #self.redis = redis_client
         self.game_repository = game_repository
         self.clients = {}
         self.player_indices = {name: i for i,name in enumerate(allowed_players)}
         self.game = None
+        self.commands = {
+            "PLAY": PlayCardCommand(),
+            "HINT": GiveHintCommand(),
+            "DISC": DiscardCardCommand()
+        }
         self.lock = threading.Lock()
    
     def broadcast_state(self):
@@ -44,11 +46,6 @@ class Server:
     def handle_join_message(self,join,conn,addr):
         name   = join.get("player")
         game_id = join.get("game_id") 
-
-        if self.game is not None:
-            snap = self.game.serialize_state()
-            msg = json.dumps({"type": "STATE", **snap}) + "\n"
-            conn.sendall(msg.encode())
 
         with self.lock:
             if game_id != self.game_id:
@@ -79,7 +76,7 @@ class Server:
                 self.broadcast_state()
             elif self.game is not None:
                 snap = self.game.serialize_state()
-                conn.sendall((json.dumps({"type":"STATE", **snap}) + "\n").encode())
+                self.broadcast_state()
         return True
     
     def handle_action_message(self,msg,conn):
@@ -87,15 +84,11 @@ class Server:
             return 
         with self.lock:
                     try:
-                        if msg.get("type") == "PLAY":
-                            self.game.play_card(msg["player_idx"], msg["card_idx"])
-                        elif msg.get("type") == "HINT":
-                            if "color" in msg:
-                                self.game.give_hint(msg["from"], msg["to"],color=Color[msg["color"]])
-                            elif "number" in msg:
-                                self.game.give_hint(msg["from"], msg["to"],number=msg["number"])
-                        elif msg.get("type") == "DISC":
-                            self.game.discard(msg["player_idx"], msg["card_idx"])
+                        cmd_type = msg.get("type")
+                        command = self.commands.get(cmd_type)
+                        if not command:
+                            raise ValueError(f"Unknown command type: {cmd_type}")
+                        command.execute(self,msg)
                         self.broadcast_state()
                     except Exception as e:
                         err = json.dumps({"type":"ERROR","msg":str(e)}) + "\n"
@@ -136,33 +129,20 @@ class Server:
             '''DISCONNECT STATE'''
             self.handle_disconnect(conn,conn_file)
         
-def main():
-    # Parse "host:port" list into tuples
-    sentinel_endpoints = []
-    for node in SENTINEL_NODES:
-        host, port = node.split(":")
-        sentinel_endpoints.append((host, int(port)))
-    sent = Sentinel(sentinel_endpoints, socket_timeout=1.0)
-    def get_master_client():
-        """
-        Return a fresh Redis client pointing to the current master.
-        """
-        return sent.master_for(
-            SENTINEL_MASTER,
-            socket_timeout=1.0,
-            decode_responses=True
-        )
-    r = get_master_client()
-    print(f"[*] Connected to Redis master via Sentinel '{SENTINEL_MASTER}' at {sentinel_endpoints}")
-    game_repo = GameRepository(r, get_master_client)
-    server = Server(GAME_ID,ALLOWED_PLAYERS,game_repo)
+def run_server_socket(server, host, port):
     with socket.socket() as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((HOST, PORT))
+        s.bind((host, port))
         s.listen()
         while True:
             conn, addr = s.accept()
             threading.Thread(target=server.handle_client, args=(conn, addr), daemon=True).start()
+
+def main():
+    redis_provider = RedisProvider()
+    game_repo = RedisGameRepository(redis_provider.get_master_client(), redis_provider.get_master_client)
+    server = Server(GAME_ID,ALLOWED_PLAYERS,game_repo)
+    run_server_socket(server,HOST,PORT)
 
 if __name__ == "__main__":
     main()

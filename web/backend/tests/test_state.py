@@ -1,6 +1,6 @@
 import pytest
-from cards import Deck, Card, Color
-from state import GameState
+from game_logic.cards import Deck, Card, Color
+from game_logic.state import GameState
 
 
 def test_deck_count_and_draw():
@@ -85,7 +85,8 @@ def test_check_end_conditions():
 def test_serialize_state_structure():
     gs = GameState(["P1", "P2"])
     snap = gs.serialize_state()
-    assert set(snap.keys()) == {'board', 'tokens', 'misfires', 'deck_count', 'hands', 'current_turn'}
+    assert set(snap.keys()) == {'board', 'tokens', 'misfires', 'deck_count', 'hands', 'current_turn',
+                                'player_names','game_id','discards'}
     assert isinstance(snap['hands'], list)
     assert len(snap['hands']) == 2
 

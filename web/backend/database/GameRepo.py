@@ -1,19 +1,11 @@
-import redis, json, time
+from database.repos import IGameRepository,RedisRepositoryBase
+import json
 # At any moment, there should be only one active authoritative server for a given game_id.
-class GameRepository:
+class RedisGameRepository(IGameRepository,RedisRepositoryBase):
+    '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
     def __init__(self, redis_client, redis_factory):
         self.redis = redis_client
         self.redis_factory = redis_factory
-
-    def _retry(self, func, retries=3, delay=0.2):
-        for attempt in range(retries):
-            try:
-                return func()
-            except Exception as e:
-                print(f"[WARN] redis op failed {attempt+1}/{retries}: {e}", flush=True)
-                self.redis = self.redis_factory()
-                time.sleep(delay)
-        raise RuntimeError("Redis operation failed")
 
     def load_game(self, game_id):
         key = f"hanabi:game:{game_id}"
