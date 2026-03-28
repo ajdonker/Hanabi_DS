@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEventData, wsClient } from "../network/wsClient";
 import { PLAY_LOGIN_COMMAND } from "../network/commandTypes";
+import { PLAYER_LOGGED_EVENT } from "../network/eventTypes";
 import "./login.css";
 
 type PlayerLoggedEvent = {
@@ -34,7 +35,7 @@ export default function Login() {
         { username: trimmed },
       );
 
-      const result = getEventData<PlayerLoggedEvent>(events, "player_logged");
+      const result = getEventData<PlayerLoggedEvent>(events, PLAYER_LOGGED_EVENT);
       if (!result) {
         setMessage("Login failed: invalid server response.");
         return;
