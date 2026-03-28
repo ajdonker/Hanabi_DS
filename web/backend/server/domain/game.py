@@ -9,6 +9,7 @@ class Board() :
         self.token = token
         self.misfires = misfires
 
+    #getters
     @property
     def misfires(self):
         return self.misfires
@@ -17,13 +18,13 @@ class Board() :
     def token(self):
         return self.token
 
-    def addDiscard(self, card):
+    def addDiscard(self, card): #add a card to discard pile
         self.discards.append(card)
         
-    def drawCard(self) -> HandCard | None :
+    def drawCard(self) -> HandCard | None : #draw a card (if possible)
         return self.deck.draw()
 
-    def updateToken(self, mode : str):
+    def updateToken(self, mode : str): #update Token based on the move
         if(mode == '+'):
             if(self.token != 8): self.token += 1
         elif(mode == '-'):
@@ -44,7 +45,7 @@ class Board() :
     #a gameover condition
     def completedPiles(self):
         if(self.calculateScore() == 25): return True        
-        #return all(height == Number.FIVE.value for height in self.piles.values())   
+        #return all(height == Number.FIVE.value for height in self.piles.values())  alternative
 
     def calculateScore(self): #calculate the score based on the piles in the board
         return sum(self.piles.values())
@@ -53,7 +54,7 @@ class Game():
     def __init__(self, gameID : int, board : Board, players : list[Player], playerTurn : str):
         self.gameID = gameID
         self.board = board
-        self.players = players
+        self.players = {p.username: p for p in players} #create a dict for quick access {"username" : Player obj}
         self.turnOrder = [p.username for p in players] #list of usernames in the order of the turns
         self.playerTurn = playerTurn 
         self.finalTurn = False
@@ -61,9 +62,9 @@ class Game():
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int):
 
-        self.canPlay(username) #check if it's player correct turn
+        self.canPlay(username) #check if player can actually play
         
-        player = self.getPlayer(username)
+        player = self.players[username]
         card = player.getCardByID(cardIndex)
 
         board = self.board
@@ -88,9 +89,13 @@ class Game():
         #check gameover
         self.checkGameOver()
         
-        #regardless the outcome of the action, the player must draw a card
+        #unless game is over, the player must draw a card (regardless of his action)
         cardDrawn = board.drawCard() #update board
-        player.addCard(cardDrawn)
+        if(board.deck.lastCard): self.finalTurn = True
+        
+        if(cardDrawn != None): player.addCard(cardDrawn)
+        
+        self.checkGameOver()
         
         #change turn
         self.changeTurn()
@@ -143,8 +148,9 @@ class Game():
         board.updateToken('+')
 
         cardDrawn = board.drawCard() #update board
-        if cardDrawn != None:
-            player.addCard(cardDrawn)
+        if(board.deck.lastCard): self.finalTurn = True
+        
+        if(cardDrawn != None): player.addCard(cardDrawn)
         
         #check gameover
         self.checkGameOver()
@@ -155,31 +161,37 @@ class Game():
     #-------------------Utils-------------------#
 
     def canPlay(self, username : str, board : Board | None):
+        
         if(username != self.playerTurn): 
             raise WrongTurnException() #to be catched in application layer (todo)
 
         elif(board.token == 0):
             raise NoTokenException() #to be catched in application layer (todo)
+        
+        elif(self.finalTurn): #can play, but it's his last turn
+            self.players[username].setLastTurn(True)
+        
 
     def changeTurn(self):
-        currentPlayerIndex = self.turnOrder.index(self.playerTurn)
-        nextPlayerIndex = (currentPlayerIndex + 1) % len(self.players) #return at the beginning of the list when is at the end
-        self.playerTurn = self.turnOrder[nextPlayerIndex]
         
-    def getPlayer(self, username): #gets a Player instance from his username
-        for player in self.players :
-            if player.username == username :return player
-
-        #if player isn't found ?
-        raise UnknownErrorException()
-
-    def checkGameOver(self): #todo
+        playerTurn = self.playerTurn 
+        
+        currentPlayerIndex = self.turnOrder.index(playerTurn)
+        nextPlayerIndex = (currentPlayerIndex + 1) % len(self.players) #return at the beginning of the list when is at the end
+        playerTurn = self.turnOrder[nextPlayerIndex]
+        
+        if(self.finalTurn):
+            self.players[playerTurn].setLastTurn(True)
+        
+    def checkGameOver(self) -> int | None: 
         
         if(self.board.misfires == 0): #no misfires left
-            raise GameOverException()
+            return self.board.calculateScore()
         elif(self.board.completedPiles): #all piles completed
-            raise GameOverException()
-        elif():#no cards left --> todo
-            raise GameOverException()
+            return self.board.calculateScore()
+        elif all(player.lastTurn for player in self.players_map.values()): #all player made their last move
+            return self.board.calculateScore()
         
+        #Game continues
+        return None
         
