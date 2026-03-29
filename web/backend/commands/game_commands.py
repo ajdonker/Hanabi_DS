@@ -2,6 +2,7 @@ from presentation import Event
 from game_logic.cards import Color
 from infrastructure.redis_provider import RedisGameRepository
 from web.backend.commands.commands import Command
+from web.backend.commands.exceptions import *
 
 class PlayCardCommand(Command):
     def __init__(self):
@@ -23,7 +24,7 @@ class PlayCardCommand(Command):
                 Event("turn_change", {"playerId": player_id})
             ]
             
-        except NotYourTurnException:
+        except WrongTurnException as e:
             return [
                 Event("error", {"message": "Not your turn"})
             ]

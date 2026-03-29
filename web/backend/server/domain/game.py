@@ -163,7 +163,7 @@ class Game():
     def canPlay(self, username : str, board : Board | None):
         
         if(username != self.playerTurn): 
-            raise WrongTurnException() #to be catched in application layer (todo)
+            raise WrongTurnException() #to be catched in application layer (done)
 
         elif(board.token == 0):
             raise NoTokenException() #to be catched in application layer (todo)
