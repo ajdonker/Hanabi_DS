@@ -47,3 +47,14 @@ class RedisGameRepository(IGameRepository,RedisRepositoryBase):
     def clear_server_info(self, game_id):
         key = f"hanabi:game:{game_id}:server"
         self._retry(lambda: self.redis.delete(key))
+        
+class RedisGameRepository:
+    def __init__(self, redis_client, redis_factory):
+        self.redis = redis_client
+        self.redis_factory = redis_factory
+
+    def load(self, game_id):
+        pass
+
+    def save(self, game_id, state_dict):
+        pass
