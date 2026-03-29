@@ -1,6 +1,6 @@
 from web.backend.server.domain.cards import Color, Deck, HandCard, Number
 from web.backend.server.domain.player import Player
-
+from domain.exceptions import *
 class Board() :
     def __init__(self, deck : Deck, piles : dict, discards : list, token : int, misfires : int):
         self.deck = deck
