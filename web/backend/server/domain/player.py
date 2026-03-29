@@ -16,6 +16,10 @@ class Player():
     def getUsername(self) -> str:
         return self.username
     
+    @setattr
+    def setLastTurn(self, value : bool):
+        self.lastTurn = value
+        
     #player actions
     def removeCard(self, cardIndex : int):
         self.hand.pop(cardIndex)

@@ -1,0 +1,11 @@
+docker ps -a --filter "name=hanabi-game-" 
+
+docker rm $(docker ps -aq --filter "name=hanabi-game-" --filter "status=exited")
+
+docker rm -f $(docker ps -aq --filter "name=hanabi-game-")
+
+docker exec -it sentinel sh
+redis-cli -p 26379 SENTINEL masters
+redis-cli -p 26379 SENTINEL get-master-addr-by-name mymaster
+redis-cli -p 26379 SENTINEL replicas mymaster
+redis-cli -p 26379 SENTINEL sentinels mymaster

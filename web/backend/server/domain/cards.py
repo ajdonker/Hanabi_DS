@@ -60,5 +60,5 @@ class Deck():
         else:  #no cards left
             return None # returns the top card if such exist
     
-    def isEmpty(self):
-        return self.cards.count == 0
+    def lastCard(self):
+        return self.cards.count == 1
