@@ -1,6 +1,6 @@
 import os,socket, threading, json
 from game_logic.state import GameState
-from database.GameRepo import RedisGameRepository
+from database.GameRepo import RedisRepository
 from commands.commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
 from infrastructure.redis_provider import RedisProvider
 
@@ -140,7 +140,7 @@ def run_server_socket(server, host, port):
 
 def main():
     redis_provider = RedisProvider()
-    game_repo = RedisGameRepository(redis_provider.get_master_client(), redis_provider.get_master_client)
+    game_repo = RedisRepository(redis_provider.get_master_client(), redis_provider.get_master_client)
     server = Server(GAME_ID,ALLOWED_PLAYERS,game_repo)
     run_server_socket(server,HOST,PORT)
 

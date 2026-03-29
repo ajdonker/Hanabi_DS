@@ -1,12 +1,11 @@
-from database.repos import IGameRepository,RedisRepositoryBase
+from database.repos import IGameRepository, ILobbyRepository, IUserRepository
 import json
 # At any moment, there should be only one active authoritative server for a given game_id.
-class RedisGameRepository(IGameRepository,RedisRepositoryBase):
+class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
     '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
-    def __init__(self, redis_client, redis_factory):
+    def __init__(self, redis_client):
         self.redis = redis_client
-        self.redis_factory = redis_factory
-
+        
     def load_game(self, game_id):
         key = f"hanabi:game:{game_id}"
         raw = self._retry(lambda: self.redis.get(key))
@@ -16,7 +15,20 @@ class RedisGameRepository(IGameRepository,RedisRepositoryBase):
         key = f"hanabi:game:{game_id}"
         payload = json.dumps(state_dict)
         self._retry(lambda: self.redis.set(key, payload))
-
+        
+    def load_user(self, username):
+        pass
+    
+    def save_user(self, user):
+        pass
+    
+    def load_lobby(self, lobby_id):
+        pass
+    
+    def save_lobby(self, lobby):
+        pass
+    
+'''
     def save_player_game_mapping(self, player, game_id):
         key = f"hanabi:player:{player}:game"
         self._retry(lambda: self.redis.set(key, game_id))
@@ -47,14 +59,4 @@ class RedisGameRepository(IGameRepository,RedisRepositoryBase):
     def clear_server_info(self, game_id):
         key = f"hanabi:game:{game_id}:server"
         self._retry(lambda: self.redis.delete(key))
-        
-class RedisGameRepository:
-    def __init__(self, redis_client, redis_factory):
-        self.redis = redis_client
-        self.redis_factory = redis_factory
-
-    def load(self, game_id):
-        pass
-
-    def save(self, game_id, state_dict):
-        pass
+'''

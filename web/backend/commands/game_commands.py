@@ -1,12 +1,12 @@
 from presentation import Event
 from web.backend.server.domain import Color
-from infrastructure.redis_provider import RedisGameRepository
+from infrastructure.redis_provider import RedisRepository
 from web.backend.commands.commands import Command
 from web.backend.server.domain.exceptions import *
 
 class PlayCardCommand(Command):
     def __init__(self):
-        self.gameRepository = RedisGameRepository()
+        self.gameRepository = RedisRepository()
         
     def execute(self, data):
         
@@ -37,7 +37,7 @@ class PlayCardCommand(Command):
     
 class DiscardCardCommand(Command):
     def __init__(self):
-        self.gameRepository = RedisGameRepository()
+        self.gameRepository = RedisRepository()
         
     def execute(self, data):
         
