@@ -15,7 +15,6 @@ class ConnectionManager:
         self._lock = Lock()
 
     def add_connection(self, websocket: WebSocket) -> str:
-        print("Adding new WebSocket connection.")
         conn_id = f"conn-{uuid4().hex[:12]}"
         with self._lock:
             self._connections[conn_id] = websocket

@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass
-from threading import Lock
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -29,13 +28,6 @@ class CommandMessage:
 class Event:
     event: str
     data: dict[str, Any]
-
-
-@dataclass
-class User:
-    id: str
-    username: str
-
 
 class WebSocketHandler:
     def __init__(self, connection_manager: ConnectionManager) -> None:
@@ -149,12 +141,10 @@ class WebSocketHandler:
         await websocket.send_text(self.serialize(payload))
 
     async def main(self, websocket: WebSocket) -> None:
-        print("WebSocketHandler main loop started.")
         conn_id = await self.on_connect(websocket)
         try:
             while True:
                 raw_text = await websocket.receive_text()
-                print(f"Received message from connection {conn_id}: {raw_text}")
                 await self.on_message(conn_id, raw_text)
         except WebSocketDisconnect:
             await self.on_disconnect(conn_id)

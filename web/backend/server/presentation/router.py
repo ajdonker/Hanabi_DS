@@ -14,5 +14,4 @@ _websocket_handler = WebSocketHandler(
 
 @ws_router.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
-    print("WebSocket connection established.")
     await _websocket_handler.main(websocket)
