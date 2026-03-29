@@ -19,10 +19,6 @@ export default function Login() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = username.trim();
-    if (!trimmed) {
-      setMessage("Please enter a username.");
-      return;
-    }
     if (isSubmitting) {
       return;
     }
@@ -30,9 +26,10 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       setMessage("");
-      const events = await wsClient.command<{ username: string }>(
+      const data: { username?: string } = trimmed ? { username: trimmed } : {};
+      const events = await wsClient.command<{ username?: string }>(
         PLAY_LOGIN_COMMAND,
-        { username: trimmed },
+        data,
       );
 
       const result = getEventData<PlayerLoggedEvent>(events, PLAYER_LOGGED_EVENT);
@@ -61,7 +58,7 @@ export default function Login() {
           <label className="login-field">
             <input
               type="text"
-              placeholder="Please enter a username"
+              placeholder="Username (optional)"
               value={username}
               onChange={(event) => {
                 setUsername(event.target.value);

@@ -1,16 +1,44 @@
 import json
+from dataclasses import dataclass
+from threading import Lock
 from typing import Any, Optional
+from uuid import uuid4
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from web.backend.server.application.dispatcher import CommandDispatcher
-from web.backend.server.application.models import CommandError, CommandMessage, Event
 from web.backend.server.presentation.connection_manager import ConnectionManager
 
 
+class CommandError(Exception):
+    def __init__(self, message: str, details: Optional[dict[str, Any]] = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.details = details or {}
+
+
+@dataclass
+class CommandMessage:
+    type: str
+    action: str
+    data: dict[str, Any]
+    request_id: Optional[str] = None
+    connection_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class Event:
+    event: str
+    data: dict[str, Any]
+
+
+@dataclass
+class User:
+    id: str
+    username: str
+
+
 class WebSocketHandler:
-    def __init__(self, dispatcher: CommandDispatcher, connection_manager: ConnectionManager) -> None:
-        self.dispatcher = dispatcher
+    def __init__(self, connection_manager: ConnectionManager) -> None:
         self.connection_manager = connection_manager
 
     def deserialize(self, raw_text: str) -> CommandMessage:
@@ -68,12 +96,8 @@ class WebSocketHandler:
 
         message.connection_id = conn_id
 
-        bound_player = self.connection_manager.get_player_for_connection(conn_id)
-        if bound_player and "playerId" not in message.data:
-            message.data["playerId"] = bound_player
-
         try:
-            events = self.dispatcher.dispatch(message)
+            events = self._handle_command(message)
         except Exception as error:
             await self._send_error(
                 conn_id,
@@ -86,6 +110,32 @@ class WebSocketHandler:
         self._sync_connections(conn_id, events)
         await self.broadcast(conn_id, events, request_id=message.request_id)
 
+    def _handle_command(self, message: CommandMessage) -> list[Event]:
+        if message.action == "player.login": 
+            return self._handle_player_login(message)
+        else:
+            return [
+                Event(
+                    event="test_event",
+                    data={
+                        "message": "Received unknown action",
+                    },
+                )
+            ]
+
+    def _handle_player_login(self, message: CommandMessage) -> list[Event]:
+        username = message.data.get("username")
+        user_id = str(uuid4())
+        return [
+            Event(
+                event="player_logged",
+                data={
+                    "playerId": user_id,
+                    "username": username,
+                    "test": 131,
+                },
+            )
+        ]
     async def broadcast(
         self,
         conn_id: str,
@@ -93,17 +143,10 @@ class WebSocketHandler:
         request_id: Optional[str] = None,
     ) -> None:
         payload = self._event_batch_payload(events, request_id=request_id)
-
-        target_conn_ids = self._target_connections(conn_id, events)
-        if not target_conn_ids:
-            target_conn_ids = [conn_id]
-
-        serialized = self.serialize(payload)
-        for target_conn_id in target_conn_ids:
-            websocket = self.connection_manager.get_connection_by_id(target_conn_id)
-            if websocket is None:
-                continue
-            await websocket.send_text(serialized)
+        websocket = self.connection_manager.get_connection_by_id(conn_id)
+        if websocket is None:
+            return
+        await websocket.send_text(self.serialize(payload))
 
     async def main(self, websocket: WebSocket) -> None:
         print("WebSocketHandler main loop started.")
@@ -116,37 +159,12 @@ class WebSocketHandler:
         except WebSocketDisconnect:
             await self.on_disconnect(conn_id)
 
-    def _target_connections(self, source_conn_id: str, events: list[Event]) -> list[str]:
-        game_ids = {
-            str(event.data["gameId"])
-            for event in events
-            if isinstance(event.data.get("gameId"), str) and event.data["gameId"]
-        }
-        if not game_ids:
-            return [source_conn_id]
-
-        target_conn_ids: set[str] = set()
-        for game_id in game_ids:
-            target_conn_ids.update(self.connection_manager.get_conn_ids_for_game(game_id))
-
-        if not target_conn_ids:
-            target_conn_ids.add(source_conn_id)
-        return list(target_conn_ids)
-
     def _sync_connections(self, conn_id: str, events: list[Event]) -> None:
         for event in events:
             if event.event == "player_logged":
                 player_id = event.data.get("playerId")
                 if isinstance(player_id, str) and player_id:
                     self.connection_manager.bind_player(conn_id, player_id)
-
-            if event.event == "game_started":
-                game_id = event.data.get("gameId")
-                players = event.data.get("players")
-                if isinstance(game_id, str) and isinstance(players, list):
-                    for player_id in players:
-                        if isinstance(player_id, str) and player_id:
-                            self.connection_manager.join_game(player_id, game_id)
 
     def _event_batch_payload(
         self,
