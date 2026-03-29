@@ -1,23 +1,7 @@
-import { FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getEventData, wsClient } from "../network/wsClient";
 import "./lobby.css";
-
-const CREATE_TABLE_API_ENDPOINT = "/api/hanabi/lobby/create";
-
-type CreateTableResponse = {
-  ok?: boolean;
-  status?: string;
-  result?: string;
-  message?: string;
-  tableId?: string;
-  table_id?: string;
-  id?: string;
-  table?: {
-    id?: string;
-    tableId?: string;
-    table_id?: string;
-  };
-};
 
 type Table = {
   id: string;
@@ -25,33 +9,113 @@ type Table = {
   maxPlayers: number;
 };
 
-const INITIAL_TABLES: Table[] = [
-  { id: "table-alpha", players: 2, maxPlayers: 4 },
-  { id: "table-beta", players: 3, maxPlayers: 5 },
-  { id: "table-gamma", players: 1, maxPlayers: 2 },
-];
+type LobbyWire = {
+  lobbyId: string;
+  name: string;
+  maxUser: number;
+  numUser: number;
+  currentUsers: string[];
+};
+
+type LobbyListEvent = {
+  lobbies: LobbyWire[];
+};
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const [tables, setTables] = useState<Table[]>(INITIAL_TABLES);
+  const [tables, setTables] = useState<Table[]>([]);
   const [playerCountInput, setPlayerCountInput] = useState("2");
   const [message, setMessage] = useState("");
+  const [isLoadingTables, setIsLoadingTables] = useState(true);
   const [isCreatingTable, setIsCreatingTable] = useState(false);
+  const [joiningLobbyId, setJoiningLobbyId] = useState<string | null>(null);
 
-  function joinTable(table: Table) {
-    navigate(`/waiting/${table.id}`, { state: { tableSize: table.maxPlayers } });
+  function toTable(lobby: LobbyWire): Table {
+    return {
+      id: lobby.lobbyId,
+      players: lobby.numUser,
+      maxPlayers: lobby.maxUser,
+    };
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadLobbies() {
+      try {
+        setIsLoadingTables(true);
+        const events = await wsClient.command<Record<string, never>>(
+          "player.list_lobbies",
+          {},
+        );
+        const payload = getEventData<LobbyListEvent>(events, "lobby_list");
+        if (!payload) {
+          throw new Error("Unable to parse lobby list.");
+        }
+        if (isMounted) {
+          setTables(payload.lobbies.map(toTable));
+        }
+      } catch (error) {
+        if (isMounted) {
+          setMessage(error instanceof Error ? error.message : "Unable to load lobbies.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingTables(false);
+        }
+      }
+    }
+
+    void loadLobbies();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function joinTable(table: Table) {
+    const playerId = localStorage.getItem("hanabi.playerId");
+    if (!playerId) {
+      setMessage("Please login before joining a lobby.");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      setMessage("");
+      setJoiningLobbyId(table.id);
+      const events = await wsClient.command<{ playerId: string; lobbyId: string }>(
+        "player.join_lobby",
+        { playerId, lobbyId: table.id },
+      );
+
+      const joined = getEventData<LobbyWire>(events, "player_joined");
+      navigate(`/waiting/${table.id}`, {
+        state: { tableSize: joined?.maxUser ?? table.maxPlayers },
+      });
+    } catch (error) {
+      console.error("Failed to join lobby:", error);
+      setMessage(error instanceof Error ? error.message : "Unable to join lobby.");
+    } finally {
+      setJoiningLobbyId(null);
+    }
   }
 
   async function createTable(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const requestedPlayers = Number(playerCountInput);
+    const playerId = localStorage.getItem("hanabi.playerId");
 
     if (
       !Number.isInteger(requestedPlayers) ||
       requestedPlayers < 2 ||
-      requestedPlayers > 4
+      requestedPlayers > 5
     ) {
-      setMessage("Please enter a valid number of players between 2 and 4.");
+      setMessage("Please enter a valid number of players between 2 and 5.");
+      return;
+    }
+    if (!playerId) {
+      setMessage("Please login before creating a lobby.");
+      navigate("/login");
       return;
     }
     if (isCreatingTable) {
@@ -61,53 +125,26 @@ export default function Lobby() {
     try {
       setIsCreatingTable(true);
       setMessage("");
+      const events = await wsClient.command<{ playerId: string; maxUser: number }>(
+        "player.create_lobby",
+        { playerId, maxUser: requestedPlayers },
+      );
+      const created = getEventData<LobbyWire>(events, "lobby_created");
+      if (!created) {
+        throw new Error("Create lobby failed: missing lobby_created event.");
+      }
+      const createdTable = toTable(created);
 
-      const response = await fetch(CREATE_TABLE_API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          playerCountInput,
-          playerCount: requestedPlayers,
-        }),
+      setTables((current) => {
+        const withoutCreated = current.filter((table) => table.id !== createdTable.id);
+        return [createdTable, ...withoutCreated];
       });
-
-      if (!response.ok) {
-        setMessage("Create game failed. Please try again.");
-        return;
-      }
-
-      let isBackendOk = false;
-      const contentType = response.headers.get("content-type") ?? "";
-
-      if (contentType.includes("application/json")) {
-        const data = (await response.json()) as CreateTableResponse;
-        const status = (data.status ?? data.result ?? data.message ?? "").trim().toUpperCase();
-        isBackendOk = data.ok === true || status === "OK";
-      } else {
-        const text = (await response.text()).trim().toUpperCase();
-        isBackendOk = text === "OK";
-      }
-
-      if (!isBackendOk) {
-        setMessage("Create game was rejected by backend.");
-        return;
-      }
-
-      const createdTable: Table = {
-        id: 'todo', // In a real implementation, this would come from the backend response
-        players: 1,
-        maxPlayers: requestedPlayers,
-      };
-
-      setTables((current) => [createdTable, ...current]);
-      navigate(`/waiting/todo`, {
-        state: { tableSize: requestedPlayers },
+      navigate(`/waiting/${createdTable.id}`, {
+        state: { tableSize: createdTable.maxPlayers },
       });
     } catch (error) {
       console.error("Failed to create table:", error);
-      setMessage("Unable to reach backend.");
+      setMessage(error instanceof Error ? error.message : "Unable to reach backend.");
     } finally {
       setIsCreatingTable(false);
     }
@@ -139,18 +176,21 @@ export default function Lobby() {
       {message && <p className="lobby-message">{message}</p>}
 
       <div className="lobby-grid">
+        {isLoadingTables && <p>Loading lobbies...</p>}
+        {!isLoadingTables && tables.length === 0 && <p>No lobbies available yet.</p>}
         {tables.map((table) => (
           <button
             key={table.id}
             className="lobby-card"
             type="button"
+            disabled={joiningLobbyId === table.id}
             onClick={() => joinTable(table)}
           >
             <h3>Game {table.id.replace("table-", "")}</h3>
             <p>
               Players: {table.players}/{table.maxPlayers}
             </p>
-            <span>JOIN</span>
+            <span>{joiningLobbyId === table.id ? "JOINING..." : "JOIN"}</span>
           </button>
         ))}
       </div>
