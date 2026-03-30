@@ -1,0 +1,1 @@
+export const PLAYER_LOGGED_EVENT = "player_logged";
