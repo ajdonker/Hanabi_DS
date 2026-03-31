@@ -1,6 +1,7 @@
 from database.repos import IGameRepository, ILobbyRepository, IUserRepository
 from commands import Command, Event
 from web.backend.database.GameRepo import RedisRepository
+
 class RegisterCommand(Command):
     def __init__(self):
         self.userRepository = RedisRepository()
@@ -20,7 +21,7 @@ class RegisterCommand(Command):
             Event("registration_success", {"message": "Registration successful"})
         ]
 
-def LoginCommand(Command):
+class LoginCommand(Command):
     def __init__(self):
         self.userRepository = RedisRepository()
         
