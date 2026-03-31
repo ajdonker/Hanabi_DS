@@ -1,6 +1,6 @@
 from web.backend.server.domain.cards import Color, Deck, HandCard, Number
 from web.backend.server.domain.player import Player
-
+from domain.exceptions import *
 class Board() :
     def __init__(self, deck : Deck, piles : dict, discards : list, token : int, misfires : int):
         self.deck = deck
@@ -163,7 +163,7 @@ class Game():
     def canPlay(self, username : str, board : Board | None):
         
         if(username != self.playerTurn): 
-            raise WrongTurnException() #to be catched in application layer (todo)
+            raise WrongTurnException() #to be catched in application layer (done)
 
         elif(board.token == 0):
             raise NoTokenException() #to be catched in application layer (todo)

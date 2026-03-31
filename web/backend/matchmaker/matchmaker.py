@@ -45,6 +45,8 @@ class Matchmaker:
         #self.redis = self.redis_factory()
         self.repo = repo
 
+
+    #matchmakerService --> application
     def add_player_to_pool(self, player):
         with self.lock:
             print(f"[MATCHMAKER] before append: {len(self.waiting_players)} waiting")
@@ -65,7 +67,8 @@ class Matchmaker:
                 return game
             print("[MATCHMAKER] not enough players yet")
             return None
-        
+    
+    #infrastructure --> GameManagerService 
     def spawn_server_container(self,game_id,player_names):
         '''spawn a container then return its information'''
         container_name = f"hanabi-game-{game_id}"
@@ -106,7 +109,7 @@ class Matchmaker:
         port = int(port_info[0]["HostPort"])
         return host, port, container_name
     
-
+    #matchmakerService --> application
     def create_game(self,players,game_id=None):
         if game_id is None:
             game_id = str(uuid.uuid4())[:8] 
@@ -125,6 +128,7 @@ class Matchmaker:
         self.active_games[game_id] = game
         return game
     
+    #presentation layer
     def notify_players(self,game):
         for idx,player in enumerate(game.players):
             msg = {
@@ -141,6 +145,7 @@ class Matchmaker:
             except Exception as e:
                 print(f"[MATCHMAKER] failed to send to {player.name}:{e}")
 
+    #applicationLayer
     def remove_game(self, game_id):
         with self.lock:
             game = self.active_games.pop(game_id, None)
@@ -155,6 +160,7 @@ class Matchmaker:
             except Exception as e:
                 print(f"Cleanup failed for {game_id}: {e}")
 
+    #applicationLayer
     def remove_waiting_player(self, conn):
         with self.lock:
             removed_names = [p.name for p in self.waiting_players if p.conn == conn]
@@ -180,7 +186,8 @@ class Matchmaker:
         for game_id in to_remove:
             print(f"[MATCHMAKER] Cleaning up expired/dead game {game_id}")
             self.remove_game(game_id)
-            
+    
+    
     def find_game(self, game_id, player_name):
         with self.lock:
             game = self.active_games.get(game_id)

@@ -14,9 +14,9 @@ class IGameRepository(ABC):
     def load_game(self, game_id):
         pass
     @abstractmethod
-    def save_game(self, game_id, state_dict):
+    def save_game(self, game):
         pass
-
+    '''
     @abstractmethod
     def save_player_game_mapping(self, player, game_id):
         pass
@@ -44,7 +44,19 @@ class IGameRepository(ABC):
     @abstractmethod
     def clear_server_info(self, game_id):
         pass
+'''
 
+class ILobbyRepository(ABC):
+    @abstractmethod
+    def load_lobby(self, lobby_id):
+        pass
+    @abstractmethod
+    def save_lobby(self, lobby):
+        pass
+
+
+#####
+'''
 class RedisRepositoryBase:
     def __init__(self, redis_client, redis_factory):
         self.redis = redis_client
@@ -59,9 +71,10 @@ class RedisRepositoryBase:
                 self.redis = self.redis_factory()
                 time.sleep(delay)
         raise RuntimeError("Redis operation failed")
-    
+
 
 class FakeGameRepository(IGameRepository):
+
     def __init__(self):
         self.games = {}
         self.player_to_game = {}
@@ -94,3 +107,4 @@ class FakeGameRepository(IGameRepository):
 
     def clear_server_info(self, game_id):
         self.server_info.pop(game_id, None)
+'''
