@@ -30,7 +30,7 @@ class HandCard():
     def __init__(self, card:Card):
         self.card = card
         self.hintColor = Color | None
-        self.hintNumber = Color | None
+        self.hintNumber = Number | None
     
     @property 
     def card(self):
@@ -50,6 +50,13 @@ class Deck():
     def __init__(self):
         self.cards = [None]*50 
 
+    @staticmethod
+    def from_count(count: int):
+        deck = Deck()
+        deck.cards = [None] * count
+        deck.deck_count = count
+        return deck
+    
     def shuffle(self):
         random.shuffle(self.cards)
 

@@ -12,7 +12,6 @@ class Client:
         self.game_started = False
         self.current_turn = None
         self.game_id = None
-        #name = input("Your name> ").strip()
         self.name = name
         # can add comms here to reject client name if it is not unique 
         

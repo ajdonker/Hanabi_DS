@@ -1,22 +1,22 @@
-from web.backend.server.domain.cards import Color, Deck, HandCard, Number
-from web.backend.server.domain.player import Player
+from server.domain.cards import Color, Deck, HandCard, Number
+from server.domain.player import Player
 from domain.exceptions import *
 class Board() :
     def __init__(self, deck : Deck, piles : dict, discards : list, token : int, misfires : int):
         self.deck = deck
         self.piles = piles
         self.discards = discards
-        self.token = token
-        self.misfires = misfires
+        self._token = token
+        self._misfires = misfires
 
     #getters
     @property
     def misfires(self):
-        return self.misfires
+        return self._misfires # infinite recursion it says like this
 
     @property
     def token(self):
-        return self.token
+        return self._token
 
     def addDiscard(self, card): #add a card to discard pile
         self.discards.append(card)
@@ -26,15 +26,15 @@ class Board() :
 
     def updateToken(self, mode : str): #update Token based on the move
         if(mode == '+'):
-            if(self.token != 8): self.token += 1
+            if(self._token != 8): self._token += 1
         elif(mode == '-'):
-            if(self.token == 0): raise NoTokenException()
-            else : self.token -= 1
+            if(self._token == 0): raise NoTokenException()
+            else : self._token -= 1
         else :
             raise UnknownErrorException()
 
     def discardMisfire(self):
-        self.misfires -= 1
+        self._misfires -= 1
 
     def updatePiles(self, card): #when a card is correctly played, the board is updated
         value = card.number
@@ -58,18 +58,122 @@ class Game():
         self.turnOrder = [p.username for p in players] #list of usernames in the order of the turns
         self.playerTurn = playerTurn 
         self.finalTurn = False
-        
+    
+    def _create_initial_game(self, game_id, player_names):
+        players = [Player(name) for name in player_names]
+
+        deck = Deck()
+        deck.shuffle()
+
+        # deal cards
+        for p in players:
+            for _ in range(5):  # or 4 depending on rules
+                p.addCard(deck.draw())
+
+        board = Board(
+            deck=deck,
+            piles={c: 0 for c in Color},
+            discards=[],
+            token=8,
+            misfires=3
+        )
+
+        return Game(
+            gameID=game_id,
+            board=board,
+            players=players,
+            playerTurn=player_names[0]
+        )
+
+    def to_dict(self):
+        return {
+            "game_id": self.gameID,
+            "player_turn": self.playerTurn,
+            "final_turn": self.finalTurn,
+
+            "players": [
+                {
+                    "username": p.username,
+                    "hand": [
+                        {
+                            "number": c.number,
+                            "color": c.color.name,
+                            "hints": c.getHints()  # or however you store hints
+                        }
+                        for c in p.getHand()
+                    ],
+                    "last_turn": p.lastTurn
+                }
+                for p in self.players.values()
+            ],
+
+            "board": {
+                "piles": {c.name: v for c, v in self.board.piles.items()},
+                "discards": [
+                    {"number": c.number, "color": c.color.name}
+                    for c in self.board.discards
+                ],
+                "tokens": self.board.token,
+                "misfires": self.board.misfires,
+                "deck_count": self.board.deck.get_deck_count()
+            }
+        } 
+    @staticmethod
+    def from_dict(data: dict):
+        # --- players ---
+        players = []
+        for p_data in data["players"]:
+            p = Player(p_data["username"])
+
+            hand = []
+            for c_data in p_data["hand"]:
+                card = HandCard(
+                    number=c_data["number"],
+                    color=Color[c_data["color"]]
+                )
+                card.setHints(c_data.get("hints", []))
+                hand.append(card)
+
+            p.setHand(hand)
+            p.lastTurn = p_data.get("last_turn", False)
+            players.append(p)
+
+        # --- board ---
+        board_data = data["board"]
+
+        board = Board(
+            deck=Deck.from_count(board_data["deck_count"]), # deck count depends on discards and plays
+            piles={Color[c]: v for c, v in board_data["piles"].items()},
+            discards=[
+                HandCard(d["number"], Color[d["color"]])
+                for d in board_data["discards"]
+            ],
+            token=board_data["tokens"],
+            misfires=board_data["misfires"]
+        )
+
+        # --- game ---
+        game = Game(
+            gameID=data["game_id"],
+            board=board,
+            players=players,
+            playerTurn=data["player_turn"]
+        )
+
+        game.finalTurn = data["final_turn"]
+
+        return game
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int):
 
-        self.canPlay(username) #check if player can actually play
+        self.canPlay(username,self.board) #check if player can actually play
         
         player = self.players[username]
         card = player.getCardByID(cardIndex)
 
         board = self.board
         color = card.color
-        value = card.value
+        value = card.number
         
         player.removeCard(cardIndex)
         card.removeHints()  #remove hint
@@ -165,7 +269,7 @@ class Game():
         if(username != self.playerTurn): 
             raise WrongTurnException() #to be catched in application layer (done)
 
-        elif(board.token == 0):
+        elif(board._token == 0):
             raise NoTokenException() #to be catched in application layer (todo)
         
         elif(self.finalTurn): #can play, but it's his last turn
@@ -178,14 +282,14 @@ class Game():
         
         currentPlayerIndex = self.turnOrder.index(playerTurn)
         nextPlayerIndex = (currentPlayerIndex + 1) % len(self.players) #return at the beginning of the list when is at the end
-        playerTurn = self.turnOrder[nextPlayerIndex]
+        self.playerTurn = self.turnOrder[nextPlayerIndex]
         
         if(self.finalTurn):
             self.players[playerTurn].setLastTurn(True)
         
     def checkGameOver(self) -> int | None: 
         
-        if(self.board.misfires == 0): #no misfires left
+        if(self.board._misfires == 0): #no misfires left
             return self.board.calculateScore()
         elif(self.board.completedPiles): #all piles completed
             return self.board.calculateScore()

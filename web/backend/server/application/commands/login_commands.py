@@ -1,6 +1,7 @@
 from database.repos import IGameRepository, ILobbyRepository, IUserRepository
-from commands import Command, Event
-from web.backend.database.GameRepo import RedisRepository
+from commands import Command
+from presentation.event import Event
+from database.GameRepo import RedisRepository
 
 class RegisterCommand(Command):
     def __init__(self):

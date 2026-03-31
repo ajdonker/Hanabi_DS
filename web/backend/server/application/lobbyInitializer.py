@@ -1,3 +1,5 @@
+from server.application.lobby import Lobby
+
 class LobbyInitializer:
 
     def create_lobby(self, name: str, max_users: int):

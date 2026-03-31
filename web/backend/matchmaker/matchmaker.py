@@ -35,18 +35,8 @@ class Matchmaker:
         self.active_player_names = {} 
         self.lock = threading.Lock()
         self.docker_client = docker.from_env()
-        # def make_redis():
-        #     return redis.Redis(
-        #         host=os.getenv("REDIS_HOST", "redis-master"),
-        #         port=int(os.getenv("REDIS_PORT", "6379")),
-        #         decode_responses=True
-        #     )
-        # self.redis_factory = make_redis
-        #self.redis = self.redis_factory()
         self.repo = repo
 
-
-    #matchmakerService --> application
     def add_player_to_pool(self, player):
         with self.lock:
             print(f"[MATCHMAKER] before append: {len(self.waiting_players)} waiting")

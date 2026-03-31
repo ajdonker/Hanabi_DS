@@ -1,7 +1,7 @@
 import os,socket, threading, json
 from game_logic.state import GameState
 from database.GameRepo import RedisRepository
-from commands.commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
+from server.application.commands.game_commands import PlayCardCommand,GiveHintCommand
 from infrastructure.redis_provider import RedisProvider
 
 HOST = '0.0.0.0'
