@@ -1,6 +1,8 @@
 from commands import Command
 from database.repos import RedisRepository
 from application import lobbyInitializer
+from presentation import Event
+from web.backend.server.application.matchmakingService import MatchmakingService
 
 class CreateLobbyCommand(Command):
     
@@ -15,7 +17,7 @@ class CreateLobbyCommand(Command):
             message.max_users
         )
         self.lobby_repository.save(lobby)
-        return ["LOBBY_CREATED"]
+        return Event("LOBBY_CREATED", {"lobby_id": lobby.name})
 
 
 class JoinLobbyCommand(Command):
@@ -23,7 +25,7 @@ class JoinLobbyCommand(Command):
     def __init__(self, lobby_repository, lobby_initializer, matchmaking_service):
         self.lobby_repository = lobby_repository
         self.lobby_initializer = lobby_initializer
-        self.matchmaking_service = matchmaking_service
+        self.matchmaking_service = MatchmakingService()
 
     def execute(self, message):
 
@@ -34,8 +36,8 @@ class JoinLobbyCommand(Command):
         self.lobby_repository.save(lobby)
 
         if not lobby.is_full():
-            return ["WAITING"]
+            return Event("WAITING_FOR_PLAYERS", {"lobby_id": lobby.name})
 
-        result = self.matchmaking_service.create_game_from_lobby(lobby)
+        self.matchmaking_service.create_game(lobby)
 
-        return [result]
+        return ##

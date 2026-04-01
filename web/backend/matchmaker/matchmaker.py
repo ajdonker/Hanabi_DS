@@ -47,7 +47,7 @@ class Matchmaker:
 
 
    #matchmakerService --> application
-    '''def add_player_to_pool(self, player):
+    def add_player_to_pool(self, player):
         with self.lock:
             print(f"[MATCHMAKER] before append: {len(self.waiting_players)} waiting")
             if len(self.waiting_players) >= QUEUE_SIZE:
@@ -126,7 +126,7 @@ class Matchmaker:
             timestamp = time.time()
         )
         self.active_games[game_id] = game
-        return game'''
+        return game
     
     #presentation layer
     def notify_players(self,game):
@@ -146,7 +146,7 @@ class Matchmaker:
                 print(f"[MATCHMAKER] failed to send to {player.name}:{e}")
 
     #applicationLayer
-    '''def remove_game(self, game_id):
+    def remove_game(self, game_id):
         with self.lock:
             game = self.active_games.pop(game_id, None)
             if not game:
@@ -166,10 +166,10 @@ class Matchmaker:
             removed_names = [p.name for p in self.waiting_players if p.conn == conn]
             self.waiting_players = [p for p in self.waiting_players if p.conn != conn]
             for name in removed_names:
-                self.active_player_names.pop(name, None)'''
+                self.active_player_names.pop(name, None)
     
     ##infrastructure
-'''    def cleanup(self):
+    def cleanup(self):
         with self.lock:
             to_remove = []
             now = time.time()
@@ -186,9 +186,9 @@ class Matchmaker:
 
         for game_id in to_remove:
             print(f"[MATCHMAKER] Cleaning up expired/dead game {game_id}")
-            self.remove_game(game_id)    '''
+            self.remove_game(game_id)    
     #application layer
-'''    def find_game(self, game_id, player_name):
+    def find_game(self, game_id, player_name):
         with self.lock:
             game = self.active_games.get(game_id)
             if game is None:
@@ -209,10 +209,10 @@ class Matchmaker:
                     print(f"Game found for player {player_name}")
                     return game
             print(f"No active game found for player {player_name}")
-            return None'''
+            return None
 
     #infrastructure
-'''def cleanup_leftover_games(self):
+    def cleanup_leftover_games(self):
         try:
             containers = self.docker_client.containers.list(
                 all=True,
@@ -226,7 +226,7 @@ class Matchmaker:
                 except Exception as e:
                     print(f"[MATCHMAKER] Failed removing {c.name}: {e}")
         except Exception as e:
-            print(f"[MATCHMAKER] Global cleanup failed: {e}")'''
+            print(f"[MATCHMAKER] Global cleanup failed: {e}")
 
 
 def handle_client(conn, addr, matchmaker):
