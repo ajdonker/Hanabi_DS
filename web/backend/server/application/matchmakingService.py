@@ -1,42 +1,64 @@
 import time
 import uuid
-from web.backend.server.application.matchmakingService import GameInformation
+from web.backend.server.application.gameInformation import GameInformation
 from web.backend.server.application.matchmakingService import WaitingPlayer
 from web.backend.server.application.gameManagerService import GameServerManager
+from web.backend.presentation.event import Event
 
 class MatchmakingService:
 
-    def __init__(self, lobby_size = 2):
-        self.lobby_size = lobby_size 
-        self.waiting_players = [] # list of WaitingPlayer objects
-        self.active_games = {} #
+    def __init__(self):
+        self.waiting_players = [] # list of WaitingPlayer objects, example: [WaitingPlayer(player_id="1234", name="alice", lobby_id="lobby1")]
+        self.active_games = {} #list of GameInformation objects, example: {"game_id": GameInformation}
         self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
+        self.lobbies = {} # example: {"players": ["alice", "bob"], max_players: 4}
         self.gameServer_manager = GameServerManager()
+        
+    #added
+    def create_lobby(self, lobby_id: str, max_users: int, user_creator : str) -> str:
+        
+        if lobby_id in self.lobbies:
+            raise Exception("Lobby already exists") #to be handled in lobby comands
 
-    def add_player_to_pool(self, player: WaitingPlayer) -> str: 
+        self.lobbies[lobby_id] = {
+            "players": [user_creator],
+            "max_users": max_users
+        }
+
+        return "LOBBY_CREATED"
+
+    #added
+    def join_lobby(self, lobby_id: str, player : WaitingPlayer) -> str:
+
+        if lobby_id not in self.lobbies:
+            raise Exception("Lobby not found")
+
+        result = self.add_player_to_pool(player, lobby_id)
+        
+        return result
+    
+    def add_player_to_pool(self, player: WaitingPlayer, lobby_id: str) -> str: 
+        
         self.waiting_players.append(player)
-
-        if len(self.waiting_players) < self.lobby_size:
+        lobby = self.lobbies[lobby_id]    
+        #count all players in the pool that are in the same lobby
+        lobby_players = [p for p in self.waiting_players if p.lobby_id == lobby_id]
+        
+        if len(lobby_players) < lobby["max_users"]:
             return "WAITING"
 
-        players = self.waiting_players[:self.lobby_size]
-        self.waiting_players = self.waiting_players[self.lobby_size:]
-
         game_id = str(uuid.uuid4())[:8]
-        player_names = [p.name for p in players]
 
-        self.create_game(players, game_id)
+        self.create_game(lobby_players, game_id)
 
         return "MATCH_FOUND"
     
-    def create_game(self,players,game_id=None):
-        if game_id is None:
-            game_id = str(uuid.uuid4())[:8] 
-
-        for p in players:
+    def create_game(self,lobby_players, game_id):
+ 
+        for p in lobby_players:
             self.active_player_names[p.name] = {"status": "active","game_id": game_id}
         
-        player_names = [p.name for p in players]
+        player_names = [p.name for p in lobby_players]
         host, port, container_name = self.gameServer_manager.spawn_server_container(game_id,player_names)
         
         game = GameInformation(
@@ -44,12 +66,13 @@ class MatchmakingService:
             container_name = container_name,
             host = host,
             port = port,
-            players = players,
+            players = lobby_players,
             timestamp = time.time()
         )
         self.active_games[game_id] = game
         return game
     
+    #useful methods for handling disconnections and finding games    
     def remove_waiting_player(self, conn):
         with self.lock:
             removed_names = [p.name for p in self.waiting_players if p.conn == conn]
@@ -79,6 +102,6 @@ class MatchmakingService:
             print(f"No active game found for player {player_name}")
             return None
     
-    #util
+    #util setter
     def setLobbySize(self, lobby_size):
         self.lobby_size = lobby_size
