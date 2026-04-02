@@ -1,17 +1,34 @@
+import time
 import uuid
-from web.backend.matchmaker.matchmaker import GameInformation
+from web.backend.server.application.matchmakingService import GameInformation
+from web.backend.server.application.matchmakingService import WaitingPlayer
 from web.backend.server.application.gameManagerService import GameServerManager
-
 
 class MatchmakingService:
 
-    def __init__(self,repo,lobby_size = 2):
-        self.lobby_size = lobby_size
-        self.waiting_players = [] #
+    def __init__(self, lobby_size = 2):
+        self.lobby_size = lobby_size 
+        self.waiting_players = [] # list of WaitingPlayer objects
         self.active_games = {} #
         self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
         self.gameServer_manager = GameServerManager()
 
+    def add_player_to_pool(self, player: WaitingPlayer) -> str: 
+        self.waiting_players.append(player)
+
+        if len(self.waiting_players) < self.lobby_size:
+            return "WAITING"
+
+        players = self.waiting_players[:self.lobby_size]
+        self.waiting_players = self.waiting_players[self.lobby_size:]
+
+        game_id = str(uuid.uuid4())[:8]
+        player_names = [p.name for p in players]
+
+        self.create_game(players, game_id)
+
+        return "MATCH_FOUND"
+    
     def create_game(self,players,game_id=None):
         if game_id is None:
             game_id = str(uuid.uuid4())[:8] 
@@ -32,28 +49,6 @@ class MatchmakingService:
         )
         self.active_games[game_id] = game
         return game
-    
-    def add_player_to_pool(self, player: WaitingPlayer) -> MatchResult:
-        self.waiting_players.append(player)
-
-        if len(self.waiting_players) < self.lobby_size:
-            return MatchResult(status="WAITING")
-
-        players = self.waiting_players[:self.lobby_size]
-        self.waiting_players = self.waiting_players[self.lobby_size:]
-
-        game_id = str(uuid.uuid4())[:8]
-        player_names = [p.name for p in players]
-
-        server_info = self.game_server_manager.start_game(game_id, player_names)
-
-        game = GameInfo(game_id, player_names)
-        self.active_games[game_id] = game
-
-        return MatchResult(
-            status="MATCH_FOUND",
-            game_info=game
-        )
     
     def remove_waiting_player(self, conn):
         with self.lock:
@@ -83,3 +78,7 @@ class MatchmakingService:
                     return game
             print(f"No active game found for player {player_name}")
             return None
+    
+    #util
+    def setLobbySize(self, lobby_size):
+        self.lobby_size = lobby_size
