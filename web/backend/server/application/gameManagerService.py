@@ -84,3 +84,17 @@ class GameServerManager:
                     print(f"[MATCHMAKER] Failed removing {c.name}: {e}")
         except Exception as e:
             print(f"[MATCHMAKER] Global cleanup failed: {e}")
+            
+    def remove_game(self, game_id):
+        with self.lock:
+            game = self.active_games.pop(game_id, None)
+            if not game:
+                return
+            try:
+                c = self.docker_client.containers.get(game.container_name)
+                for p in game.players:
+                    self.active_player_names.pop(p.name, None)
+                c.stop(timeout=2)
+                c.remove()
+            except Exception as e:
+                print(f"Cleanup failed for {game_id}: {e}")

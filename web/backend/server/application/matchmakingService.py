@@ -3,7 +3,7 @@ import uuid
 from web.backend.server.application.gameInformation import GameInformation
 from web.backend.server.application.matchmakingService import WaitingPlayer
 from web.backend.server.application.gameManagerService import GameServerManager
-from web.backend.presentation.event import Event
+from web.backend.server.presentation.event import Event
 
 class MatchmakingService:
 

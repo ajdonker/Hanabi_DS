@@ -1,7 +1,7 @@
 from presentation import Event
 from web.backend.server.domain import Color
-from infrastructure.redis_provider import RedisRepository
-from web.backend.commands.commands import Command
+from web.backend.server.infrastructure.redis_provider import RedisRepository
+from web.backend.server.application import Command
 from web.backend.server.domain.exceptions import *
 
 class PlayCardCommand(Command):

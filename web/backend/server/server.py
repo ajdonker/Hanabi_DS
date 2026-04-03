@@ -2,7 +2,7 @@ import os,socket, threading, json
 from game_logic.state import GameState
 from database.GameRepo import RedisRepository
 from commands.commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
-from infrastructure.redis_provider import RedisProvider
+from web.backend.server.infrastructure.redis_provider import RedisProvider
 
 HOST = '0.0.0.0'
 PORT = int(os.getenv("PORT","12345"))

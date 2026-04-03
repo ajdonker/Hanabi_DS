@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import WebSocket, WebSocketDisconnect
 
+from web.backend.server.application.commands.login_commands import LoginCommand, RegisterCommand
 from web.backend.server.presentation.connection_manager import ConnectionManager
 
 
@@ -104,7 +105,11 @@ class WebSocketHandler:
 
     def _handle_command(self, message: CommandMessage) -> list[Event]:
         if message.action == "player.login": 
-            return self._handle_player_login(message)
+            return LoginCommand().execute(message.data)
+        elif message.action == "player.register":
+            return RegisterCommand().execute(message.data)
+        elif 1==1:#mock  # other commands...
+            pass
         else:
             return [
                 Event(

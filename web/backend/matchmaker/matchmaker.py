@@ -1,6 +1,6 @@
 import socket,json,threading,uuid,docker,os,time
 from database.GameRepo import RedisGameRepository
-from infrastructure.redis_provider import RedisProvider
+from web.backend.server.infrastructure.redis_provider import RedisProvider
 import redis
 HOST = "0.0.0.0"
 PORT = 9000

@@ -1,25 +1,46 @@
-from database.repos import IGameRepository, ILobbyRepository, IUserRepository
+from time import time
+
+from database.repos import IGameRepository, IUserRepository
 import json
+
+from web.backend.server.application.user import User
+from web.backend.server.domain.game import Game
+
 # At any moment, there should be only one active authoritative server for a given game_id.
-class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
-    '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
+
+class RedisRepository(IGameRepository, IUserRepository):
+    #Stores game states per game_id and game session related metadata 
+    # - player -> game, game -> players, game ->server
     def __init__(self, redis_client):
         self.redis = redis_client
-        
-    def load_game(self, game_id):
+    
+    def _retry(self, func, retries=3, delay=0.2):
+        for attempt in range(retries):
+            try:
+                return func()
+            except Exception as e:
+                print(f"[WARN] redis operation failed {attempt+1}/{retries}: {e}", flush=True)
+                self.redis = self.redis_factory()
+                time.sleep(delay)
+        raise RuntimeError("Redis operation failed")
+
+    
+    #Game 
+    def load_game(self, game_id : str) -> Game | None:
         key = f"hanabi:game:{game_id}"
         raw = self._retry(lambda: self.redis.get(key))
         return json.loads(raw) if raw else None
 
-    def save_game(self, game_id, state_dict):
-        key = f"hanabi:game:{game_id}"
-        payload = json.dumps(state_dict)
+    def save_game(self, game: Game):
+        key = f"hanabi:game:{game.id}"
+        payload = json.dumps(game.state)
         self._retry(lambda: self.redis.set(key, payload))
-        
-    def load_user(self, username):
+    
+    #User    
+    def load_user(self, username : str) -> User | None:
         pass
     
-    def save_user(self, user):
+    def save_user(self, user: User):
         pass
     
     def load_lobby(self, lobby_id):
