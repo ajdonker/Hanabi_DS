@@ -1,7 +1,7 @@
 import time
 import uuid
 from web.backend.server.application.gameInformation import GameInformation
-from web.backend.server.application.matchmakingService import WaitingPlayer
+from web.backend.server.application.waitingPlayer import WaitingPlayer
 from web.backend.server.application.gameManagerService import GameServerManager
 from web.backend.presentation.event import Event
 

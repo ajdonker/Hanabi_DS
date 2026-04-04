@@ -1,5 +1,5 @@
 import socket,json,threading,uuid,docker,os,time
-from database.GameRepo import RedisGameRepository
+from database.GameRepo import RedisRepository
 from infrastructure.redis_provider import RedisProvider
 import redis
 HOST = "0.0.0.0"
@@ -334,7 +334,7 @@ def run_matchmaker_socket(matchmaker,host,port):
         matchmaker.cleanup_leftover_games() 
 def main():
     redis_provider = RedisProvider()
-    repo = RedisGameRepository(redis_provider.get_master_client(),redis_provider.get_master_client)
+    repo = RedisRepository(redis_client=redis_provider.get_master_client())
     matchmaker = Matchmaker(repo=repo,lobby_size=LOBBY_SIZE)
     matchmaker.cleanup_leftover_games()
     threading.Thread(

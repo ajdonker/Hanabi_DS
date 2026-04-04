@@ -1,7 +1,7 @@
 from commands import Command
 from database.repos import RedisRepository
 from application import lobbyInitializer
-from presentation import Event
+from web.backend.presentation.event import Event
 from web.backend.server.application.waitingPlayer import WaitingPlayer
 from web.backend.server.application.matchmakingService import MatchmakingService
 
@@ -14,7 +14,7 @@ from web.backend.server.application.matchmakingService import MatchmakingService
 
 class CreateLobbyCommand(Command):
 
-    def __init__(self, matchmaking_service):
+    def __init__(self, matchmaking_service: MatchmakingService):
         self.matchmaking_service = matchmaking_service
 
     def execute(self, message):
@@ -36,7 +36,7 @@ class CreateLobbyCommand(Command):
 
 class JoinLobbyCommand(Command):
 
-    def __init__(self, matchmaking_service):
+    def __init__(self, matchmaking_service: MatchmakingService):
         self.matchmaking_service = matchmaking_service
 
     def execute(self, message):

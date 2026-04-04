@@ -1,16 +1,16 @@
-import os,socket, threading, json
+import os,json
 from game_logic.state import GameState
 from database.GameRepo import RedisRepository
-from server.application.commands.game_commands import PlayCardCommand,GiveHintCommand
+from server.application.commands.game_commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
 from infrastructure.redis_provider import RedisProvider
-
+import asyncio,websockets
 HOST = '0.0.0.0'
 PORT = int(os.getenv("PORT","12345"))
 GAME_ID = os.getenv("GAME_ID", "testgame")
 PLAYERS_JSON = os.getenv("PLAYERS_JSON", '["Alice","Bob"]')
 ALLOWED_PLAYERS = json.loads(PLAYERS_JSON)
 TIMEOUT = 5000
-
+# OLD ARCHITECTURE
 class Server:
     def __init__(self,game_id,allowed_players,game_repository):
         self.game_id = game_id
@@ -25,47 +25,50 @@ class Server:
             "HINT": GiveHintCommand(),
             "DISC": DiscardCardCommand()
         }
-        self.lock = threading.Lock()
+        self.lock = asyncio.Lock()
    
-    def broadcast_state(self):
+    async def broadcast_state(self):
         """Send current game state to all connected clients after saving to game repository."""
-        #global r
         snap = self.game.serialize_state()
         try:
-            self.game_repository.save_game(self.game_id, snap)
+            self.game_repository.save_game(self.game_id, snap) # we should think about making this async so to not block server with slow sync repo write/read
         except Exception as e:
             print(f"[ERROR] Could not persist game state: {e}", flush=True)
 
-        msg = json.dumps({"type": "STATE", **snap}) + "\n"
-        for conn, addr in self.clients.values():
+        msg = json.dumps({"type": "STATE", **snap})
+        dead = []
+        for name, ws in self.clients.items():
             try:
-                conn.sendall(msg.encode())
-            except Exception:
-                pass
+                await ws.send(msg)
+            except:
+                dead.append(name)
+
+        for name in dead:
+            del self.clients[name]
         
-    def handle_join_message(self,join,conn,addr):
+    async def handle_join_message(self,join,websocket):
         name   = join.get("player")
         game_id = join.get("game_id") 
 
-        with self.lock:
+        async with self.lock: 
             if game_id != self.game_id:
-                conn.sendall((json.dumps({"type":"ERROR","msg":"Wrong game_id"}) + "\n").encode())
-                conn.close()
+                await websocket.send(json.dumps({"type":"ERROR","msg":"Wrong game_id"}))
+                await websocket.close()
                 return False
 
             if name not in self.allowed_players:
-                conn.sendall((json.dumps({"type":"ERROR","msg":"Player not assigned to this game"}) + "\n").encode())
-                conn.close()
+                await websocket.send(json.dumps({"type":"ERROR","msg":"Player not assigned to this game"}))
+                await websocket.close()
                 return False
 
             if name in self.clients:
-                conn.sendall((json.dumps({"type":"ERROR","msg":"Player already connected"}) + "\n").encode())
-                conn.close()
+                await websocket.send(json.dumps({"type":"ERROR","msg":"Player already connected"}))
+                await websocket.close()
                 return False
 
-            self.clients[name] = (conn, addr)
+            self.clients[name] = websocket
             idx = self.player_indices[name]
-            conn.sendall((json.dumps({"type":"ASSIGN_IDX","idx":idx}) + "\n").encode())
+            await websocket.send(json.dumps({"type":"ASSIGN_IDX","idx":idx}))
 
             if len(self.clients) == self.expected_players and self.game is None:
                 saved_state = self.game_repository.load_game(self.game_id)
@@ -73,76 +76,73 @@ class Server:
                     self.game = GameState.from_serialized(saved_state)
                 else:
                     self.game = GameState(self.allowed_players)
-                self.broadcast_state()
+                await self.broadcast_state()
             elif self.game is not None:
-                snap = self.game.serialize_state()
-                self.broadcast_state()
+                await self.broadcast_state()
         return True
     
-    def handle_action_message(self,msg,conn):
-        if not self.game:
-            return 
-        with self.lock:
+    async def handle_action_message(self,msg,websocket):
+        async with self.lock: 
+                    if not self.game:
+                        return
                     try:
                         cmd_type = msg.get("type")
                         command = self.commands.get(cmd_type)
                         if not command:
                             raise ValueError(f"Unknown command type: {cmd_type}")
                         command.execute(self,msg)
-                        self.broadcast_state()
+                        await self.broadcast_state()
                     except Exception as e:
-                        err = json.dumps({"type":"ERROR","msg":str(e)}) + "\n"
-                        conn.sendall(err.encode())
+                        await websocket.send(json.dumps({
+                            "type": "ERROR",
+                            "msg": str(e)
+                        }))
     
-    def handle_disconnect(self,conn,conn_file):
-        with self.lock:
-            for player_name, (player_conn, _) in list(self.clients.items()):
-                if player_conn == conn:
-                    del self.clients[player_name]
+    async def handle_disconnect(self,websocket):
+        async with self.lock:
+            for name, ws in list(self.clients.items()):
+                if ws == websocket:
+                    del self.clients[name]
                     break
 
-            conn_file.close()
-            conn.close()
-
-    def handle_client(self, conn, addr):
+    async def handle_client(self, websocket):
         '''loop that handles client messages depending on whether all have joined.'''
-        conn_file = conn.makefile('r')
         try:
             '''JOIN STATE'''
-            line = conn_file.readline()
-            if not line:
-                conn.close()
-                return
-            join = json.loads(line)
-            should_continue = self.handle_join_message(join,conn,addr)
+            raw = await websocket.recv()
+            join = json.loads(raw)
+            should_continue = await self.handle_join_message(join,websocket)
             if not should_continue:
-                conn.close()
                 return
-            while True:
+            
+            async for raw in websocket:
                 '''ACTION state'''
-                line = conn_file.readline()
-                if not line:
-                    break
-                msg = json.loads(line)
-                self.handle_action_message(msg,conn)
+                msg = json.loads(raw)
+                await self.handle_action_message(msg,websocket)
+
+        except websockets.exceptions.ConnectionClosed:
+            pass
+
         finally:
             '''DISCONNECT STATE'''
-            self.handle_disconnect(conn,conn_file)
+            await self.handle_disconnect(websocket)
         
-def run_server_socket(server, host, port):
-    with socket.socket() as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((host, port))
-        s.listen()
-        while True:
-            conn, addr = s.accept()
-            threading.Thread(target=server.handle_client, args=(conn, addr), daemon=True).start()
-
-def main():
+async def main():
     redis_provider = RedisProvider()
-    game_repo = RedisRepository(redis_provider.get_master_client(), redis_provider.get_master_client)
-    server = Server(GAME_ID,ALLOWED_PLAYERS,game_repo)
-    run_server_socket(server,HOST,PORT)
+    game_repo = RedisRepository(
+        redis_provider.get_master_client(),
+        redis_provider.get_master_client
+    )
+
+    server = Server(GAME_ID, ALLOWED_PLAYERS, game_repo)
+
+    async def handler(websocket):
+        await server.handle_client(websocket)
+
+    await websockets.serve(handler, HOST, PORT)
+
+    print(f"WebSocket server running on {HOST}:{PORT}")
+    await asyncio.Future()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

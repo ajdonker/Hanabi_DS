@@ -4,6 +4,7 @@ import json
 import os
 import time
 
+SERVER_TIMEOUT_TIME = 50000
 
 class GameServerManager:
 
