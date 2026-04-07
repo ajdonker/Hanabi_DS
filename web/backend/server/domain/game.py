@@ -1,32 +1,42 @@
-from server.domain.cards import Color, Deck, HandCard, Number
+from server.domain.cards import Color, Deck, HandCard, Number, Card
 from server.domain.player import Player
-from domain.exceptions import *
+from server.domain.exceptions import *
+from typing import List 
+
 class Board() :
     def __init__(self, deck : Deck, piles : dict, discards : list, token : int, misfires : int):
-        self.deck = deck
-        self.piles = piles
-        self.discards = discards
+        self._deck = deck
+        self._piles = piles
+        self._discards = discards
         self._token = token
         self._misfires = misfires
 
     #getters
     @property
     def misfires(self):
-        return self._misfires # infinite recursion it says like this
+        return self._misfires 
 
     @property
     def token(self):
         return self._token
+    
+    @property
+    def piles(self):
+        return self._piles
+
+    @property
+    def deck(self):
+        return self._deck
 
     def addDiscard(self, card): #add a card to discard pile
-        self.discards.append(card)
+        self._discards.append(card)
         
     def drawCard(self) -> HandCard | None : #draw a card (if possible)
-        return self.deck.draw()
+        return self._deck.draw()
 
     def updateToken(self, mode : str): #update Token based on the move
         if(mode == '+'):
-            if(self._token != 8): self._token += 1
+            if(self._token < 8): self._token += 1
         elif(mode == '-'):
             if(self._token == 0): raise NoTokenException()
             else : self._token -= 1
@@ -37,29 +47,37 @@ class Board() :
         self._misfires -= 1
 
     def updatePiles(self, card): #when a card is correctly played, the board is updated
-        value = card.number
-        color = card.color
-
-        self.piles[color] = value
+        value = card.number.value
+        color = card.color 
+        self._piles[color] = value # where is the check on correct 
 
     #a gameover condition
     def completedPiles(self):
-        if(self.calculateScore() == 25): return True        
-        #return all(height == Number.FIVE.value for height in self.piles.values())  alternative
+        return all(v == 5 for v in self._piles.values())        
+        #return all(height == Number.FIVE.value for height in self._piles.values())  alternative
 
     def calculateScore(self): #calculate the score based on the piles in the board
-        return sum(self.piles.values())
+        return sum(self._piles.values())
 
 class Game():
     def __init__(self, gameID : int, board : Board, players : list[Player], playerTurn : str):
-        self.gameID = gameID
-        self.board = board
-        self.players = {p.username: p for p in players} #create a dict for quick access {"username" : Player obj}
-        self.turnOrder = [p.username for p in players] #list of usernames in the order of the turns
-        self.playerTurn = playerTurn 
-        self.finalTurn = False
+
+        self._gameID = gameID
+        self._board = board
+        self._players = {p._username: p for p in players} #create a dict for quick access {"username" : Player obj}
+        self._turnOrder = [p._username for p in players] #list of usernames in the order of the turns
+        self._playerTurn = playerTurn 
+        self._finalTurn = False
+
+    def getPlayer(self, username: str) -> Player:
+
+        if username not in self._players:
+            raise KeyError(f"Player {username} not found")
+        
+        return self._players[username]
     
-    def _create_initial_game(self, game_id, player_names):
+    @staticmethod
+    def _create_initial_game(game_id:int = 0, player_names: List[str] = ["Player1","Player2"]):
         players = [Player(name) for name in player_names]
 
         deck = Deck()
@@ -68,7 +86,7 @@ class Game():
         # deal cards
         for p in players:
             for _ in range(5):  # or 4 depending on rules
-                p.addCard(deck.draw())
+                p.addCard(HandCard(deck.draw()))
 
         board = Board(
             deck=deck,
@@ -85,37 +103,37 @@ class Game():
             playerTurn=player_names[0]
         )
 
-    def to_dict(self):
+    def to_dict(self):  # not good for now
         return {
-            "game_id": self.gameID,
-            "player_turn": self.playerTurn,
-            "final_turn": self.finalTurn,
+            "game_id": self._gameID,
+            "player_turn": self._playerTurn,
+            "final_turn": self._finalTurn,
 
             "players": [
                 {
-                    "username": p.username,
+                    "username": p._username,
                     "hand": [
                         {
-                            "number": c.number,
-                            "color": c.color.name,
+                            "number": c.card.number,
+                            "color": c.card.color.name,
                             "hints": c.getHints()  # or however you store hints
                         }
-                        for c in p.getHand()
+                        for c in p.getHand
                     ],
-                    "last_turn": p.lastTurn
+                    "last_turn": p._lastTurn
                 }
-                for p in self.players.values()
+                for p in self._players.values()
             ],
 
             "board": {
-                "piles": {c.name: v for c, v in self.board.piles.items()},
+                "piles": {c.name: v for c, v in self._board._piles.items()},
                 "discards": [
                     {"number": c.number, "color": c.color.name}
-                    for c in self.board.discards
+                    for c in self._board._discards
                 ],
-                "tokens": self.board.token,
-                "misfires": self.board.misfires,
-                "deck_count": self.board.deck.get_deck_count()
+                "tokens": self._board._token,
+                "misfires": self._board._misfires,
+                "deck_count": self._board._deck.get_deck_count()
             }
         } 
     @staticmethod
@@ -128,14 +146,16 @@ class Game():
             hand = []
             for c_data in p_data["hand"]:
                 card = HandCard(
-                    number=c_data["number"],
-                    color=Color[c_data["color"]]
+                    Card(
+                        Number(c_data["number"]),
+                        Color(c_data["color"])
+                        )
                 )
                 card.setHints(c_data.get("hints", []))
                 hand.append(card)
 
             p.setHand(hand)
-            p.lastTurn = p_data.get("last_turn", False)
+            p._lastTurn = p_data.get("last_turn", False)
             players.append(p)
 
         # --- board ---
@@ -166,136 +186,198 @@ class Game():
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int):
 
-        self.canPlay(username,self.board) #check if player can actually play
+        self.canPlay(username,self._board) #check if player can actually play
         
-        player = self.players[username]
+        player = self._players[username]
         card = player.getCardByID(cardIndex)
 
-        board = self.board
+        board = self._board
         color = card.color
-        value = card.number
+        value = card.number.value
         
         player.removeCard(cardIndex)
         card.removeHints()  #remove hint
 
-        if(board.piles[color] == 5) : #Corresponding pile is already full
+        exc = False
+
+        if(board._piles[color] == 5) : #Corresponding pile is already full
             board.addDiscard(card)
             board.discardMisfire()
-            raise MisfireException()  #to be catched in application layer
+            exc = True
+            #raise MisfireException()  #to be catched in application layer
 
-        if(value == board.piles[color] + 1) : #Card correctly placed
+        if(value == board._piles[color] + 1) : #Card correctly placed
             board.updatePiles(card)
         else : # Wrong order --> mistake
             board.addDiscard(card)
             board.discardMisfire()
-            raise MisfireException()
+            #raise MisfireException()
+            exc = True
         
         #check gameover
         self.checkGameOver()
         
         #unless game is over, the player must draw a card (regardless of his action)
         cardDrawn = board.drawCard() #update board
-        if(board.deck.lastCard): self.finalTurn = True
+        if(board._deck.get_deck_count() <= 1): 
+            self._finalTurn = True
+            player.setLastTurn(True)
         
-        if(cardDrawn != None): player.addCard(cardDrawn)
+        if(cardDrawn != None): player.addCard(HandCard(cardDrawn))
         
         self.checkGameOver()
         
         #change turn
         self.changeTurn()
+        if exc:
+            raise MisfireException()
 
 
-    def giveHint(self, username : str, cardIndex : list[int], hintType : str, value : str):
-        
-        self.canPlay(username, self.board)
-         
-        player = self.getPlayer(username)
-        board = self.board        
-        playerHand = player.getHand()
+    def giveHint(self, username: str, target: str, *, color: Color = None, number: Number = None):
 
-        if(hintType == "color"):
-            hintColor = Color[value.upper()] #what if key it's not found ?
-            for idx in cardIndex:
-                playerHand[idx].setHintColor(hintColor)
-                
-        elif(hintType == "number"):
-            hintNumber = Number(int(value)) #what if the string doesn't contain a number ?
-            for idx in cardIndex:
-                playerHand[idx].setHintNumber(hintNumber)
-    
-        else:
-            raise UnknownErrorException()
-        
+        board = self._board
+
+        invalid = (
+            (color is None and number is None) or
+            (color is not None and number is not None) or
+            (username == target) or
+            (board._token == 0)
+        )
+
+        self.canPlay(username, board)
+
+        player = self.getPlayer(target)
+        playerHand = player.getHand
+
+        matched = False
+
+        if not invalid:
+            for card in playerHand:
+                if color is not None:
+                    if card.card.color == color:
+                        card.setHintColor(color)
+                        matched = True
+
+                elif number is not None:
+                    if card.card.number == number:
+                        card.setHintNumber(number)
+                        matched = True
+
+        success = (not invalid) and matched
+
         board.updateToken('-')
-        
-        #check gameover
-        self.checkGameOver()
 
-        #change turn
+        self.checkGameOver()
         self.changeTurn()
+
+        if (not success):
+            raise InvalidHintException
 
     def discardCard(self, username : str, cardIndex: int):
                     
-        self.canPlay()
+        self.canPlay(username, self._board)
               
         player = self.getPlayer(username)
         card = player.getCardByID(cardIndex)
-        board = self.board
+        board = self._board
 
-        #remove hints
         card.removeHints()
-
         player.removeCard(cardIndex)
         board.addDiscard(card)
 
-        #board update        
         board.updateToken('+')
 
-        cardDrawn = board.drawCard() #update board
-        if(board.deck.lastCard): self.finalTurn = True
-        
-        if(cardDrawn != None): player.addCard(cardDrawn)
-        
-        #check gameover
+        cardDrawn = board.drawCard() 
+        if(board._deck.get_deck_count() < 1): 
+            self._finalTurn = True
+            player.setLastTurn(True)
+            
+        if(cardDrawn != None): player.addCardAt(cardIndex,HandCard(cardDrawn))
+        print("AFTER INSERT:", [id(c) for c in player._hand])
+
         self.checkGameOver()
         
-        #change turn
         self.changeTurn()
 
     #-------------------Utils-------------------#
 
     def canPlay(self, username : str, board : Board | None):
         
-        if(username != self.playerTurn): 
+        if(username != self._playerTurn): 
             raise WrongTurnException() #to be catched in application layer (done)
 
         elif(board._token == 0):
             raise NoTokenException() #to be catched in application layer (todo)
         
-        elif(self.finalTurn): #can play, but it's his last turn
-            self.players[username].setLastTurn(True)
+        elif(self._finalTurn): #can play, but it's his last turn
+            self._players[username].setLastTurn(True)
         
 
     def changeTurn(self):
         
-        playerTurn = self.playerTurn 
+        playerTurn = self._playerTurn 
         
-        currentPlayerIndex = self.turnOrder.index(playerTurn)
-        nextPlayerIndex = (currentPlayerIndex + 1) % len(self.players) #return at the beginning of the list when is at the end
-        self.playerTurn = self.turnOrder[nextPlayerIndex]
+        currentPlayerIndex = self._turnOrder.index(playerTurn)
+        nextPlayerIndex = (currentPlayerIndex + 1) % len(self._players) #return at the beginning of the list when is at the end
+        self._playerTurn = self._turnOrder[nextPlayerIndex]
         
-        if(self.finalTurn):
-            self.players[playerTurn].setLastTurn(True)
+        if(self._finalTurn):
+            self._players[playerTurn].setLastTurn(True)
         
     def checkGameOver(self) -> int | None: 
         
-        if(self.board._misfires == 0): #no misfires left
-            return self.board.calculateScore()
-        elif(self.board.completedPiles): #all piles completed
-            return self.board.calculateScore()
-        elif all(player.lastTurn for player in self.players_map.values()): #all player made their last move
-            return self.board.calculateScore()
-        
-        #Game continues
+        if self._board._misfires == 0:
+            return self._board.calculateScore()
+
+        if self._board.completedPiles():
+            return self._board.calculateScore()
+
+        if all(p._lastTurn for p in self._players.values()):
+            return self._board.calculateScore()
+
         return None
-        
+    
+    def debugPrintState(self):
+        print("\n" + "="*60)
+        print(f"GAME DEBUG STATE (GameID: {self._gameID})")
+        print("="*60)
+
+        # --- Turn Info ---
+        print("\n--- TURN INFO ---")
+        print(f"Current Player Turn: {self._playerTurn}")
+        print(f"Turn Order: {self._turnOrder}")
+        print(f"Final Turn Active: {self._finalTurn}")
+
+        # --- Board ---
+        board = self._board
+        print("\n--- BOARD ---")
+        print(f"Tokens: {board._token}")
+        print(f"Misfires (lives): {board._misfires}")
+        print(f"Piles: {board._piles}")
+        print(f"Discard pile size: {len(board._discards)}")
+        print(f"Deck size: {len(board._deck._cards)}")
+
+        # --- Players ---
+        print("\n--- PLAYERS ---")
+        for username in self._turnOrder:  # preserves actual turn order
+            player = self._players[username]
+
+            print(f"\nPlayer: {username}")
+            print(f"  Last Turn Flag: {player._lastTurn}")
+
+            print("  Hand:")
+            for i, handCard in enumerate(player._hand):
+                card = handCard.card
+
+                # safe hint access
+                hint_color = getattr(handCard, "_hintColor", None)
+                hint_number = getattr(handCard, "_hintNumber", None)
+
+                print(
+                    f"    [{i}] "
+                    f"{card.color}-{card.number} | "
+                    f"Hints -> color: {hint_color}, number: {hint_number} | "
+                    f"HandCardID: {id(handCard)} CardID: {id(card)}"
+                )
+
+        print("\n" + "="*60 + "\n")

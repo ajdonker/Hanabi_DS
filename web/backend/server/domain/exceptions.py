@@ -12,3 +12,6 @@ class UnknownErrorException(Exception):
 
 class NoTokenException(Exception):
     pass
+
+class InvalidHintException(Exception):
+    pass

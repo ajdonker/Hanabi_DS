@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from web.backend.server.presentation.connection_manager import ConnectionManager
+from server.presentation.connection_manager import ConnectionManager
 
 
 class CommandError(Exception):

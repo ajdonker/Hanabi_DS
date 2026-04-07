@@ -1,0 +1,10 @@
+client
+config
+data
+database
+game_logic
+infrastructure
+matchmaker
+presentation
+server
+tests

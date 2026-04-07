@@ -1,0 +1,9 @@
+[project]
+name = "hanabi"
+version = "0.1.0"
+
+[tool.setuptools]
+package-dir = {"" = "web/backend"}
+
+[tool.setuptools.packages.find]
+where = ["web/backend"]

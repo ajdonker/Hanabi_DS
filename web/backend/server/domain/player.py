@@ -1,37 +1,55 @@
-from web.backend.server.domain.cards import HandCard
-from web.backend.server.domain.cards import Card
+from server.domain.cards import HandCard
+from server.domain.cards import Card
 
 class Player():
-    def __init__(self, username:str, hand:list[HandCard]):
-        self.username = username
-        self.hand = hand
-        self.lastTurn = False #used for checking GameOver
+    def __init__(self, username:str, hand:list[HandCard] = None):
+        self._username = username
+        self._hand = hand if hand is not None else []
+        self._lastTurn = False #used for checking GameOver
 
     #getters
     @property
     def getHand(self) -> list[HandCard]:
-        return self.hand
+        return self._hand
 
     @property
     def getUsername(self) -> str:
-        return self.username
+        return self._username
     
-    @setattr
-    def setLastTurn(self, value : bool):
-        self.lastTurn = value
+    def setHand(self, hand: list[HandCard]):
+        self._hand = hand
+
+    def getLastTurn(self):
+        return self._lastTurn
+    
+    def setLastTurn(self, value: bool):
+        self._lastTurn = value
         
     #player actions
-    def removeCard(self, cardIndex : int):
-        self.hand.pop(cardIndex)
+    def removeCard(self, cardIndex: int):
+        card = self._hand.pop(cardIndex)
+        card.removeHints()
+        return card
 
     def addCard(self, card : HandCard):
-        
+        if card is not None and not isinstance(card, HandCard):
+            raise TypeError("Expected HandCard")
         if(card is None):
-            self.lastTurn = True #it's player last turn
+            self._lastTurn = True #it's player last turn ??
         else:
-            self.hand.insert(0, HandCard) 
+            self._hand.insert(0, card) 
+
+    def addCardAt(self, index: int, card: HandCard):
+        if card is not None and not isinstance(card, HandCard):
+            raise TypeError("Expected HandCard")
+        if(card is None):
+            self._lastTurn = True #it's player last turn ??
+        else:
+            self._hand.insert(index, card) 
 
     #utils
     def getCardByID(self, cardIndex) -> HandCard:
-        return self.hand[cardIndex]
+        if cardIndex < 0 or cardIndex >= len(self._hand):
+            raise IndexError("Invalid card index")
+        return self._hand[cardIndex]
         

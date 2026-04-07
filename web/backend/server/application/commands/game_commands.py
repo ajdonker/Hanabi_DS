@@ -2,7 +2,7 @@ from presentation.event import Event
 from server.domain.cards import Color
 from database.GameRepo import RedisRepository
 from database.repos import IGameRepository
-from commands.commands import Command
+from server.application.commands.commands import Command
 from server.domain.exceptions import *
 from server.domain.game import Game
 
@@ -96,10 +96,10 @@ class GiveHintCommand(Command):
             number = data["number"]
 
             game.giveHint(
-                from_player_idx=from_player,
-                to_player_idx=to_player,
-                color=color,
-                number=number
+                from_player,
+                to_player,
+                color,
+                number
             )
 
             self.repo.save(game)

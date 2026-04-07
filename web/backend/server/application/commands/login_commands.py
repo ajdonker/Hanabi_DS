@@ -1,5 +1,5 @@
 from database.repos import IGameRepository, ILobbyRepository, IUserRepository
-from commands import Command
+from server.application.commands.commands import Command
 from presentation.event import Event
 from database.GameRepo import RedisRepository
 

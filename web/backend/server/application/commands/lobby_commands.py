@@ -1,16 +1,8 @@
-from commands import Command
-from database.repos import RedisRepository
-from application import lobbyInitializer
-from web.backend.presentation.event import Event
-from web.backend.server.application.waitingPlayer import WaitingPlayer
-from web.backend.server.application.matchmakingService import MatchmakingService
-
-
-#example of JSON request to create a lobby:
-# { lobby_id: "lobby1", 
-#   max_users: 4,
-#   user_creator: "alice" 
-# }
+from server.application.commands.commands import Command
+from server.application import lobbyInitializer
+from presentation.event import Event
+from server.application.waitingPlayer import WaitingPlayer
+from server.application.matchmakingService import MatchmakingService
 
 class CreateLobbyCommand(Command):
 

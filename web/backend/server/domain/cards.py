@@ -14,58 +14,90 @@ class Number(Enum):
 
 class Card():
     def __init__(self, number:Number, color:Color):
-        self.number = number
-        self.color = color
+        self._number = number
+        self._color = color
     
     #getters
     @property 
     def number(self):
-        return self.number
+        return self._number
     
     @property 
     def color(self):
-        return self.color
+        return self._color
 
 class HandCard():
     def __init__(self, card:Card):
-        self.card = card
-        self.hintColor = Color | None
-        self.hintNumber = Number | None
+        self._card = card
+        self._hintColor = None
+        self._hintNumber = None
     
-    @property 
+    @property
     def card(self):
-        return self.card
+        return self._card
+    
+    @property
+    def color(self):
+        return self._card.color
+
+    @property
+    def number(self):
+        return self._card.number
     
     def setHintColor(self, color:Color):
-        self.hintColor = color
+        self._hintColor = color
 
     def setHintNumber(self, number:Number):
-        self.hintNumber = number
+        self._hintNumber = number
 
     def removeHints(self):
-        self.hintColor = None
-        self.hintNumber = None
+        self._hintColor = None
+        self._hintNumber = None
+
+    def setHints(self, hints: dict):
+        if hints is None:
+            return
+        if hints.get("color"):
+            self._hintColor = Color[hints["color"]]
+        if hints.get("number"):
+            self._hintNumber = Number(hints["number"])
+            
+    def getHints(self):
+        return {
+            "color": self._hintColor if self._hintColor else None,
+            "number": self._hintNumber if self._hintNumber else None
+        }
 
 class Deck():
     def __init__(self):
-        self.cards = [None]*50 
+        self._cards = []
+        for color in Color:
+            self._cards += [Card(Number.ONE, color)] * 3
+            self._cards += [Card(Number.TWO, color)] * 2
+            self._cards += [Card(Number.THREE, color)] * 2
+            self._cards += [Card(Number.FOUR, color)] * 2
+            self._cards += [Card(Number.FIVE, color)] * 1
+        self._deck_count = 50
 
     @staticmethod
     def from_count(count: int):
         deck = Deck()
-        deck.cards = [None] * count
-        deck.deck_count = count
+        deck._cards = [None] * count
+        deck._deck_count = count
         return deck
     
     def shuffle(self):
-        random.shuffle(self.cards)
+        random.shuffle(self._cards)
 
-    def draw(self):
-        if self.cards: #still cards in the deck
-            self.count -= 1
-            return self.cards.pop() 
+    def draw(self) -> Card: 
+        if self._cards: #still cards in the deck
+            self._deck_count -= 1
+            return self._cards.pop() 
         else:  #no cards left
             return None # returns the top card if such exist
     
     def lastCard(self):
-        return self.cards.count == 1
+        return len(self._cards) == 1
+    
+    def get_deck_count(self):
+        return len(self._cards)
