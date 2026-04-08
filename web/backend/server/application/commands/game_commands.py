@@ -12,28 +12,38 @@ class PlayCardCommand(Command):
         self.repo = repo
         
     def execute(self, data) -> list[Event]:
-    
+        
         try:
+            
             game_id = data["gameId"] #can raise KeyError
-
+            player_id=data["playerId"]
+            card_index=data["cardIndex"]
+            
             raw = self.repo.load_game(game_id)
-
             if raw is None: 
                 raise GameNotFoundException()
         
             game = Game.from_dict(raw)
-        
-            player_id=data["playerId"]
-            card_index=data["cardIndex"]
-            
-            game.playCard(player_id, card_index) #can raise a lot of exceptions
+                
+            result = game.playCard(player_id, card_index) #can raise exceptions
 
             self.repo.save_game(game_id,game.to_dict()) 
+            
+            events = []
 
-            return [
-                Event("card_played", {"playerId": player_id, "cardIndex": card_index}),
-                Event("turn_change", {"playerId": player_id})
-            ]
+            if result.success :
+               events.append(Event("card_correct", {"playerId": player_id, "cardIndex": card_index}))
+            else :    
+                events.append(Event("card_wrong", {"playerId": player_id, "cardIndex": card_index}))
+                events.append(Event("misfire", {"playerId": player_id, "misfire" : result.misfire}))
+            
+            if result.game_over :
+                events.append(Event("game_over", {"score" : result.score}))
+                return events
+
+            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
+            
+            return events           
         
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
