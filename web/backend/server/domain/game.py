@@ -232,7 +232,6 @@ class Game():
         if exc:
             raise MisfireException()
 
-
     def giveHint(self, username: str, target: str, *, color: Color = None, number: Number = None):
 
         board = self._board

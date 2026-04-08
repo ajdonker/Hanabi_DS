@@ -1,8 +1,8 @@
 import pytest
-from server.domain.cards import Card, Color, Number, Deck, HandCard
-from server.domain.player import Player
-from server.domain.game import Game, Board
-from server.domain.exceptions import *
+from web.backend.server.domain.cards import Card, Color, Number, Deck, HandCard
+from web.backend.server.domain.player import Player
+from web.backend.server.domain.game import Game, Board
+from web.backend.server.domain.exceptions import *
 
 # @pytest.fixture
 # def simple_card():

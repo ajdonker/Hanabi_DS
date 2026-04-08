@@ -10,9 +10,13 @@ class PlayCardCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
         
-    def execute(self, data):
-
-        game_id = data["gameId"]
+    def execute(self, data) -> list[Event]:
+    
+        try:
+            game_id = data["gameId"]
+        except KeyError:
+            return [Event("error", {"message": "Corrisponding gameId not found in request"})]
+        
         raw = self.repo.load_game(game_id)
 
         if raw is None:
@@ -23,6 +27,7 @@ class PlayCardCommand(Command):
         try:
             player_id=data["playerId"]
             card_index=data["cardIndex"]
+            
             game.playCard(player_id, card_index)
 
             self.repo.save_game(game_id,game.to_dict())
@@ -47,7 +52,7 @@ class DiscardCardCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
         
-    def execute(self, data):
+    def execute(self, data) -> list[Event]:
         
         game_id = data["gameId"]
         raw = self.repo.load_game(game_id)
@@ -62,17 +67,15 @@ class DiscardCardCommand(Command):
             card_index=data["cardIndex"]
             game.discardCard(player_id, card_index)
 
-            self.repo.save(game)
+            self.repo.save_game(game_id, game.to_dict())
 
             return [
                 Event("card_discarded", {"playerId": player_id, "cardIndex": card_index}),
                 Event("turn_change", {"playerId": player_id})
             ]
             
-        except WrongTurnException as e:
-            return [
-                Event("error", {"message": "Not your turn"})
-            ]
+        except WrongTurnException :
+            return [Event("error", {"message": "Not your turn"})]
 
 class GiveHintCommand(Command):
     # we refactored repos so this way unsure if alrights
@@ -102,7 +105,7 @@ class GiveHintCommand(Command):
                 number
             )
 
-            self.repo.save(game)
+            self.repo.save_game(game)
 
             return [
                 Event("hint_given", {

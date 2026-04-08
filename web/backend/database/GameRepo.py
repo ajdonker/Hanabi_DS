@@ -25,13 +25,16 @@ class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
         self._retry(lambda: self.redis.set(key, payload))
         
     def load_user(self, username):
-        pass
+        key = f"hanabi:user:{username}"
+        raw = self._retry(lambda: self.redis.get(key))
+        return json.loads(raw) if raw else None
     
     def save_user(self, user):
-        pass
+        key = f"hanabi:user:{user.username}"
+        payload = json.dumps({
+            "fullName": user.fullName,
+            "email": user.email,
+            "password": user._hashedPass
+        })
+        self._retry(lambda: self.redis.set(key, payload))
     
-    def load_lobby(self, lobby_id):
-        pass
-    
-    def save_lobby(self, lobby):
-        pass

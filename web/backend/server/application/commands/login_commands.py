@@ -1,26 +1,30 @@
+import hashlib
+
 from database.repos import IGameRepository, ILobbyRepository, IUserRepository
 from server.application.commands.commands import Command
 from presentation.event import Event
 from database.GameRepo import RedisRepository
+from web.backend.server.application.user import User
 
 class RegisterCommand(Command):
     def __init__(self):
         self.userRepository = RedisRepository()
         
     def execute(self, data):
+        
+        fullName = data["fullName"]
+        email = data["email"]
         username = data["username"]
-        password = data["password"] #of course you'd want to hash this, it's just a blueprint
+        password = data["password"]
 
-        if self.userRepository.get_user(username):
-            return [
-                Event("error", {"message": "Username already exists"})
-            ]
+        user = User(fullName, username, email, password)
+        
+        if self.userRepository.load_user(username): #if return something, user already exists
+            return [Event("error", {"message": "Username already exists"})]
 
-        self.userRepository.save_user(username, password)
+        self.userRepository.save_user(user)
 
-        return [
-            Event("registration_success", {"message": "Registration successful"})
-        ]
+        return [Event("registration_success", {"message": "Registration successful"})]
 
 class LoginCommand(Command):
     def __init__(self):
@@ -30,13 +34,11 @@ class LoginCommand(Command):
         username = data["username"]
         password = data["password"]
 
-        user = self.userRepository.get_user(username)
-
-        if not user or user.password != password:
-            return [
-                Event("error", {"message": "Invalid username or password"})
-            ]
-
-        return [
-            Event("login_success", {"message": "Login successful"})
-        ]
+        user = self.userRepository.load_user(username)
+        if user is None :
+            return [Event("error", {"message": "User not found"})]
+        
+        if user._hashedPass != hashlib.sha256(password.encode('utf-8')).hexdigest():
+            return [Event("error", {"message": "Invalid username or password"})]
+        
+        return [Event("login_success", {"message": "Login successful"})]
