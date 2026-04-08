@@ -89,12 +89,12 @@ class Deck():
     def shuffle(self):
         random.shuffle(self._cards)
 
-    def draw(self) -> Card: 
+    def draw(self) -> Card | None: 
         if self._cards: #still cards in the deck
             self._deck_count -= 1
             return self._cards.pop() 
         else:  #no cards left
-            return None # returns the top card if such exist
+            return None # retur | Nonens the top card if such exist
     
     def lastCard(self):
         return len(self._cards) == 1

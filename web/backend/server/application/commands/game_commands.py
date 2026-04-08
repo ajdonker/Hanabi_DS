@@ -5,6 +5,7 @@ from database.repos import IGameRepository
 from server.application.commands.commands import Command
 from server.domain.exceptions import *
 from server.domain.game import Game
+from web.backend.server.domain.exceptionMapper import ExceptionMapper
 
 class PlayCardCommand(Command):
     def __init__(self,repo: IGameRepository):
@@ -13,40 +14,29 @@ class PlayCardCommand(Command):
     def execute(self, data) -> list[Event]:
     
         try:
-            game_id = data["gameId"]
-        except KeyError:
-            return [Event("error", {"message": "Corrisponding gameId not found in request"})]
-        
-        raw = self.repo.load_game(game_id)
+            game_id = data["gameId"] #can raise KeyError
 
-        if raw is None:
-            return [Event("error", {"message": "Game not found"})]
-        
-        game = Game.from_dict(raw)
+            raw = self.repo.load_game(game_id)
 
-        try:
+            if raw is None: 
+                raise GameNotFoundException()
+        
+            game = Game.from_dict(raw)
+        
             player_id=data["playerId"]
             card_index=data["cardIndex"]
             
-            game.playCard(player_id, card_index)
+            game.playCard(player_id, card_index) #can raise a lot of exceptions
 
-            self.repo.save_game(game_id,game.to_dict())
+            self.repo.save_game(game_id,game.to_dict()) 
 
             return [
                 Event("card_played", {"playerId": player_id, "cardIndex": card_index}),
                 Event("turn_change", {"playerId": player_id})
             ]
-            
-        except WrongTurnException :
-            return [
-                Event("error", {"message": "Not your turn"})
-            ]
         
-        except MisfireException :
-            return [
-                Event("misfire", {"message": "You played a wrong card"}),
-                Event("turn_change", {"playerId": player_id})
-            ]      
+        except GameException as ex:
+            return ExceptionMapper.to_events(ex)
     
 class DiscardCardCommand(Command):
     def __init__(self,repo: IGameRepository):

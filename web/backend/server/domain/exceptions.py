@@ -1,10 +1,32 @@
-class WrongTurnException(Exception):
+from web.backend.presentation.event import Event
+
+class GameException(Exception):
+    ###Base class for domain exceptions
     pass
 
-class InvalidCardException(Exception):
+#Managing the game
+
+class KeyErrorException(GameException):
     pass
 
-class MisfireException(Exception):
+class GameNotFoundException(GameException):
+    pass
+
+###
+
+class WrongTurnException(GameException): #It's not your turn
+    pass
+
+class NoTokenException(GameException): #No tokens left
+    pass
+
+class MisfireException(GameException): 
+    pass
+
+class InvalidCardException(GameException):
+    pass
+
+class InvalidHintException(GameException):
     pass
 
 class UnknownErrorException(Exception):
@@ -13,5 +35,4 @@ class UnknownErrorException(Exception):
 class NoTokenException(Exception):
     pass
 
-class InvalidHintException(Exception):
-    pass
+

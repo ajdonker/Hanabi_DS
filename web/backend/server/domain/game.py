@@ -40,8 +40,6 @@ class Board() :
         elif(mode == '-'):
             if(self._token == 0): raise NoTokenException()
             else : self._token -= 1
-        else :
-            raise UnknownErrorException()
 
     def discardMisfire(self):
         self._misfires -= 1
@@ -136,6 +134,7 @@ class Game():
                 "deck_count": self._board._deck.get_deck_count()
             }
         } 
+    
     @staticmethod
     def from_dict(data: dict):
         # --- players ---
@@ -183,11 +182,12 @@ class Game():
         game.finalTurn = data["final_turn"]
 
         return game
+    
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int):
 
         self.canPlay(username,self._board) #check if player can actually play
-        
+
         player = self._players[username]
         card = player.getCardByID(cardIndex)
 
@@ -311,7 +311,6 @@ class Game():
         elif(self._finalTurn): #can play, but it's his last turn
             self._players[username].setLastTurn(True)
         
-
     def changeTurn(self):
         
         playerTurn = self._playerTurn 
