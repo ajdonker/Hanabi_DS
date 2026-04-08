@@ -1,4 +1,5 @@
 from database.repos import IGameRepository, ILobbyRepository, IUserRepository
+from server.domain.game import Game
 import json
 # At any moment, there should be only one active authoritative server for a given game_id.
 class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
@@ -14,15 +15,21 @@ class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
                 continue
         raise RuntimeError("Redis operation failed")
     
-    def load_game(self, game_id):
+    def load_game(self, game_id) -> Game:
         key = f"hanabi:game:{game_id}"
         raw = self._retry(lambda: self.redis.get(key))
-        return json.loads(raw) if raw else None
 
-    def save_game(self, game_id, state_dict):
-        key = f"hanabi:game:{game_id}"
-        payload = json.dumps(state_dict)
-        self._retry(lambda: self.redis.set(key, payload))
+        if not raw:
+            return None
+
+        data = json.loads(raw)
+        return Game.from_dict(data)
+
+    def save_game(self,game: Game):
+        key = f"hanabi:game:{game.gameID}"
+        payload = json.dumps(game.to_dict())
+        self._retry(lambda: self.redis.set(key, payload)) # pass state dict or Game object in interface
+        
         
     def load_user(self, username):
         key = f"hanabi:user:{username}"

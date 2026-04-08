@@ -1,31 +1,9 @@
 import pytest
-from web.backend.server.domain.cards import Card, Color, Number, Deck, HandCard
-from web.backend.server.domain.player import Player
-from web.backend.server.domain.game import Game, Board
-from web.backend.server.domain.exceptions import *
-
-# @pytest.fixture
-# def simple_card():
-#     return Card(Number.ONE, Color.RED)
-
-# @pytest.fixture
-# def hand_card(simple_card):
-#     return HandCard(simple_card)
-
-# @pytest.fixture
-# def player(hand_card):
-#     return Player("P1", [hand_card])
-
-# @pytest.fixture
-# def board():
-#     deck = Deck()
-#     return Board(
-#         deck=deck,
-#         piles={c: 0 for c in Color},
-#         discards=[],
-#         token=8,
-#         misfires=3
-#     )
+from server.domain.cards import Card, Color, Number, Deck, HandCard
+from server.domain.player import Player
+from server.domain.game import Game, Board
+from server.domain.exceptions import *
+from database.gameSerializer import GameSerializer
 
 @pytest.fixture
 def game():
@@ -292,6 +270,54 @@ def test_game_over_on_perfect_score():
 
     assert game.checkGameOver()
 
+def test_game_serialization_roundtrip(game):
+    data = GameSerializer.to_dict(game)
+    restored = GameSerializer.from_dict(data)
+
+    assert restored._gameID == game._gameID
+    assert restored._playerTurn == game._playerTurn
+    assert restored._finalTurn == game._finalTurn
+
+    # players
+    assert set(restored._players.keys()) == set(game._players.keys())
+
+    for username in game._players:
+        p1 = game._players[username]
+        p2 = restored._players[username]
+
+        assert len(p1._hand) == len(p2._hand)
+
+        for c1, c2 in zip(p1._hand, p2._hand):
+            assert c1.card.color == c2.card.color
+            assert c1.card.number == c2.card.number
+
+def test_serialization_preserves_hints(game):
+
+    player = game.getPlayer("P1")
+    card = player._hand[0]
+
+    card.setHintColor(Color.RED)
+    card.setHintNumber(Number.TWO)
+
+    data = GameSerializer.to_dict(game)
+    restored = GameSerializer.from_dict(data)
+
+    assert GameSerializer.to_dict(restored) == GameSerializer.to_dict(game)
+    
+    restored_card = restored.getPlayer("P1")._hand[0]
+
+    assert restored_card._hintColor == Color.RED
+    assert restored_card._hintNumber == Number.TWO
+
+def test_serialization_after_discard(game):
+
+    game.discardCard("P1", 0)
+
+    data = GameSerializer.to_dict(game)
+    restored = GameSerializer.from_dict(data)
+
+    assert len(restored._board._discards) == len(game._board._discards)
+    assert restored._board._token == game._board._token
 
 
 
