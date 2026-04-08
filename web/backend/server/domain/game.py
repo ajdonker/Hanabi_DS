@@ -4,7 +4,6 @@ from server.domain.exceptions import *
 from web.backend.server.domain.results import *
 from typing import List
 
-
 class Board() :
     def __init__(self, deck : Deck, piles : dict, discards : list, token : int, misfires : int):
         self._deck = deck
@@ -36,12 +35,14 @@ class Board() :
     def drawCard(self) -> HandCard | None : #draw a card (if possible)
         return self._deck.draw()
 
-    def updateToken(self, mode : str): #update Token based on the move
+    def updateToken(self, mode : str) -> bool: #update Token based on the move
         if(mode == '+'):
             if(self._token < 8): self._token += 1
         elif(mode == '-'):
-            if(self._token == 0): raise NoTokenException()
+            if(self._token == 0): return False
             else : self._token -= 1
+        
+        return True
 
     def discardMisfire(self):
         self._misfires -= 1
@@ -257,7 +258,7 @@ class Game():
         result = HintResult()
     
         if (board._token == 0):
-            return HintResult
+            result.setNoToken()
         
         player = self.getPlayer(target)
         playerHand = player.getHand
@@ -265,20 +266,21 @@ class Game():
         matched = False
 
         if valid:
-            for card in playerHand:
+            for handCard in playerHand:
                 if color is not None:
-                    if card.card.color == color:
-                        card.setHintColor(color)
+                    if handCard.card.color == color:
+                        handCard.setHintColor(color)
                         matched = True
 
                 elif number is not None:
-                    if card.card.number == number:
-                        card.setHintNumber(number)
+                    if handCard.card.number == number:
+                        handCard.setHintNumber(number)
                         matched = True
 
         success = valid and matched
 
-        board.updateToken('-')
+        if not board.updateToken('-'):
+            pass
 
         self.checkGameOver()
         self.changeTurn()

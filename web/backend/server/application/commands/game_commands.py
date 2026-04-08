@@ -54,28 +54,31 @@ class DiscardCardCommand(Command):
         
     def execute(self, data) -> list[Event]:
         
-        game_id = data["gameId"]
-        raw = self.repo.load_game(game_id)
-
-        if raw is None:
-            return [Event("error", {"message": "Game not found"})]
-        
-        game = Game.from_dict(raw)
-
         try:
+            game_id = data["gameId"]
             player_id=data["playerId"]
             card_index=data["cardIndex"]
-            game.discardCard(player_id, card_index)
+            
+            raw = self.repo.load_game(game_id)
+            if raw is None:
+                return [Event("error", {"message": "Game not found"})]
+        
+            game = Game.from_dict(raw)
+
+            result = game.discardCard(player_id, card_index)
 
             self.repo.save_game(game_id, game.to_dict())
 
-            return [
-                Event("card_discarded", {"playerId": player_id, "cardIndex": card_index}),
-                Event("turn_change", {"playerId": player_id})
-            ]
+            events = []
             
-        except WrongTurnException :
-            return [Event("error", {"message": "Not your turn"})]
+            #todo
+            
+            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
+                        
+            return events
+            
+        except GameException as ex:
+            return ExceptionMapper.to_events(ex)
 
 class GiveHintCommand(Command):
     # we refactored repos so this way unsure if alrights
@@ -83,22 +86,21 @@ class GiveHintCommand(Command):
         self.repo = repo
 
     def execute(self, data):
-        
-        game_id = data["gameId"]
-        raw = self.repo.load_game(game_id)
-
-        if raw is None:
-            return [Event("error", {"message": "Game not found"})]
-        
-        game = Game.from_dict(raw)
-
+    
         try:
+            game_id = data["gameId"]
             from_player = data["fromPlayerId"]
             to_player = data["toPlayerId"]
             color = data["color"]
             number = data["number"]
 
-            game.giveHint(
+            raw = self.repo.load_game(game_id)
+            if raw is None:
+                return [Event("error", {"message": "Game not found"})]
+        
+            game = Game.from_dict(raw)
+
+            result = game.giveHint(
                 from_player,
                 to_player,
                 color,
@@ -107,7 +109,14 @@ class GiveHintCommand(Command):
 
             self.repo.save_game(game)
 
-            return [
+            events = []
+            
+            #todo
+            
+            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
+
+            return events
+            '''[
                 Event("hint_given", {
                     "fromPlayerId": from_player, 
                     "toPlayerId": to_player,
@@ -115,7 +124,7 @@ class GiveHintCommand(Command):
                     "number": number
                 }),
                 Event("turn_change", {"playerId": from_player})
-            ]
+            ]'''
 
-        except WrongTurnException:
-            return [Event("error", {"message": "Not your turn"})]
+        except GameException as ex:
+            return ExceptionMapper.to_events(ex)

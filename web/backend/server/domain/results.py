@@ -26,6 +26,6 @@ class PlayDiscardCardResult(GameResult):
 class HintResult(GameResult):
     def __init__(self):
         super().__init__(...)    
-        
+        self.tokensLeft = None | int
 
         
