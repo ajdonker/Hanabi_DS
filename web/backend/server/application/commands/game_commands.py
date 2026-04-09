@@ -15,9 +15,10 @@ class PlayCardCommand(Command):
         
         try:
             
-            game_id = data["gameId"] #can raise KeyError
-            player_id=data["playerId"]
-            card_index=data["cardIndex"]
+            #all can raise KeyError
+            game_id = data["gameId"]
+            player_id = data["playerId"]
+            card_index = data["cardIndex"]
             
             raw = self.repo.load_game(game_id)
             if raw is None: 
@@ -71,8 +72,14 @@ class DiscardCardCommand(Command):
 
             events = []
             
-            #todo
+            if result.success :
+               events.append(Event("card_discarded", {"playerId": player_id, "cardIndex": card_index}))
+            else :    
+                pass # it's impossible failing to discard a card
             
+            if result.game_over :
+                events.append(Event("game_over", {"score" : result.score}))
+                    
             events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
                         
             return events
@@ -81,7 +88,6 @@ class DiscardCardCommand(Command):
             return ExceptionMapper.to_events(ex)
 
 class GiveHintCommand(Command):
-    # we refactored repos so this way unsure if alrights
     def __init__(self,repo: IGameRepository):
         self.repo = repo
 
@@ -100,31 +106,36 @@ class GiveHintCommand(Command):
         
             game = Game.from_dict(raw)
 
-            result = game.giveHint(
-                from_player,
-                to_player,
-                color,
-                number
-            )
+            result = game.giveHint(from_player,to_player,color,number)
 
             self.repo.save_game(game)
 
             events = []
             
             #todo
-            
-            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
-
-            return events
-            '''[
-                Event("hint_given", {
+            if result.success : #hint successful
+               events.append(Event("hint_given", {
                     "fromPlayerId": from_player, 
                     "toPlayerId": to_player,
                     "color": color,
-                    "number": number
-                }),
-                Event("turn_change", {"playerId": from_player})
-            ]'''
-
+                    "number": number,
+                    "tokensLeft" : result.tokensLeft
+                }))
+            else :    
+                events.append(Event("hint_failed", {
+                    "fromPlayerId": from_player, 
+                    "toPlayerId": to_player,
+                    "color": color,
+                    "number": number,
+                    "tokensLeft" : result.tokensLeft
+                }))
+            
+            if result.game_over :
+                events.append(Event("game_over", {"score" : result.score}))
+                    
+            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
+                        
+            return events
+        
         except GameException as ex:
             return ExceptionMapper.to_events(ex)

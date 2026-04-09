@@ -77,7 +77,7 @@ class Game():
         
         return self._players[username]
     
-    @staticmethod #for testing 
+    @staticmethod #removed in main
     def _create_initial_game(game_id:int = 0, player_names: List[str] = ["Player1","Player2"]):
         players = [Player(name) for name in player_names]
 
@@ -105,6 +105,7 @@ class Game():
         )
 
     # serialization (obj --> dict) and deserialization (dict --> obj)
+    #removed in main
     def to_dict(self):  # not good for now
         return {
             "game_id": self._gameID,
@@ -190,13 +191,12 @@ class Game():
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int) -> PlayDiscardCardResult:
 
-        self.canPlay(username,self._board) #can raise an exception
+        self.canPlay(username) #can raise WrongTurn exception
 
         result = PlayDiscardCardResult()
     
         player = self._players[username]
-        card = player.getCardByID(cardIndex) #can raise an exception
-
+        card = player.getCardByID(cardIndex) #can raise IndexTurn exception
         board = self._board
         color = card.color
         value = card.number.value
@@ -238,14 +238,15 @@ class Game():
         
         #change turn
         self.changeTurn()
+        result.setNextPlayer(self._playerTurn)
         
         return result
 
     def giveHint(self, username: str, target: str, color: Color = None, number: Number = None) -> HintResult:
 
+        self.canPlay(username) #can raise WrongTurn exception
+        
         board = self._board
-
-        self.canPlay(username, board)
         
         #check function's arguments
         valid = (
@@ -256,10 +257,7 @@ class Game():
         )
         
         result = HintResult()
-    
-        if (board._token == 0):
-            result.setNoToken()
-        
+            
         player = self.getPlayer(target)
         playerHand = player.getHand
 
@@ -277,23 +275,31 @@ class Game():
                         handCard.setHintNumber(number)
                         matched = True
 
-        success = valid and matched
+        if valid and matched :
+            result.setSuccess(True)
+            board.updateToken('-')
+        
+        result.setTokensLeft(board.token)
 
-        if not board.updateToken('-'):
-            pass
-
-        self.checkGameOver()
+        #check gameover
+        score = self.checkGameOver()
+        if score :
+            result.setGameOver(score)
+        
+        #change turn
         self.changeTurn()
-
+        result.setNextPlayer(self._playerTurn)
+        
+        return result
 
     def discardCard(self, username : str, cardIndex: int) -> PlayDiscardCardResult:
                     
-        self.canPlay(username, self._board) #can raise an Exception
+        self.canPlay(username, self._board) #can raise WrongTurn Exception
         
         result = PlayDiscardCardResult()
         
-        player = self.getPlayer(username)
-        card = player.getCardByID(cardIndex)
+        player = self._players[username] 
+        card = player.getCardByID(cardIndex) #can raise IndexTurn Exception
         board = self._board
 
         card.removeHints()
@@ -318,10 +324,12 @@ class Game():
             result.setGameOver(score)
         
         self.changeTurn()
-
+        result.setNextPlayer(self._playerTurn)
+        
+        return result
     #-------------------Utils-------------------#
 
-    def canPlay(self, username : str, board : Board | None): #check if the player can actually play
+    def canPlay(self, username : str): #check if the player can actually play
         
         if(username != self._playerTurn): 
             raise WrongTurnException() #to be catched in application layer (done)
