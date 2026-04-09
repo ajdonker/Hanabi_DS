@@ -109,7 +109,7 @@ class Game(GameInterface):
         return self._players[username]
     
     @staticmethod #removed in main
-    def _create_initial_game(game_id:int = 0, player_names: List[str] = ["Player1","Player2"]):
+    def _create_initial_game(game_id:int = 0, player_names: list[str] = ["Player1","Player2"]):
         players = [Player(name) for name in player_names]
 
         deck = Deck()
@@ -196,7 +196,7 @@ class Game(GameInterface):
         board = self._board
         
         #check function's arguments
-        valid = (
+        invalid = (
             (color is None and number is None) or
             (color is not None and number is not None) or
             (username == target) or
@@ -210,7 +210,7 @@ class Game(GameInterface):
 
         matched = False
 
-        if valid:
+        if not invalid:
             for handCard in playerHand:
                 if color is not None:
                     if handCard.card.color == color:
@@ -222,7 +222,7 @@ class Game(GameInterface):
                         handCard.setHintNumber(number)
                         matched = True
 
-        if valid and matched :
+        if not invalid and matched :
             result.setSuccess(True)
             board.updateToken('-')
         

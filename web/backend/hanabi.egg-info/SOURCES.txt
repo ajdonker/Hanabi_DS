@@ -1,10 +1,10 @@
 LICENSE
 README.md
 pyproject.toml
-tests/test_server.py
 web/backend/client/__init__.py
 web/backend/client/client.py
 web/backend/database/GameRepo.py
+web/backend/database/gameSerializer.py
 web/backend/database/repos.py
 web/backend/game_logic/__init__.py
 web/backend/game_logic/cards.py
@@ -34,9 +34,12 @@ web/backend/server/application/commands/lobby_commands.py
 web/backend/server/application/commands/login_commands.py
 web/backend/server/domain/__init__.py
 web/backend/server/domain/cards.py
+web/backend/server/domain/exceptionMapper.py
 web/backend/server/domain/exceptions.py
 web/backend/server/domain/game.py
+web/backend/server/domain/gameInterface.py
 web/backend/server/domain/player.py
+web/backend/server/domain/results.py
 web/backend/server/domain/state.py
 web/backend/server/presentation/connection_manager.py
 web/backend/server/presentation/router.py

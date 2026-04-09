@@ -15,7 +15,7 @@ class GameResult:
         
 class PlayDiscardCardResult(GameResult):
     def __init__(self):
-        super().__init__(...)
+        super().__init__()
         self.misfire = 0
 
     def setMisfire(self, misfire : int):
@@ -23,7 +23,7 @@ class PlayDiscardCardResult(GameResult):
     
 class HintResult(GameResult):
     def __init__(self):
-        super().__init__(...)    
+        super().__init__()    
         self.tokensLeft = None | int
     
     def setTokensLeft(self, tokens : int):

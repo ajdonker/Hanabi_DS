@@ -1,2 +1,10 @@
 tests/test_server.py
 web/backend/tests
+.venv/
+.pytest_cache/
+tests/__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.vscode/
