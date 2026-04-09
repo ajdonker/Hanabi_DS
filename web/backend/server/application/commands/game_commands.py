@@ -5,6 +5,7 @@ from database.repos import IGameRepository
 from server.application.commands.commands import Command
 from server.domain.exceptions import *
 from server.domain.game import Game
+from web.backend.database.gameSerializer import GameSerializer
 from web.backend.server.domain.exceptionMapper import ExceptionMapper
 
 class PlayCardCommand(Command):
@@ -24,7 +25,7 @@ class PlayCardCommand(Command):
             if raw is None: 
                 raise GameNotFoundException()
         
-            game = Game.from_dict(raw)
+            game = GameSerializer.from_dict(raw)
                 
             result = game.playCard(player_id, card_index) #can raise exceptions
 
@@ -48,7 +49,10 @@ class PlayCardCommand(Command):
         
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
-    
+
+        except RuntimeError:
+            return [Event("error", {"message": "Temporary server issue"})]
+
 class DiscardCardCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
@@ -64,7 +68,7 @@ class DiscardCardCommand(Command):
             if raw is None:
                 return [Event("error", {"message": "Game not found"})]
         
-            game = Game.from_dict(raw)
+            game = GameSerializer.from_dict(raw)
 
             result = game.discardCard(player_id, card_index)
 
@@ -86,6 +90,8 @@ class DiscardCardCommand(Command):
             
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
+        except RuntimeError:
+            return [Event("error", {"message": "Temporary server issue"})]
 
 class GiveHintCommand(Command):
     def __init__(self,repo: IGameRepository):
@@ -139,3 +145,5 @@ class GiveHintCommand(Command):
         
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
+        except RuntimeError:
+            return [Event("error", {"message": "Temporary server issue"})]

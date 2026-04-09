@@ -1,19 +1,27 @@
 from database.repos import IGameRepository, ILobbyRepository, IUserRepository
 from server.domain.game import Game
-import json
+import json, time, random
 # At any moment, there should be only one active authoritative server for a given game_id.
 class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
     '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
     def __init__(self, redis_client):
         self.redis = redis_client
 
-    def _retry(self, fn, retries=3):
-        for _ in range(retries):
+    def _retry(self, fn, retries=3, base_delay=0.1):
+    
+        for attempt in range(retries):
+            
             try:
                 return fn()
-            except Exception:
-                continue
-        raise RuntimeError("Redis operation failed")
+            except (ConnectionError, TimeoutError) as e:
+                if attempt == retries - 1:
+                    raise RuntimeError("Redis operation failed") from e
+
+                # exponential backoff + jitter
+                delay = base_delay * (2 ** attempt)
+                delay += random.uniform(0, 0.05)
+
+                time.sleep(delay)
     
     def load_game(self, game_id) -> Game:
         key = f"hanabi:game:{game_id}"

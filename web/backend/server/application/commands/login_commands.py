@@ -21,9 +21,12 @@ class RegisterCommand(Command):
         
         if self.userRepository.load_user(username): #if return something, user already exists
             return [Event("error", {"message": "Username already exists"})]
-
-        self.userRepository.save_user(user)
-
+        
+        try :
+            self.userRepository.save_user(user)
+        except RuntimeError:
+            return [Event("error", {"message": "Temporary server issue"})]
+        
         return [Event("registration_success", {"message": "Registration successful"})]
 
 class LoginCommand(Command):
@@ -31,6 +34,7 @@ class LoginCommand(Command):
         self.userRepository = RedisRepository()
         
     def execute(self, data):
+        
         username = data["username"]
         password = data["password"]
 
