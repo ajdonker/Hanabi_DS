@@ -1,17 +1,21 @@
-class WrongTurnException(Exception):
+class GameException(Exception):
     pass
 
-class InvalidCardException(Exception):
+class KeyErrorException(GameException):
     pass
 
-class MisfireException(Exception):
+class IndexError(GameException):
     pass
 
-class UnknownErrorException(Exception):
+class GameNotFoundException(GameException):
     pass
 
-class NoTokenException(Exception):
+class WrongTurnException(GameException): #It's not your turn
     pass
 
-class InvalidHintException(Exception):
-    pass
+###################
+
+
+
+
+

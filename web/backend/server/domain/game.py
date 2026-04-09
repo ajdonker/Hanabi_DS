@@ -1,7 +1,7 @@
 from server.domain.cards import Color, Deck, HandCard, Number, Card
 from server.domain.player import Player
 from server.domain.exceptions import *
-from typing import List 
+from web.backend.server.domain.results import *
 from server.domain.gameInterface import GameInterface
 
 class Board() :
@@ -39,14 +39,14 @@ class Board() :
     def drawCard(self) -> HandCard | None : #draw a card (if possible)
         return self._deck.draw()
 
-    def updateToken(self, mode : str): #update Token based on the move
+    def updateToken(self, mode : str) -> bool: #update Token based on the move
         if(mode == '+'):
             if(self._token < 8): self._token += 1
         elif(mode == '-'):
-            if(self._token == 0): raise NoTokenException()
+            if(self._token == 0): return False
             else : self._token -= 1
-        else :
-            raise UnknownErrorException()
+        
+        return True
 
     def discardMisfire(self):
         self._misfires -= 1
@@ -108,7 +108,7 @@ class Game(GameInterface):
         
         return self._players[username]
     
-    @staticmethod
+    @staticmethod #removed in main
     def _create_initial_game(game_id:int = 0, player_names: List[str] = ["Player1","Player2"]):
         players = [Player(name) for name in player_names]
 
@@ -136,105 +136,124 @@ class Game(GameInterface):
         )
     
     #-------------------Game actions-------------------#
-    def playCard(self, username : str, cardIndex: int):
+    def playCard(self, username : str, cardIndex: int) -> PlayDiscardCardResult:
 
-        self.canPlay(username) #check if player can actually play
+        self.canPlay(username) #can raise WrongTurn exception
         
+        result = PlayDiscardCardResult()
+    
         player = self._players[username]
-        card = player.getCardByID(cardIndex)
-
+        card = player.getCardByID(cardIndex) #can raise IndexTurn exception
         board = self._board
         color = card.color
         value = card.number.value
         
         player.removeCard(cardIndex)
         card.removeHints()  #remove hint
-
-        exc = False
-
+        
         if(board._piles[color] == 5) : #Corresponding pile is already full
             board.addDiscard(card)
             board.discardMisfire()
-            exc = True
-            #raise MisfireException()  #to be catched in application layer
+            result.setMisfire(board.misfires) #not an exception anymore --> it's a result
 
         if(value == board._piles[color] + 1) : #Card correctly placed
+            result.setSuccess(True)
             board.updatePiles(card)
         else : # Wrong order --> mistake
             board.addDiscard(card)
             board.discardMisfire()
-            #raise MisfireException()
-            exc = True
+            result.setMisfire(board.misfires) #not an exception anymore --> it's a result
         
         #check gameover
-        self.checkGameOver()
-        
+        score = self.checkGameOver()
+        if score :
+            result.setGameOver(True)
+
         #unless game is over, the player must draw a card (regardless of his action)
         cardDrawn = board.drawCard() #update board
         if(board._deck.get_deck_count() <= 1): 
             self._finalTurn = True
             player.setLastTurn(True)
         
-        if(cardDrawn != None): player.addCard(HandCard(cardDrawn))
+        if(cardDrawn != None): 
+            player.addCard(HandCard(cardDrawn))
         
-        self.checkGameOver()
+        #check gameover
+        score = self.checkGameOver()
+        if score :
+            result.setGameOver(score)
         
         #change turn
         self.changeTurn()
-        if exc:
-            raise MisfireException()
+        result.setNextPlayer(self._playerTurn)
+        
+        return result
 
-    def giveHint(self, username: str, target: str, *, color: Color = None, number: Number = None):
+    def giveHint(self, username: str, target: str, color: Color = None, number: Number = None) -> HintResult:
 
+        self.canPlay(username) #can raise WrongTurn exception
+        
         board = self._board
-
-        invalid = (
+        
+        #check function's arguments
+        valid = (
             (color is None and number is None) or
             (color is not None and number is not None) or
             (username == target) or
             (board._token == 0)
         )
-
-        self.canPlay(username)
+        
+        result = HintResult()
 
         player = self.getPlayer(target)
         playerHand = player.getHand
 
         matched = False
 
-        if not invalid:
-            for card in playerHand:
+        if valid:
+            for handCard in playerHand:
                 if color is not None:
-                    if card.card.color == color:
-                        card.setHintColor(color)
+                    if handCard.card.color == color:
+                        handCard.setHintColor(color)
                         matched = True
 
                 elif number is not None:
-                    if card.card.number == number:
-                        card.setHintNumber(number)
+                    if handCard.card.number == number:
+                        handCard.setHintNumber(number)
                         matched = True
 
-        success = (not invalid) and matched
+        if valid and matched :
+            result.setSuccess(True)
+            board.updateToken('-')
+        
+        result.setTokensLeft(board.token)
 
-        board.updateToken('-')
-
-        self.checkGameOver()
+        #check gameover
+        score = self.checkGameOver()
+        if score :
+            result.setGameOver(score)
+        
+        #change turn
         self.changeTurn()
+        result.setNextPlayer(self._playerTurn)
+        
+        return result
 
-        if (not success):
-            raise InvalidHintException
-
-    def discardCard(self, username : str, cardIndex: int):
+    def discardCard(self, username : str, cardIndex: int) -> PlayDiscardCardResult:
                     
         self.canPlay(username)
-              
-        player = self.getPlayer(username)
-        card = player.getCardByID(cardIndex)
+     
+        player = self._players[username]  
+        card = player.getCardByID(cardIndex)  #can raise IndexTurn Exception
         board = self._board
 
+        result = PlayDiscardCardResult()
+          
         card.removeHints()
         player.removeCard(cardIndex)
         board.addDiscard(card)
+
+        result.setSuccess(True)
 
         board.updateToken('+')
 
@@ -246,24 +265,25 @@ class Game(GameInterface):
         if(cardDrawn != None): player.addCardAt(cardIndex,HandCard(cardDrawn))
         print("AFTER INSERT:", [id(c) for c in player._hand])
 
-        self.checkGameOver()
+        #check gameover
+        score = self.checkGameOver()
+        if score :
+            result.setGameOver(score)
         
         self.changeTurn()
-
+        result.setNextPlayer(self._playerTurn)
+        
+        return result
     #-------------------Utils-------------------#
 
-    def canPlay(self, username : str):
+    def canPlay(self, username : str): #check if the player can actually play
         
         if(username != self._playerTurn): 
             raise WrongTurnException() #to be catched in application layer (done)
 
-        elif(self.board.token == 0):
-            raise NoTokenException() #to be catched in application layer (todo)
-        
-        elif(self.finalTurn): #can play, but it's his last turn
+        elif(self._finalTurn): #can play, but it's his last turn
             self._players[username].setLastTurn(True)
         
-
     def changeTurn(self):
         
         playerTurn = self._playerTurn 

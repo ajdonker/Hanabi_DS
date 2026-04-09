@@ -5,48 +5,49 @@ from database.repos import IGameRepository
 from server.application.commands.commands import Command
 from server.domain.exceptions import *
 from server.domain.game import Game
+from web.backend.server.domain.exceptionMapper import ExceptionMapper
 
 class PlayCardCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
         
     def execute(self, data) -> list[Event]:
-    
+        
         try:
+            
+            #all can raise KeyError
             game_id = data["gameId"]
-        except KeyError:
-            return [Event("error", {"message": "Corrisponding gameId not found in request"})]
-        
-        raw = self.repo.load_game(game_id)
-
-        if raw is None:
-            return [Event("error", {"message": "Game not found"})]
-        
-        game = Game.from_dict(raw)
-
-        try:
-            player_id=data["playerId"]
-            card_index=data["cardIndex"]
+            player_id = data["playerId"]
+            card_index = data["cardIndex"]
             
-            game.playCard(player_id, card_index)
-
-            self.repo.save_game(game_id,game.to_dict())
-
-            return [
-                Event("card_played", {"playerId": player_id, "cardIndex": card_index}),
-                Event("turn_change", {"playerId": player_id})
-            ]
-            
-        except WrongTurnException :
-            return [
-                Event("error", {"message": "Not your turn"})
-            ]
+            raw = self.repo.load_game(game_id)
+            if raw is None: 
+                raise GameNotFoundException()
         
-        except MisfireException :
-            return [
-                Event("misfire", {"message": "You played a wrong card"}),
-                Event("turn_change", {"playerId": player_id})
-            ]      
+            game = Game.from_dict(raw)
+                
+            result = game.playCard(player_id, card_index) #can raise exceptions
+
+            self.repo.save_game(game_id,game.to_dict()) 
+            
+            events = []
+
+            if result.success :
+               events.append(Event("card_correct", {"playerId": player_id, "cardIndex": card_index}))
+            else :    
+                events.append(Event("card_wrong", {"playerId": player_id, "cardIndex": card_index}))
+                events.append(Event("misfire", {"playerId": player_id, "misfire" : result.misfire}))
+            
+            if result.game_over :
+                events.append(Event("game_over", {"score" : result.score}))
+                return events
+
+            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
+            
+            return events           
+        
+        except GameException as ex:
+            return ExceptionMapper.to_events(ex)
     
 class DiscardCardCommand(Command):
     def __init__(self,repo: IGameRepository):
@@ -54,68 +55,87 @@ class DiscardCardCommand(Command):
         
     def execute(self, data) -> list[Event]:
         
-        game_id = data["gameId"]
-        raw = self.repo.load_game(game_id)
-
-        if raw is None:
-            return [Event("error", {"message": "Game not found"})]
-        
-        game = Game.from_dict(raw)
-
         try:
+            game_id = data["gameId"]
             player_id=data["playerId"]
             card_index=data["cardIndex"]
-            game.discardCard(player_id, card_index)
+            
+            raw = self.repo.load_game(game_id)
+            if raw is None:
+                return [Event("error", {"message": "Game not found"})]
+        
+            game = Game.from_dict(raw)
+
+            result = game.discardCard(player_id, card_index)
 
             self.repo.save_game(game_id, game.to_dict())
 
-            return [
-                Event("card_discarded", {"playerId": player_id, "cardIndex": card_index}),
-                Event("turn_change", {"playerId": player_id})
-            ]
+            events = []
             
-        except WrongTurnException :
-            return [Event("error", {"message": "Not your turn"})]
+            if result.success :
+               events.append(Event("card_discarded", {"playerId": player_id, "cardIndex": card_index}))
+            else :    
+                pass # it's impossible failing to discard a card
+            
+            if result.game_over :
+                events.append(Event("game_over", {"score" : result.score}))
+                    
+            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
+                        
+            return events
+            
+        except GameException as ex:
+            return ExceptionMapper.to_events(ex)
 
 class GiveHintCommand(Command):
-    # we refactored repos so this way unsure if alrights
     def __init__(self,repo: IGameRepository):
         self.repo = repo
 
     def execute(self, data):
-        
-        game_id = data["gameId"]
-        raw = self.repo.load_game(game_id)
-
-        if raw is None:
-            return [Event("error", {"message": "Game not found"})]
-        
-        game = Game.from_dict(raw)
-
+    
         try:
+            game_id = data["gameId"]
             from_player = data["fromPlayerId"]
             to_player = data["toPlayerId"]
             color = data["color"]
             number = data["number"]
 
-            game.giveHint(
-                from_player,
-                to_player,
-                color,
-                number
-            )
+            raw = self.repo.load_game(game_id)
+            if raw is None:
+                return [Event("error", {"message": "Game not found"})]
+        
+            game = Game.from_dict(raw)
+
+            result = game.giveHint(from_player,to_player,color,number)
 
             self.repo.save_game(game)
 
-            return [
-                Event("hint_given", {
+            events = []
+            
+            #todo
+            if result.success : #hint successful
+               events.append(Event("hint_given", {
                     "fromPlayerId": from_player, 
                     "toPlayerId": to_player,
                     "color": color,
-                    "number": number
-                }),
-                Event("turn_change", {"playerId": from_player})
-            ]
-
-        except WrongTurnException:
-            return [Event("error", {"message": "Not your turn"})]
+                    "number": number,
+                    "tokensLeft" : result.tokensLeft
+                }))
+            else :    
+                events.append(Event("hint_failed", {
+                    "fromPlayerId": from_player, 
+                    "toPlayerId": to_player,
+                    "color": color,
+                    "number": number,
+                    "tokensLeft" : result.tokensLeft
+                }))
+            
+            if result.game_over :
+                events.append(Event("game_over", {"score" : result.score}))
+                    
+            events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
+                        
+            return events
+        
+        except GameException as ex:
+            return ExceptionMapper.to_events(ex)
