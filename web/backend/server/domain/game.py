@@ -2,7 +2,7 @@ from server.domain.cards import Color, Deck, HandCard, Number, Card
 from server.domain.player import Player
 from server.domain.exceptions import *
 from web.backend.server.domain.results import *
-from typing import List
+from server.domain.gameInterface import GameInterface
 
 class Board() :
     def __init__(self, deck : Deck, piles : dict, discards : list, token : int, misfires : int):
@@ -28,6 +28,10 @@ class Board() :
     @property
     def deck(self):
         return self._deck
+    
+    @property
+    def discards(self):
+        return self._discards
 
     def addDiscard(self, card): #add a card to discard pile
         self._discards.append(card)
@@ -60,7 +64,7 @@ class Board() :
     def calculateScore(self): #calculate the score based on the piles in the board
         return sum(self._piles.values())
 
-class Game():
+class Game(GameInterface):
     def __init__(self, gameID : int, board : Board, players : list[Player], playerTurn : str):
 
         self._gameID = gameID
@@ -70,6 +74,33 @@ class Game():
         self._playerTurn = playerTurn 
         self._finalTurn = False
 
+    @property
+    def gameID(self) -> int:
+        return self._gameID
+    
+    @property
+    def board(self) -> Board:
+        return self._board
+    
+    @property
+    def players(self) -> dict[str, Player]:
+        return self._players
+    
+    @property
+    def turnOrder(self) -> list[str]:
+        return self._turnOrder
+    
+    @property
+    def playerTurn(self) -> str:
+        return self._playerTurn
+    
+    @property
+    def finalTurn(self) -> bool:
+        return self._finalTurn
+
+    def setFinalTurn(self,turn : bool):
+        self._finalTurn = turn
+        
     def getPlayer(self, username: str) -> Player:
 
         if username not in self._players:
@@ -103,96 +134,12 @@ class Game():
             players=players,
             playerTurn=player_names[0]
         )
-
-    # serialization (obj --> dict) and deserialization (dict --> obj)
-    #removed in main
-    def to_dict(self):  # not good for now
-        return {
-            "game_id": self._gameID,
-            "player_turn": self._playerTurn,
-            "final_turn": self._finalTurn,
-
-            "players": [
-                {
-                    "username": p._username,
-                    "hand": [
-                        {
-                            "number": c.card.number,
-                            "color": c.card.color.name,
-                            "hints": c.getHints()  # or however you store hints
-                        }
-                        for c in p.getHand
-                    ],
-                    "last_turn": p._lastTurn
-                }
-                for p in self._players.values()
-            ],
-
-            "board": {
-                "piles": {c.name: v for c, v in self._board._piles.items()},
-                "discards": [
-                    {"number": c.number, "color": c.color.name}
-                    for c in self._board._discards
-                ],
-                "tokens": self._board._token,
-                "misfires": self._board._misfires,
-                "deck_count": self._board._deck.get_deck_count()
-            }
-        } 
-    
-    @staticmethod
-    def from_dict(data: dict):
-        # --- players ---
-        players = []
-        for p_data in data["players"]:
-            p = Player(p_data["username"])
-
-            hand = []
-            for c_data in p_data["hand"]:
-                card = HandCard(
-                    Card(
-                        Number(c_data["number"]),
-                        Color(c_data["color"])
-                        )
-                )
-                card.setHints(c_data.get("hints", []))
-                hand.append(card)
-
-            p.setHand(hand)
-            p._lastTurn = p_data.get("last_turn", False)
-            players.append(p)
-
-        # --- board ---
-        board_data = data["board"]
-
-        board = Board(
-            deck=Deck.from_count(board_data["deck_count"]), # deck count depends on discards and plays
-            piles={Color[c]: v for c, v in board_data["piles"].items()},
-            discards=[
-                HandCard(d["number"], Color[d["color"]])
-                for d in board_data["discards"]
-            ],
-            token=board_data["tokens"],
-            misfires=board_data["misfires"]
-        )
-
-        # --- game ---
-        game = Game(
-            gameID=data["game_id"],
-            board=board,
-            players=players,
-            playerTurn=data["player_turn"]
-        )
-
-        game.finalTurn = data["final_turn"]
-
-        return game
     
     #-------------------Game actions-------------------#
     def playCard(self, username : str, cardIndex: int) -> PlayDiscardCardResult:
 
         self.canPlay(username) #can raise WrongTurn exception
-
+        
         result = PlayDiscardCardResult()
     
         player = self._players[username]
@@ -257,7 +204,7 @@ class Game():
         )
         
         result = HintResult()
-            
+
         player = self.getPlayer(target)
         playerHand = player.getHand
 
@@ -294,14 +241,14 @@ class Game():
 
     def discardCard(self, username : str, cardIndex: int) -> PlayDiscardCardResult:
                     
-        self.canPlay(username, self._board) #can raise WrongTurn Exception
-        
-        result = PlayDiscardCardResult()
-        
-        player = self._players[username] 
-        card = player.getCardByID(cardIndex) #can raise IndexTurn Exception
+        self.canPlay(username)
+     
+        player = self._players[username]  
+        card = player.getCardByID(cardIndex)  #can raise IndexTurn Exception
         board = self._board
 
+        result = PlayDiscardCardResult()
+          
         card.removeHints()
         player.removeCard(cardIndex)
         board.addDiscard(card)

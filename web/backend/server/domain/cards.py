@@ -37,6 +37,14 @@ class HandCard():
         return self._card
     
     @property
+    def hintColor(self):
+        return self._hintColor
+    
+    @property
+    def hintNumber(self):
+        return self._hintNumber
+    
+    @property
     def color(self):
         return self._card.color
 
