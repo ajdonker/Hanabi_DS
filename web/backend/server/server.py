@@ -1,6 +1,6 @@
 import os,json
 from game_logic.state import GameState
-from database.GameRepo import RedisRepository
+from web.backend.database.RedisRepository import RedisRepository
 from server.application.commands.game_commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
 from infrastructure.redis_provider import RedisProvider
 import asyncio,websockets

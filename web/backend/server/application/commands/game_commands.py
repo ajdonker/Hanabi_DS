@@ -1,6 +1,4 @@
 from server.presentation.websocket_handler import Event
-from server.domain.cards import Color
-from database.GameRepo import RedisRepository
 from database.repos import IGameRepository
 from server.application.commands.commands import Command
 from server.domain.exceptions import *
@@ -90,6 +88,7 @@ class DiscardCardCommand(Command):
             
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
+        
         except RuntimeError:
             return [Event("error", {"message": "Temporary server issue"})]
 
@@ -118,7 +117,6 @@ class GiveHintCommand(Command):
 
             events = []
             
-            #todo
             if result.success : #hint successful
                events.append(Event("hint_given", {
                     "fromPlayerId": from_player, 
@@ -145,5 +143,6 @@ class GiveHintCommand(Command):
         
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
+        
         except RuntimeError:
             return [Event("error", {"message": "Temporary server issue"})]
