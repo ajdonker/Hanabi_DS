@@ -1,4 +1,4 @@
-from presentation.event import Event
+from server.presentation.websocket_handler import Event
 from server.domain.cards import Color
 from database.GameRepo import RedisRepository
 from database.repos import IGameRepository

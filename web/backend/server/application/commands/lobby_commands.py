@@ -1,6 +1,6 @@
 from server.application.commands.commands import Command
 from server.application import lobbyInitializer
-from presentation.event import Event
+from server.presentation.websocket_handler import Event
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService
 

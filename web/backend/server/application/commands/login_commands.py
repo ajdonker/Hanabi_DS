@@ -2,7 +2,7 @@ import hashlib
 
 from database.repos import IGameRepository, ILobbyRepository, IUserRepository
 from server.application.commands.commands import Command
-from presentation.event import Event
+from server.presentation.websocket_handler import Event
 from database.GameRepo import RedisRepository
 from web.backend.server.application.user import User
 

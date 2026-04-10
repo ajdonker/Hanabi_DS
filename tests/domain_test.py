@@ -45,24 +45,19 @@ def test_play_card_correct(game): #ok
 
     assert game._board._piles[Color.RED] == 1
 
-'''
-def test_play_card_wrong(game): #fail --> not an exception anymore
-    player = game._players["P1"]
-    card = player.getCardByID(0)
+def test_play_card_wrong(game): #ok
+    
+    # force wrong card
+    game.playCard("P1", 0) #2 RED
 
-    # force wrong state
-    game._board._piles[card.card.color] = 3
+    assert game._board._misfires == 2
 
-    with pytest.raises(Exception):
-        game.playCard("P1", 0)
-'''
-
-'''
-def test_hint_to_yourself_raises_exception(game): #fail --> not an exception anymore
-    with pytest.raises(Exception):
-        game.giveHint("P1", "P1", color=Color.RED)
-'''
-
+def test_hint_to_yourself (game): #fail --> not an exception anymore
+    
+    result = game.giveHint("P1", "P1", color= Color.RED)
+    
+    assert result.success == False
+    
 def test_token_decreases(game): #ok
     before = game._board.token
     game.debugPrintState()
@@ -111,7 +106,7 @@ def test_play_valid_card_updates_board(): #ok
 
     assert game._board.calculateScore() == 1
 
-def test_play_card_misfire_and_discard(): #fail
+def test_play_card_misfire_and_discard(): #ok
     game = Game._create_initial_game("g1", ["P1", "P2"])
 
     player = game._players["P1"]

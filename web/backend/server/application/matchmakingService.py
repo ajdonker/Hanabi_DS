@@ -3,7 +3,7 @@ import uuid
 from server.application.gameInformation import GameInformation
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.gameManagerService import GameServerManager
-from presentation.event import Event
+from server.presentation.websocket_handler import Event
 
 class MatchmakingService:
 
