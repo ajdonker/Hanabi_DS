@@ -1,2 +1,4 @@
 redis
 docker
+fastapi
+uvicorn[standard]
