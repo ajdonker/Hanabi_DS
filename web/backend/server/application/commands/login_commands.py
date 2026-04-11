@@ -1,14 +1,13 @@
 import hashlib
-
-from database.repos import IGameRepository, ILobbyRepository, IUserRepository
 from server.application.commands.commands import Command
 from server.presentation.websocket_handler import Event
-from database.GameRepo import RedisRepository
+from web.backend.database.RedisRepository import RedisRepository
+from web.backend.database.mockRedis import MockRedisRepository
 from web.backend.server.application.user import User
 
 class RegisterCommand(Command):
-    def __init__(self):
-        self.userRepository = RedisRepository()
+    def __init__(self, repository=None):
+        self.userRepository = repository or RedisRepository()
         
     def execute(self, data):
         
@@ -30,8 +29,8 @@ class RegisterCommand(Command):
         return [Event("registration_success", {"message": "Registration successful"})]
 
 class LoginCommand(Command):
-    def __init__(self):
-        self.userRepository = RedisRepository()
+    def __init__(self, repository=None):
+        self.userRepository = repository or RedisRepository()
         
     def execute(self, data):
         
