@@ -104,7 +104,7 @@ def test_login_wrong_password():
     event = login_cmd.execute(data)
     
     assert event[0].event == "error"
-    assert "already exists" in event[0].data["message"]
+    assert "Invalid" in event[0].data["message"]
 
 def test_login_user_not_found(): #ok
         

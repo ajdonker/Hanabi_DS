@@ -41,7 +41,7 @@ class LoginCommand(Command):
         if user is None :
             return [Event("error", {"message": "User not found"})]
         
-        if user.hashedpass != hashlib.sha256(password.encode('utf-8')).hexdigest():
+        if user._hashedPass != hashlib.sha256(password.encode('utf-8')).hexdigest():
             return [Event("error", {"message": "Invalid username or password"})]
         
         return [Event("login_success", {"message": "Login successful"})]
