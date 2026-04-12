@@ -5,6 +5,6 @@ database
 game_logic
 infrastructure
 matchmaker
-presentation
 server
+shared
 tests
