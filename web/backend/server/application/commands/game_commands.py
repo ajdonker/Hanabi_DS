@@ -9,26 +9,27 @@ from web.backend.server.domain.exceptionMapper import ExceptionMapper
 class PlayCardCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
-
+        
     def execute(self, data) -> list[Event]:
-
+        
         try:
-
+            
             #all can raise KeyError
             game_id = data["gameId"]
             player_id = data["playerId"]
             card_index = data["cardIndex"]
-
+            
             raw = self.repo.load_game(game_id)
+            print("raw's type:", type(raw))
             if raw is None: 
                 raise GameNotFoundException()
-            print("raw is an instance of ", type(raw))
+        
             game = GameSerializer.from_dict(raw)
-
+                
             result = game.playCard(player_id, card_index) #can raise exceptions
 
             self.repo.save_game(game_id,game.to_dict()) 
-
+            
             events = []
 
             if result.success :
@@ -36,15 +37,15 @@ class PlayCardCommand(Command):
             else :    
                 events.append(Event("card_wrong", {"playerId": player_id, "cardIndex": card_index}))
                 events.append(Event("misfire", {"playerId": player_id, "misfire" : result.misfire}))
-
+            
             if result.game_over :
                 events.append(Event("game_over", {"score" : result.score}))
                 return events
 
             events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
-
+            
             return events           
-
+        
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
 
@@ -54,18 +55,18 @@ class PlayCardCommand(Command):
 class DiscardCardCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
-
+        
     def execute(self, data) -> list[Event]:
-
+        
         try:
             game_id = data["gameId"]
             player_id=data["playerId"]
             card_index=data["cardIndex"]
-
+            
             raw = self.repo.load_game(game_id)
             if raw is None:
                 return [Event("error", {"message": "Game not found"})]
-
+        
             game = GameSerializer.from_dict(raw)
 
             result = game.discardCard(player_id, card_index)
@@ -73,22 +74,22 @@ class DiscardCardCommand(Command):
             self.repo.save_game(game_id, game.to_dict())
 
             events = []
-
+            
             if result.success :
                events.append(Event("card_discarded", {"playerId": player_id, "cardIndex": card_index}))
             else :    
                 pass # it's impossible failing to discard a card
-
+            
             if result.game_over :
                 events.append(Event("game_over", {"score" : result.score}))
-
+                    
             events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
-
+                        
             return events
-
+            
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
-
+        
         except RuntimeError:
             return [Event("error", {"message": "Temporary server issue"})]
 
@@ -97,7 +98,7 @@ class GiveHintCommand(Command):
         self.repo = repo
 
     def execute(self, data):
-
+    
         try:
             game_id = data["gameId"]
             from_player = data["fromPlayerId"]
@@ -108,7 +109,7 @@ class GiveHintCommand(Command):
             raw = self.repo.load_game(game_id)
             if raw is None:
                 return [Event("error", {"message": "Game not found"})]
-
+        
             game = Game.from_dict(raw)
 
             result = game.giveHint(from_player,to_player,color,number)
@@ -116,7 +117,7 @@ class GiveHintCommand(Command):
             self.repo.save_game(game)
 
             events = []
-
+            
             if result.success : #hint successful
                events.append(Event("hint_given", {
                     "fromPlayerId": from_player, 
@@ -133,16 +134,16 @@ class GiveHintCommand(Command):
                     "number": number,
                     "tokensLeft" : result.tokensLeft
                 }))
-
+            
             if result.game_over :
                 events.append(Event("game_over", {"score" : result.score}))
-
+                    
             events.append(Event("turn_change", {"next_player" : result.nextPlayer}))
-
+                        
             return events
-
+        
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
-
+        
         except RuntimeError:
             return [Event("error", {"message": "Temporary server issue"})]
