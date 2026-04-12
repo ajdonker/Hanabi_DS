@@ -1,11 +1,8 @@
 import asyncio
 import json
-from web.backend.server.presentation.connection_manager import ConnectionManager
-from web.backend.server.presentation.websocket_handler import CommandError, Event, WebSocketDisconnect, WebSocketHandler
+from server.presentation.connection_manager import ConnectionManager
+from server.presentation.websocket_handler import CommandError, Event, WebSocketDisconnect, WebSocketHandler
 import pytest
-
-
-
 
 class DummyWebSocket:
     def __init__(self, incoming=None):
