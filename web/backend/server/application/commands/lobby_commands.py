@@ -1,3 +1,4 @@
+from database import RedisRepository
 from server.application.commands.commands import Command
 from server.application import lobbyInitializer
 from server.presentation.websocket_handler import Event
@@ -6,31 +7,34 @@ from server.application.matchmakingService import MatchmakingService
 
 class CreateLobbyCommand(Command):
 
-    def __init__(self, matchmaking_service: MatchmakingService):
+    def __init__(self, matchmaking_service: MatchmakingService, repository = None):
         self.matchmaking_service = matchmaking_service
+        self.matchmakerRepository = repository or RedisRepository()
 
-    def execute(self, message):
+    def execute(self, data):
 
-        player = WaitingPlayer(player_id= generate_id(), name = message.user_creator)
+        userCreator = data["user_creator"]
+        lobbyID = data["lobby_id"]
+        maxUsers = data["maxUsers"]
+    
+        player = WaitingPlayer(player_id = generate_id(), name = userCreator, lobby_id= lobbyID)
 
-        self.matchmaking_service.create_lobby(
-            message.lobby_id,
-            message.max_users,
-            player
-        )
-
+        self.matchmaking_service.create_lobby(lobbyID, maxUsers, userCreator)
+        
         return Event("LOBBY_CREATED", {"lobby_id": message.lobby_id})
 
 #example of JSON request to join a lobby:
-# { lobby_id: "lobby1", 
+# { 
+#   lobby_id: "lobby1", 
 #   user_joined: "bob"
 # }
 
 class JoinLobbyCommand(Command):
 
-    def __init__(self, matchmaking_service: MatchmakingService):
+    def __init__(self, matchmaking_service: MatchmakingService, repository = None):
         self.matchmaking_service = matchmaking_service
-
+        self.matchmakerRepository = repository or RedisRepository()
+        
     def execute(self, message):
 
         player = WaitingPlayer(player_id=generate_id(), name=message.user_joined)

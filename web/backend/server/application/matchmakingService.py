@@ -3,7 +3,6 @@ import uuid
 from server.application.gameInformation import GameInformation
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.gameManagerService import GameServerManager
-from server.presentation.websocket_handler import Event
 
 class MatchmakingService:
 
@@ -11,7 +10,7 @@ class MatchmakingService:
         self.waiting_players = [] # list of WaitingPlayer objects, example: [WaitingPlayer(player_id="1234", name="alice", lobby_id="lobby1")]
         self.active_games = {} #list of GameInformation objects, example: {"game_id": GameInformation}
         self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
-        self.lobbies = {} # example: {"players": ["alice", "bob"], max_players: 4}
+        self.lobbies = {} # example: {"lobby_id" : 001, "players": ["alice", "bob"], "max_players": 4}
         self.gameServer_manager = GameServerManager()
         
     #added
@@ -27,17 +26,10 @@ class MatchmakingService:
 
         return "LOBBY_CREATED"
 
-    #added
-    def join_lobby(self, lobby_id: str, player : WaitingPlayer) -> str:
-
+    def join_lobby(self, player: WaitingPlayer, lobby_id: str) -> str: 
+        
         if lobby_id not in self.lobbies:
             raise Exception("Lobby not found")
-
-        result = self.add_player_to_pool(player, lobby_id)
-        
-        return result
-    
-    def add_player_to_pool(self, player: WaitingPlayer, lobby_id: str) -> str: 
         
         self.waiting_players.append(player)
         lobby = self.lobbies[lobby_id]    
@@ -49,9 +41,9 @@ class MatchmakingService:
 
         game_id = str(uuid.uuid4())[:8]
 
-        self.create_game(lobby_players, game_id)
-
-        return "MATCH_FOUND"
+        game = self.create_game(lobby_players, game_id)
+        
+        return game
     
     def create_game(self,lobby_players, game_id):
  

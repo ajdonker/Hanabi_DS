@@ -1,10 +1,10 @@
 from database.gameSerializer import GameSerializer
-from database.repos import IGameRepository, ILobbyRepository, IUserRepository
+from database.repos import IGameRepository, IMatchmakerRepository, IUserRepository
 from server.application import user
 from server.application.user import User
 from server.domain.game import Game
 import json, time, random
-class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
+class RedisRepository(IGameRepository, IMatchmakerRepository, IUserRepository):
     '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
     def __init__(self, redis_client):
         self.redis = redis_client
@@ -24,7 +24,8 @@ class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
                 delay += random.uniform(0, 0.05)
 
                 time.sleep(delay)
-    
+
+    ## ------------------------------------------------ GameRepository ------------------------------------------------
     def load_game(self, game_id) -> Game | None:
         key = f"hanabi:game:{game_id}"
         
@@ -43,7 +44,10 @@ class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
         payload = json.dumps(GameSerializer.to_dict(game))
         
         self._retry(lambda: self.redis.set(key, payload)) # pass state dict or Game object in interface
-             
+    
+    #--------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------ UserRepository ----------------------------------------------------
+
     def load_user(self, username : str) -> User | None:
         key = f"hanabi:user:{username}"
         
@@ -63,8 +67,26 @@ class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
         
         self._retry(lambda: self.redis.set(key, payload))
     
-    def load_lobby(self, lobby_id):
+    ## -----------------------------------------------------------------------------------------------------------------
+    ## ------------------------------------------------ MatchmakerRepository ------------------------------------------------
+    
+    # Mapping player <-> game
+    
+    def save_player_game(self, player_id: str, game_id: str):
         pass
     
-    def save_lobby(self, lobby):
+    def get_game_by_player(self, player_id: str) -> str | None:
+        pass
+    
+    def remove_player(self, player_id: str):
+        pass
+
+    # --- GAME → SERVER INFO ---
+    def save_game_server(self, game_id: str, host: str, port: int, container: str):
+        pass
+    
+    def get_server_by_game(self, game_id: str) -> dict | None:
+        pass
+    
+    def remove_game(self, game_id: str):
         pass

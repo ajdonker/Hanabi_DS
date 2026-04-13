@@ -16,10 +16,30 @@ class IGameRepository(ABC):
     def save_game(self, game):
         pass
 
-class ILobbyRepository(ABC):
+class IMatchmakerRepository(ABC):
+
+    # --- PLAYER ↔ GAME ---
     @abstractmethod
-    def load_lobby(self, lobby_id):
+    def save_player_game(self, player_id: str, game_id: str):
         pass
+    
     @abstractmethod
-    def save_lobby(self, lobby):
+    def get_game_by_player(self, player_id: str) -> str | None:
+        pass
+    
+    @abstractmethod
+    def remove_player(self, player_id: str):
+        pass
+
+    # --- GAME → SERVER INFO ---
+    @abstractmethod
+    def save_game_server(self, game_id: str, host: str, port: int, container: str):
+        pass
+    
+    @abstractmethod
+    def get_server_by_game(self, game_id: str) -> dict | None:
+        pass
+    
+    @abstractmethod
+    def remove_game(self, game_id: str):
         pass
