@@ -15,6 +15,10 @@ class WrongTurnException(GameException): #It's not your turn
 
 ###################
 
+class LobbyException(Exception):
+    pass
+
+
 
 
 

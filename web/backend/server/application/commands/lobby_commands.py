@@ -1,6 +1,6 @@
 from database import RedisRepository
 from server.application.commands.commands import Command
-from server.application import lobbyInitializer
+from server.domain.exceptions import LobbyException
 from server.presentation.websocket_handler import Event
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService
@@ -16,12 +16,13 @@ class CreateLobbyCommand(Command):
         userCreator = data["user_creator"]
         lobbyID = data["lobby_id"]
         maxUsers = data["maxUsers"]
-    
-        player = WaitingPlayer(player_id = generate_id(), name = userCreator, lobby_id= lobbyID)
 
-        self.matchmaking_service.create_lobby(lobbyID, maxUsers, userCreator)
+        try :
+            self.matchmaking_service.create_lobby(lobbyID, maxUsers, userCreator)
+        except LobbyException :
+            return Event("error", {"message" : "Lobby already created"})
         
-        return Event("LOBBY_CREATED", {"lobby_id": message.lobby_id})
+        return Event("lobby_created", {"lobby_id": lobbyID})
 
 #example of JSON request to join a lobby:
 # { 

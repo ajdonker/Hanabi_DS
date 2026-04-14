@@ -3,6 +3,7 @@ import uuid
 from server.application.gameInformation import GameInformation
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.gameManagerService import GameServerManager
+from server.domain.exceptions import LobbyException
 
 class MatchmakingService:
 
@@ -17,7 +18,7 @@ class MatchmakingService:
     def create_lobby(self, lobby_id: str, max_users: int, user_creator : str) -> str:
         
         if lobby_id in self.lobbies:
-            raise Exception("Lobby already exists") #to be handled in lobby comands
+            raise LobbyException
 
         self.lobbies[lobby_id] = {
             "players": [user_creator],
