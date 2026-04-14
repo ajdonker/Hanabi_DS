@@ -1,10 +1,6 @@
 LICENSE
 README.md
 pyproject.toml
-web/backend/hanabi.egg-info/PKG-INFO
-web/backend/hanabi.egg-info/SOURCES.txt
-web/backend/hanabi.egg-info/dependency_links.txt
-web/backend/hanabi.egg-info/top_level.txt
 web/backend/client/__init__.py
 web/backend/client/client.py
 web/backend/database/RedisRepository.py

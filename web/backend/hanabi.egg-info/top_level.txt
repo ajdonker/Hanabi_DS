@@ -6,5 +6,4 @@ game_logic
 infrastructure
 matchmaker
 server
-shared
 tests
