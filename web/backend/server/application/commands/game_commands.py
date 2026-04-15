@@ -109,7 +109,7 @@ class GiveHintCommand(Command):
             if raw is None:
                 return [Event("error", {"message": "Game not found"})]
         
-            game = Game.from_dict(raw)
+            game = GameSerializer.from_dict(raw)
 
             result = game.giveHint(from_player,to_player,color,number)
 

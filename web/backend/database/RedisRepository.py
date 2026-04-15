@@ -73,14 +73,11 @@ class RedisRepository(IGameRepository, IMatchmakerRepository, IUserRepository):
     # Mapping player <-> game
     
     def save_player_game(self, username: str, game_id: str):
-        key = f"hanabi:match:{username}"
-        
-        payload = game_id
-        
-        self._retry(lambda: self.redis.set(key, payload))
+        key = f"hanabi:player:{username}:game"
+        self._retry(lambda: self.redis.set(key, game_id))
     
     def get_game_by_player(self, username: str) -> str | None:
-        key = f"hanabi:match:{username}"
+        key = f"hanabi:player:{username}:game"
         
         game_id  = self._retry(lambda: self.redis.get(key))
     
@@ -94,10 +91,26 @@ class RedisRepository(IGameRepository, IMatchmakerRepository, IUserRepository):
 
     # --- GAME → SERVER INFO ---
     def save_game_server(self, game_id: str, host: str, port: int, container: str):
-        pass
+        key = f"hanabi:game:{game_id}:server"
+        
+        payload = json.dumps({
+            "host": host,
+            "port": port,
+            "container": container
+        })
+        
+        self._retry(lambda: self.redis.set(key, payload))
+
     
     def get_server_by_game(self, game_id: str) -> dict | None:
-        pass
+        key = f"hanabi:game:{game_id}:server"
+        
+        container  = self._retry(lambda: self.redis.get(key))
+
+        if not container:
+            return None
+    
+        return container
     
     def remove_game(self, game_id: str):
         pass

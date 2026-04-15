@@ -7,9 +7,8 @@ from server.application.matchmakingService import MatchmakingService
 
 class CreateLobbyCommand(Command):
 
-    def __init__(self, matchmaking_service: MatchmakingService, repository = None):
+    def __init__(self, matchmaking_service: MatchmakingService):
         self.matchmaking_service = matchmaking_service
-        self.matchmakerRepository = repository or RedisRepository()
 
     def execute(self, data):
 
@@ -32,9 +31,8 @@ class CreateLobbyCommand(Command):
 
 class JoinLobbyCommand(Command):
 
-    def __init__(self, matchmaking_service: MatchmakingService, repository = None):
+    def __init__(self, matchmaking_service: MatchmakingService):
         self.matchmaking_service = matchmaking_service
-        self.matchmakerRepository = repository or RedisRepository()
         
     def execute(self, data) -> list[Event]:
 
