@@ -26,7 +26,7 @@ class RedisRepository(IGameRepository, IMatchmakerRepository, IUserRepository):
                 time.sleep(delay)
 
     ## ------------------------------------------------ GameRepository ------------------------------------------------
-    def load_game(self, game_id) -> Game | None:
+    def load_game(self, game_id : str) -> Game | None:
         key = f"hanabi:game:{game_id}"
         
         raw = self._retry(lambda: self.redis.get(key))
@@ -72,11 +72,22 @@ class RedisRepository(IGameRepository, IMatchmakerRepository, IUserRepository):
     
     # Mapping player <-> game
     
-    def save_player_game(self, player_id: str, game_id: str):
-        pass
+    def save_player_game(self, username: str, game_id: str):
+        key = f"hanabi:match:{username}"
+        
+        payload = game_id
+        
+        self._retry(lambda: self.redis.set(key, payload))
     
-    def get_game_by_player(self, player_id: str) -> str | None:
-        pass
+    def get_game_by_player(self, username: str) -> str | None:
+        key = f"hanabi:match:{username}"
+        
+        game_id  = self._retry(lambda: self.redis.get(key))
+    
+        if not game_id:
+            return None
+    
+        return game_id
     
     def remove_player(self, player_id: str):
         pass

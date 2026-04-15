@@ -96,7 +96,7 @@ class GiveHintCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
 
-    def execute(self, data):
+    def execute(self, data) -> list[Event]:
     
         try:
             game_id = data["gameId"]

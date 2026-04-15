@@ -11,8 +11,8 @@ class GameServerManager:
     def __init__(self):
         self.docker_client = docker.from_env()
 
+    #spawn a container then return its information
     def spawn_server_container(self,game_id,player_names):
-        '''spawn a container then return its information'''
         container_name = f"hanabi-game-{game_id}"
         container = self.docker_client.containers.run(
             image="hanabi-server", 

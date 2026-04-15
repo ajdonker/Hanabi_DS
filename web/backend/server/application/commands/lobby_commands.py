@@ -36,27 +36,23 @@ class JoinLobbyCommand(Command):
         self.matchmaking_service = matchmaking_service
         self.matchmakerRepository = repository or RedisRepository()
         
-    def execute(self, message):
+    def execute(self, data) -> list[Event]:
 
-        player = WaitingPlayer(player_id=generate_id(), name=message.user_joined)
+        lobbyID = data["lobby_id"]
+        userJoined = data["user_joined"]
 
-        result = self.matchmaking_service.join_lobby(
-            message.lobby_id,
-            player
-        )
+        events = []
 
-        if result == "WAITING":
-            return Event(result, {})
+        try :
+            result = self.matchmaking_service.join_lobby(lobbyID, userJoined)
+        except LobbyException :
+            return Event("error", {"message" : "Lobby not found"})
+        
+        events.append(Event("user_joined", {"lobby_id": lobbyID, "user_joined" : userJoined}))
+        
+        if(result == "WAITING") :
+            events.append(Event("lobby_waiting", {"lobby_id": lobbyID}))
+        elif(result == "GAME_CREATED") :
+            events.append(Event("game_created", {"lobby_id": lobbyID}))
 
-        elif result == "MATCH_FOUND":
-            return Event(result, {
-                "game_id": result.game_id,
-                "host": result.host,
-                "port": result.port
-            })
-        else :
-            pass #unknown error
-
-def generate_id():
-    import uuid
-    return str(uuid.uuid4())[:8]
+        return events
