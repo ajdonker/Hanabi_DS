@@ -4,14 +4,14 @@ from database.RedisRepository import RedisRepository
 from server.application.gameInformation import GameInformation
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.gameManagerService import GameServerManager
-from server.domain.exceptions import LobbyException
+from server.domain.exceptions import LobbyException, RedisErrorException
 
 class MatchmakingService:
 
     def __init__(self, repository):
         self.waiting_players = list[WaitingPlayer] # list of WaitingPlayer objects, example: [WaitingPlayer(player_id="1234", lobby_id="lobby1")]
-        self.active_games = {} #list of GameInformation objects, example: {"game_id": "g01", GameInformation}
         self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
+        self.active_games = {} #list of GameInformation objects, example: {"game_id": "g01", GameInformation}
         self.lobbies = {} # example: {"lobby_id" : 001, "players": ["alice", "bob"], "max_players": 4}
         self.gameServer_manager = GameServerManager()
         self.matchmakerRepository = repository or RedisRepository()
@@ -42,21 +42,27 @@ class MatchmakingService:
         if len(lobby_players) < lobby["max_users"]:
             return "WAITING"
         
-        self.create_game(lobby_players, lobby_id, game_id = str(uuid.uuid4())[:8])
+        try :
+            self.create_game(lobby_players, game_id = str(uuid.uuid4())[:8])
+        except RedisErrorException:
+            pass
         
         return "GAME_CREATED"
     
-    def create_game(self,lobby_players,lobby_id, game_id):
+    def create_game(self,lobby_players, game_id):
  
         for p in lobby_players:
-            self.active_player_names[p.name] = {"status": "active","game_id": game_id}
+            self.active_player_names[p.player_id] = {"status": "active","game_id": game_id}
         
         try: 
-            self.matchmakerRepository.save_player_game(lobby_id, game_id)
-        except RuntimeError:
-            raise RuntimeError #to be handled
             
-        player_names = [p.name for p in lobby_players]
+            for p in lobby_players :
+                self.matchmakerRepository.save_player_game(p.player_id, game_id)
+
+        except RuntimeError:
+            raise RedisErrorException #to be handled
+            
+        player_names = [p.player_id for p in lobby_players]
         host, port, container_name = self.gameServer_manager.spawn_server_container(game_id,player_names)
         
         game = GameInformation(
@@ -78,7 +84,7 @@ class MatchmakingService:
             container= game.container_name
             )
         except RuntimeError:
-            raise RuntimeError #to be handled
+            raise RedisErrorException #to be handled
         
         return game
     

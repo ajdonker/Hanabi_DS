@@ -31,10 +31,7 @@ class GameServerManager:
         )
         time.sleep(1)
         container.reload()
-        for p in player_names:
-            self.repo.save_player_game_mapping(p, game_id)
 
-        self.repo.save_game_players(game_id, player_names)
         port_info = container.attrs["NetworkSettings"]["Ports"]["12345/tcp"]
         if not port_info:
             print("[MATCHMAKER] full attrs ports:", port_info)
