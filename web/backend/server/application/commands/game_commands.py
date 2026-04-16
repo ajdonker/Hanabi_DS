@@ -3,8 +3,8 @@ from database.repos import IGameRepository
 from server.application.commands.commands import Command
 from server.domain.exceptions import *
 from server.domain.game import Game
-from web.backend.database.gameSerializer import GameSerializer
-from web.backend.server.domain.exceptionMapper import ExceptionMapper
+from database.gameSerializer import GameSerializer
+from server.domain.exceptionMapper import ExceptionMapper
 
 class PlayCardCommand(Command):
     def __init__(self,repo: IGameRepository):

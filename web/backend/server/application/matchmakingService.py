@@ -3,7 +3,7 @@ import uuid
 import threading
 from server.application.gameInformation import GameInformation
 from server.application.waitingPlayer import WaitingPlayer
-from web.backend.server.application.gameServerManager import GameServerManager
+from server.application.gameServerManager import GameServerManager
 from server.presentation.websocket_handler import Event
 from database.RedisRepository import RedisRepository
 
@@ -18,7 +18,7 @@ class MatchmakingService:
         self.lobbies = {} # example: {"players": ["alice", "bob"], max_players: 4}
         self.repo = repo if repo is not None else RedisRepository()
         self.gameServer_manager = GameServerManager()
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         
     #added
     def create_lobby(self, lobby_id: str, max_users: int, user_creator : str) -> str:
@@ -45,19 +45,21 @@ class MatchmakingService:
     
     def add_player_to_pool(self, player: WaitingPlayer, lobby_id: str) -> str: 
         
-        with self.lock:
-            self.waiting_players.append(player)
-            lobby = self.lobbies[lobby_id]    
-            #count all players in the pool that are in the same lobby
-            lobby_players = [p for p in self.waiting_players if p.lobby_id == lobby_id]
-            
-            if len(lobby_players) < lobby["max_users"]:
-                return "WAITING"
+        if any(p.name == player.name and p.lobby_id == lobby_id for p in self.waiting_players):
+            return "ALREADY_IN_QUEUE"
+        
+        self.waiting_players.append(player)
+        lobby = self.lobbies[lobby_id]    
+        #count all players in the pool that are in the same lobby
+        lobby_players = [p for p in self.waiting_players if p.lobby_id == lobby_id]
+        
+        if len(lobby_players) < lobby["max_users"]:
+            return "WAITING"
 
-            self.waiting_players = [p for p in self.waiting_players if p.lobby_id != lobby_id]
-            game_id = str(uuid.uuid4())[:8]
+        self.waiting_players = [p for p in self.waiting_players if p.lobby_id != lobby_id]
+        game_id = str(uuid.uuid4())[:8]
 
-            self.create_game(lobby_players, game_id)
+        self.create_game(lobby_players, game_id)
             
         return "MATCH_FOUND"
     
@@ -72,16 +74,16 @@ class MatchmakingService:
             
             # for player_name in player_names:
             #     self.repo.save_player_game_mapping(player_name, game_id) save player game mapping left out for now
-            self.repo.save_game_players(game_id, player_names)
             
             game = GameInformation(
                 game_id= game_id,
                 container_name = container_name,
-                host = host,
-                port = port,
+                # host = host,
+                # port = port,
                 players = lobby_players,
                 timestamp = time.time()
             )
+            self.repo.save_game_information(game)
             self.active_games[game_id] = game
             return game
     
@@ -117,12 +119,12 @@ class MatchmakingService:
             print(f"[MATCHMAKER] Cleaning up expired/dead game {game_id}")
             self.remove_game(game_id)
             
-    def remove_waiting_player(self, conn):
+    def remove_waiting_player(self, player_name: str):
         with self.lock:
-            removed_names = [p.name for p in self.waiting_players if p.conn == conn]
-            self.waiting_players = [p for p in self.waiting_players if p.conn != conn]
-            for name in removed_names:
-                self.active_player_names.pop(name, None)
+            self.waiting_players = [
+                p for p in self.waiting_players if p.name != player_name
+            ]
+            self.active_player_names.pop(player_name, None)
 
     def find_game(self, game_id, player_name):
         with self.lock:

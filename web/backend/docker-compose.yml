@@ -11,7 +11,7 @@ services:
     user: root
     entrypoint: >
       sh -c "
-        chown -R redis:redis /etc/redis-config &&
+        sudo chown -R redis:redis /etc/redis-config &&
         exec redis-server /etc/redis-config/redis.conf
       "
     hostname: redis-master
@@ -31,7 +31,7 @@ services:
     user: root
     entrypoint: >
       sh -c "
-        chown -R redis:redis /etc/redis-config &&
+        sudo chown -R redis:redis /etc/redis-config &&
         exec redis-server /etc/redis-config/redis.conf --replicaof redis-master 6379 --replica-announce-ip redis-replica
       "
     ports:
@@ -51,7 +51,7 @@ services:
     hostname: sentinel
     entrypoint: >
       sh -c "
-        chown -R redis:redis /etc/redis-config &&
+        sudo chown -R redis:redis /etc/redis-config &&
         exec redis-sentinel /etc/redis-config/redis.conf --sentinel
       "
     command:
@@ -68,41 +68,41 @@ services:
     networks:
       - hanabi_net
 
-  # server:
-  #   build: .
-  #   image: hanabi-server
-  #   container_name: hanabi-server
-  #   hostname: hanabi-server
-  #   depends_on:
-  #     - sentinel
-  #   environment:
-  #     SENTINEL_NODES: "sentinel:26379"
-  #     SENTINEL_MASTER_NAME: "mymaster"
-  #   ports:
-  #     - "12345:12345"
-  #   networks:
-  #     - hanabi_net
+  server:
+    build: .
+    image: hanabi-server
+    container_name: hanabi-server
+    hostname: hanabi-server
+    depends_on:
+      - sentinel
+    environment:
+      SENTINEL_NODES: "sentinel:26379"
+      SENTINEL_MASTER_NAME: "mymaster"
+    ports:
+      - "12345:12345"
+    networks:
+      - hanabi_net
   
 
   # service used to fail using sentinel. might try whether depends_on would fix that 
-  matchmaker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: matchmaker
-    command: python -m matchmaker.matchmaker
-    ports:
-      - "9000:9000"
-    environment:
-      REDIS_HOST: "redis-master"
-      REDIS_PORT: "6379"
-      DOCKER_NETWORK: "backend_hanabi_net"
-      PYTHONUNBUFFERED: "1"
-    depends_on:
-      - redis-master
-      - redis-replica
-      - sentinel
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - hanabi_net
+  # matchmaker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: matchmaker
+  #   command: python -m matchmaker.matchmaker
+  #   ports:
+  #     - "9000:9000"
+  #   environment:
+  #     REDIS_HOST: "redis-master"
+  #     REDIS_PORT: "6379"
+  #     DOCKER_NETWORK: "backend_hanabi_net"
+  #     PYTHONUNBUFFERED: "1"
+  #   depends_on:
+  #     - redis-master
+  #     - redis-replica
+  #     - sentinel
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - hanabi_net

@@ -1,5 +1,5 @@
 from .exceptions import GameException, GameNotFoundException, WrongTurnException, NoTokenException, MisfireException
-from web.backend.presentation.event import Event
+from server.presentation.websocket_handler import Event
 
 class ExceptionMapper:
 

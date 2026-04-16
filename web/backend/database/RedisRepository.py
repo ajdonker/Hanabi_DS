@@ -3,11 +3,23 @@ from database.repos import IGameRepository, ILobbyRepository, IUserRepository
 from server.application import user
 from server.application.user import User
 from server.domain.game import Game
-import json, time, random
+from server.application.gameInformation import GameInformation
+from redis.sentinel import Sentinel
+import json, time, random, os
 class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
     '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
-    def __init__(self, redis_client):
-        self.redis = redis_client
+    def __init__(self, redis_client=None):
+        if redis_client:
+            self.redis = redis_client
+        else:
+            sentinel_nodes = os.getenv("SENTINEL_NODES", "localhost:26379").split(",")
+            sentinel = Sentinel([tuple(node.split(":")) for node in sentinel_nodes])
+
+            self.redis = sentinel.master_for(
+                os.getenv("SENTINEL_MASTER_NAME", "mymaster"),
+                decode_responses=True
+            )
+        
 
     def _retry(self, fn, retries=3, base_delay=0.1):
     
@@ -38,11 +50,25 @@ class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
         return GameSerializer.from_dict(data)
 
     def save_game(self,game: Game):
+        if not hasattr(game, "gameID"):
+            raise TypeError(f"Expected Game object, got {type(game)}")
+
         key = f"hanabi:game:{game.gameID}"
         
         payload = json.dumps(GameSerializer.to_dict(game))
         
-        self._retry(lambda: self.redis.set(key, payload)) # pass state dict or Game object in interface
+        self._retry(lambda: self.redis.set(key, payload)) 
+
+    def save_game_information(self,game_info: GameInformation):
+        key = f"hanabi:game_info:{game_info.game_id}"
+    
+        payload = json.dumps({
+            "players": [p.name for p in game_info.players],
+            "container": game_info.container_name,
+            "timestamp": game_info.timestamp,
+        })
+
+        self._retry(lambda: self.redis.set(key, payload))
              
     def load_user(self, username : str) -> User | None:
         key = f"hanabi:user:{username}"

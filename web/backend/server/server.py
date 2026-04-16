@@ -1,8 +1,9 @@
 import os,json
-from game_logic.state import GameState
-from web.backend.database.RedisRepository import RedisRepository
+from database.RedisRepository import RedisRepository
 from server.application.commands.game_commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
 from infrastructure.redis_provider import RedisProvider
+from database.gameSerializer import GameSerializer
+from server.domain.game import Game
 import asyncio,websockets
 HOST = '0.0.0.0'
 PORT = int(os.getenv("PORT","12345"))
@@ -21,17 +22,18 @@ class Server:
         self.player_indices = {name: i for i,name in enumerate(allowed_players)}
         self.game = None
         self.commands = {
-            "PLAY": PlayCardCommand(),
-            "HINT": GiveHintCommand(),
-            "DISC": DiscardCardCommand()
+            "PLAY": PlayCardCommand(game_repository),
+            "HINT": GiveHintCommand(game_repository),
+            "DISC": DiscardCardCommand(game_repository)
         }
         self.lock = asyncio.Lock()
+        self.game_serializer = GameSerializer()
    
     async def broadcast_state(self):
         """Send current game state to all connected clients after saving to game repository."""
-        snap = self.game.serialize_state()
+        snap = self.game_serializer.to_dict(self.game) # maybe changes to interface to not have to touch GameSerializer here 
         try:
-            self.game_repository.save_game(self.game_id, snap) # we should think about making this async so to not block server with slow sync repo write/read
+            self.game_repository.save_game(self.game) # we should think about making this async so to not block server with slow sync repo write/read
         except Exception as e:
             print(f"[ERROR] Could not persist game state: {e}", flush=True)
 
@@ -73,9 +75,9 @@ class Server:
             if len(self.clients) == self.expected_players and self.game is None:
                 saved_state = self.game_repository.load_game(self.game_id)
                 if saved_state:
-                    self.game = GameState.from_serialized(saved_state)
+                    self.game = saved_state
                 else:
-                    self.game = GameState(self.allowed_players)
+                    self.game = Game._create_initial_game(game_id=self.game_id,player_names=self.allowed_players)
                 await self.broadcast_state()
             elif self.game is not None:
                 await self.broadcast_state()
@@ -130,8 +132,7 @@ class Server:
 async def main():
     redis_provider = RedisProvider()
     game_repo = RedisRepository(
-        redis_provider.get_master_client(),
-        redis_provider.get_master_client
+        redis_provider.get_master_client()
     )
 
     server = Server(GAME_ID, ALLOWED_PLAYERS, game_repo)
