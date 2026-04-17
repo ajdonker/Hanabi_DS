@@ -26,12 +26,14 @@ class MatchmakingService:
             "max_players": max_users
         }
 
-    def join_lobby(self, user_joined : str, lobby_id: str) -> str: 
+    def join_lobby(self, lobby_id: str, player : WaitingPlayer) -> str: 
         
         if lobby_id not in self.lobbies:
             raise LobbyException #lobby not found
         
-        player = WaitingPlayer(user_joined, lobby_id)
+        if player in self.waiting_players :  
+            return "ALREADY_EXISTING_PLAYER"  
+
         self.waiting_players.append(player)
         
         lobby = self.lobbies[lobby_id]    
@@ -68,8 +70,8 @@ class MatchmakingService:
         game = GameInformation(
             game_id= game_id,
             container_name = container_name,
-            host = host,
-            port = port,
+            host= host,
+            port= port,
             players = lobby_players,
             timestamp = time.time()
         )

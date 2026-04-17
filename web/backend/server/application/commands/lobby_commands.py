@@ -38,11 +38,14 @@ class JoinLobbyCommand(Command):
 
         lobbyID = data["lobby_id"]
         userJoined = data["user_joined"]
-
+        playerID = data["player_id"]
+        
         events = []
 
+        player = WaitingPlayer(playerID, userJoined, lobbyID)
+        
         try :
-            result = self.matchmaking_service.join_lobby(lobbyID, userJoined)
+            result = self.matchmaking_service.join_lobby(lobbyID, player)
         except LobbyException :
             return Event("error", {"message" : "Lobby not found"})
         
