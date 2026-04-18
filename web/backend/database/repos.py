@@ -15,11 +15,3 @@ class IGameRepository(ABC):
     @abstractmethod
     def save_game(self, game):
         pass
-
-class ILobbyRepository(ABC):
-    @abstractmethod
-    def load_lobby(self, lobby_id):
-        pass
-    @abstractmethod
-    def save_lobby(self, lobby):
-        pass

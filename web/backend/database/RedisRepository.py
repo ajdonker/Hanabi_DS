@@ -1,12 +1,12 @@
 from database.gameSerializer import GameSerializer
-from database.repos import IGameRepository, ILobbyRepository, IUserRepository
+from database.repos import IGameRepository, IUserRepository
 from server.application import user
 from server.application.user import User
 from server.domain.game import Game
 from server.application.gameInformation import GameInformation
 from redis.sentinel import Sentinel
 import json, time, random, os
-class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
+class RedisRepository(IGameRepository, IUserRepository):
     '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
     def __init__(self, redis_client=None):
         if redis_client:
@@ -88,9 +88,3 @@ class RedisRepository(IGameRepository, ILobbyRepository, IUserRepository):
         payload = json.dumps(User.to_dict(user))
         
         self._retry(lambda: self.redis.set(key, payload))
-    
-    def load_lobby(self, lobby_id):
-        pass
-    
-    def save_lobby(self, lobby):
-        pass

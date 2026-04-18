@@ -4,8 +4,8 @@ import threading
 from server.application.gameInformation import GameInformation
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.gameServerManager import GameServerManager
-from server.presentation.websocket_handler import Event
 from database.RedisRepository import RedisRepository
+from server.domain.exceptions import LobbyException
 
 SERVER_TIMEOUT_TIME = 50000
 
@@ -24,7 +24,7 @@ class MatchmakingService:
     def create_lobby(self, lobby_id: str, max_users: int, user_creator : str) -> str:
         with self.lock:
             if lobby_id in self.lobbies:
-                raise Exception("Lobby already exists") #to be handled in lobby comands
+                raise LobbyException("Lobby already exists") #to be handled in lobby comands
 
             self.lobbies[lobby_id] = {
                 "players": [user_creator],
@@ -37,7 +37,7 @@ class MatchmakingService:
     def join_lobby(self, lobby_id: str, player : WaitingPlayer) -> str:
         with self.lock:
             if lobby_id not in self.lobbies:
-                raise Exception("Lobby not found")
+                raise LobbyException
 
             result = self.add_player_to_pool(player, lobby_id)
         

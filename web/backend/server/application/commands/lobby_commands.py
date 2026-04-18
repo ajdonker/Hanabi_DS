@@ -3,7 +3,7 @@ from server.application import lobbyInitializer
 from server.presentation.websocket_handler import Event
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService
-
+from server.domain.exceptions import LobbyException
 class CreateLobbyCommand(Command):
 
     def __init__(self, matchmaking_service: MatchmakingService):
@@ -11,15 +11,18 @@ class CreateLobbyCommand(Command):
 
     def execute(self, message):
 
-        player = WaitingPlayer(player_id= generate_id(), name = message.user_creator)
+        userCreator = message["user_creator"]
+        lobbyID = message["lobby_id"]
+        maxUsers = message["maxUsers"]
 
-        self.matchmaking_service.create_lobby(
-            message.lobby_id,
-            message.max_users,
-            player
-        )
+        player = WaitingPlayer(player_id= generate_id(), name = userCreator)
 
-        return Event("LOBBY_CREATED", {"lobby_id": message.lobby_id})
+        try :
+            result = self.matchmaking_service.create_lobby(lobbyID, maxUsers,player)
+        except LobbyException :
+            return Event("error", {"message" : "Lobby already exist"})
+
+        return Event(result, {"lobby_id": lobbyID})
 
 #example of JSON request to join a lobby:
 # { lobby_id: "lobby1", 
@@ -33,12 +36,19 @@ class JoinLobbyCommand(Command):
 
     def execute(self, message):
 
-        player = WaitingPlayer(player_id=generate_id(), name=message.user_joined)
+        lobbyID = message["lobby_id"]
+        userJoined = message["user_joined"]
 
-        result = self.matchmaking_service.join_lobby(
-            message.lobby_id,
-            player
-        )
+        events = []
+
+        player = WaitingPlayer(player_id=generate_id(), name = userJoined)
+
+        try :
+            result = self.matchmaking_service.join_lobby(lobbyID,player)
+        except LobbyException :
+            return Event("error", {"message" : "Lobby not found"})
+
+        events.append(Event("user_joined", {"lobby_id": lobbyID, "user_joined" : userJoined}))
 
         if result == "WAITING":
             return Event(result, {})
