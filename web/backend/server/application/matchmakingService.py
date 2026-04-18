@@ -17,7 +17,7 @@ class MatchmakingService:
         self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
         self.lobbies = {} # example: {"players": ["alice", "bob"], max_players: 4}
         self.repo = repo if repo is not None else RedisRepository()
-        self.gameServer_manager = GameServerManager()
+        self.gameServerManager = GameServerManager()
         self.lock = threading.RLock()
         
     #added
@@ -70,7 +70,7 @@ class MatchmakingService:
                 self.active_player_names[p.name] = {"status": "active","game_id": game_id}
             
             player_names = [p.name for p in lobby_players]
-            host, port, container_name = self.gameServer_manager.spawn_server_container(game_id,player_names)
+            host, port, container_name = self.gameServerManager.spawn_server_container(game_id,player_names)
             
             # for player_name in player_names:
             #     self.repo.save_player_game_mapping(player_name, game_id) save player game mapping left out for now
@@ -96,7 +96,7 @@ class MatchmakingService:
             for p in game.players:
                 self.active_games.pop(p.name, None)
 
-        removed = self.gameServer_manager.remove_container(game.container_name)
+        removed = self.gameServerManager.remove_container(game.container_name)
         if not removed:
             print(f"Cleanup failed for {game_id}: could not remove container {game.container_name}")
     
@@ -108,7 +108,7 @@ class MatchmakingService:
             now = time.time()
 
             for game_id, game in self.active_games.items():
-                status = self.gameServer_manager.get_container_status(game.container_name)
+                status = self.gameServerManager.get_container_status(game.container_name)
                 too_old = (now - game.timestamp) > SERVER_TIMEOUT_TIME
                 dead = status in (None, "exited", "dead")
 

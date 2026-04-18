@@ -15,7 +15,7 @@ def matchmaking():
     )
 
     service = MatchmakingService(repo=mock_repo)
-    service.gameServer_manager = mock_manager
+    service.gameServerManager = mock_manager
     return service
 
 
@@ -39,7 +39,7 @@ def test_matchmaking_creates_game(matchmaking):
 
 
 def test_cleanup_removes_dead_game(matchmaking):
-    matchmaking.gameServer_manager.get_container_status.return_value = "exited"
+    matchmaking.gameServerManager.get_container_status.return_value = "exited"
 
     matchmaking.create_lobby("l1", 1, "alice")
     p1 = WaitingPlayer("1", "alice", "l1")
@@ -86,7 +86,7 @@ def test_remove_waiting_player(matchmaking):
     assert "bob" not in names
 
 def test_cleanup_removes_dead_game(matchmaking):
-    matchmaking.gameServer_manager.get_container_status.return_value = "exited"
+    matchmaking.gameServerManager.get_container_status.return_value = "exited"
 
     matchmaking.create_lobby("l1", 1, "alice")
     matchmaking.join_lobby("l1", WaitingPlayer("1", "alice", "l1"))
