@@ -1,9 +1,9 @@
 import hashlib
 from server.application.commands.commands import Command
 from server.presentation.websocket_handler import Event
-from database.RedisRepository import RedisRepository
-from database.mockRedis import MockRedisRepository
-from server.application.user import User
+from web.backend.database.RedisRepository import RedisRepository
+from web.backend.database.mockRedis import MockRedisRepository
+from web.backend.server.application.user import User
 
 class RegisterCommand(Command):
     def __init__(self, repository=None):

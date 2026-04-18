@@ -90,6 +90,19 @@ class MatchmakingService:
         
         return game
     
+    def remove_game(self, game_id):
+        with self.lock:
+            game = self.active_games.pop(game_id, None)
+            if not game:
+                return
+            
+            for p in game.players:
+                self.active_games.pop(p.name, None)
+
+        removed = self.gameServer_manager.remove_container(game.container_name)
+        if not removed:
+            print(f"Cleanup failed for {game_id}: could not remove container {game.container_name}")
+    
     #useful methods for handling disconnections and finding games    
     #to be moved in presentation
     def remove_waiting_player(self, conn):

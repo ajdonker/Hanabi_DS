@@ -13,20 +13,7 @@ class GameNotFoundException(GameException):
 class WrongTurnException(GameException): #It's not your turn
     pass
 
-class NoTokenException(GameException):
-    pass
-
-class MisfireException(GameException):
-    pass
-
 ###################
-
-class LobbyException(Exception):
-    pass
-
-class RedisErrorException(GameException, LobbyException):
-    pass
-
 
 
 

@@ -1,7 +1,7 @@
 from server.domain.cards import Color, Deck, HandCard, Number, Card
 from server.domain.player import Player
 from server.domain.exceptions import *
-from server.domain.results import *
+from web.backend.server.domain.results import *
 from server.domain.gameInterface import GameInterface
 
 class Board() :
@@ -108,7 +108,7 @@ class Game(GameInterface):
         
         return self._players[username]
     
-    @staticmethod 
+    @staticmethod #removed in main
     def _create_initial_game(game_id:int = 0, player_names: list[str] = ["Player1","Player2"]):
         players = [Player(name) for name in player_names]
 

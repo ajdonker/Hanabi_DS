@@ -3,8 +3,8 @@ from database.repos import IGameRepository
 from server.application.commands.commands import Command
 from server.domain.exceptions import *
 from server.domain.game import Game
-from database.gameSerializer import GameSerializer
-from server.domain.exceptionMapper import ExceptionMapper
+from web.backend.database.gameSerializer import GameSerializer
+from web.backend.server.domain.exceptionMapper import ExceptionMapper
 
 class PlayCardCommand(Command):
     def __init__(self,repo: IGameRepository):
@@ -96,7 +96,7 @@ class GiveHintCommand(Command):
     def __init__(self,repo: IGameRepository):
         self.repo = repo
 
-    def execute(self, data) -> list[Event]:
+    def execute(self, data):
     
         try:
             game_id = data["gameId"]
@@ -109,7 +109,7 @@ class GiveHintCommand(Command):
             if raw is None:
                 return [Event("error", {"message": "Game not found"})]
         
-            game = GameSerializer.from_dict(raw)
+            game = Game.from_dict(raw)
 
             result = game.giveHint(from_player,to_player,color,number)
 
