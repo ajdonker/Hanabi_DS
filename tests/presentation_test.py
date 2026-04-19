@@ -1,10 +1,14 @@
 import asyncio
 import json
-from web.backend.server.presentation.connection_manager import ConnectionManager
-from web.backend.server.presentation.websocket_handler import CommandError, Event, WebSocketDisconnect, WebSocketHandler
 import pytest
 
+from fastapi import WebSocketDisconnect
 
+from server.presentation.connection_manager import ConnectionManager
+from server.presentation.command_factory import CommandFactory
+from server.presentation.websocket_handler import CommandError, WebSocketHandler
+from server.application.command_dispatcher import CommandDispatcher
+from server.events import Event
 
 
 class DummyWebSocket:
@@ -26,6 +30,38 @@ class DummyWebSocket:
         if isinstance(item, Exception):
             raise item
         return item
+
+
+class DummyCommand:
+    pass
+
+
+class DummyFactory:
+    def __init__(self, command=None, should_raise=False):
+        self.command = command or DummyCommand()
+        self.should_raise = should_raise
+
+    def create(self, message):
+        if self.should_raise:
+            raise ValueError("factory boom")
+        return self.command
+
+
+class DummyDispatcher:
+    def __init__(self, events=None, should_raise=False):
+        self.events = events or []
+        self.should_raise = should_raise
+
+    def dispatch(self, command):
+        if self.should_raise:
+            raise RuntimeError("boom")
+        return self.events
+
+
+def make_handler(manager, events=None, factory=None, dispatcher=None):
+    factory = factory or DummyFactory()
+    dispatcher = dispatcher or DummyDispatcher(events=events or [])
+    return WebSocketHandler(manager, dispatcher, factory)
 
 
 def test_connection_manager_bind_join_leave_flow():
@@ -88,7 +124,7 @@ def test_connection_manager_join_game_with_unbound_player_is_noop():
 
 def test_deserialize_valid_payload_and_request_id_trim():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    handler = make_handler(manager)
 
     raw = json.dumps(
         {
@@ -107,7 +143,7 @@ def test_deserialize_valid_payload_and_request_id_trim():
 
 def test_deserialize_invalid_payload_raises_command_error():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    handler = make_handler(manager)
 
     with pytest.raises(CommandError) as exc_info:
         handler.deserialize('{"type": "command", "data": {}}')
@@ -118,7 +154,7 @@ def test_deserialize_invalid_payload_raises_command_error():
 
 def test_on_message_invalid_json_sends_error_payload():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    handler = make_handler(manager)
 
     ws = DummyWebSocket()
     conn = manager.add_connection(ws)
@@ -131,10 +167,11 @@ def test_on_message_invalid_json_sends_error_payload():
     assert payload["message"] == "Invalid JSON payload."
     assert "error" in payload["details"]
 
-# maybe fail with websocket_handler.py after adding dispatcher
-def test_on_message_login_binds_player_and_returns_event_batch():
+
+def test_on_message_player_logged_binds_player_and_returns_event_batch():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    events = [Event("player_logged", {"playerId": "P1", "username": "P1"})]
+    handler = make_handler(manager, events=events)
 
     ws = DummyWebSocket()
     conn = manager.add_connection(ws)
@@ -142,7 +179,7 @@ def test_on_message_login_binds_player_and_returns_event_batch():
     raw = json.dumps(
         {
             "type": "command",
-            "action": "player.login",
+            "action": "anything",
             "requestId": "r-100",
             "data": {"username": "P1"},
         }
@@ -165,20 +202,15 @@ def test_on_message_login_binds_player_and_returns_event_batch():
 
 def test_on_message_internal_error_returns_error_with_request_id():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    handler = make_handler(manager, dispatcher=DummyDispatcher(should_raise=True))
 
     ws = DummyWebSocket()
     conn = manager.add_connection(ws)
 
-    def boom(_message):
-        raise RuntimeError("boom")
-
-    handler._handle_command = boom
-
     raw = json.dumps(
         {
             "type": "command",
-            "action": "player.login",
+            "action": "anything",
             "requestId": "r-500",
             "data": {"username": "P2"},
         }
@@ -195,19 +227,19 @@ def test_on_message_internal_error_returns_error_with_request_id():
 
 def test_on_connect_accepts_websocket_and_registers_connection():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    handler = make_handler(manager)
 
     ws = DummyWebSocket()
     conn = asyncio.run(handler.on_connect(ws))
 
-    assert ws.accepted == True
+    assert ws.accepted is True
     assert conn.startswith("conn-")
     assert manager.get_connection_by_id(conn) is ws
 
 
 def test_main_handles_disconnect_and_cleans_connection():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    handler = make_handler(manager)
 
     disconnect = WebSocketDisconnect()
     ws = DummyWebSocket(incoming=[disconnect])
@@ -217,9 +249,10 @@ def test_main_handles_disconnect_and_cleans_connection():
     assert ws.accepted is True
     assert manager._connections == {}
 
+
 def test_broadcast_sends_event_batch_to_websocket():
     manager = ConnectionManager()
-    handler = WebSocketHandler(manager)
+    handler = make_handler(manager)
 
     ws = DummyWebSocket()
     conn = manager.add_connection(ws)

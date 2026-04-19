@@ -11,7 +11,7 @@ services:
     user: root
     entrypoint: >
       sh -c "
-        sudo chown -R redis:redis /etc/redis-config &&
+         chown -R redis:redis /etc/redis-config &&
         exec redis-server /etc/redis-config/redis.conf
       "
     hostname: redis-master
@@ -31,7 +31,7 @@ services:
     user: root
     entrypoint: >
       sh -c "
-        sudo chown -R redis:redis /etc/redis-config &&
+         chown -R redis:redis /etc/redis-config &&
         exec redis-server /etc/redis-config/redis.conf --replicaof redis-master 6379 --replica-announce-ip redis-replica
       "
     ports:
@@ -51,7 +51,7 @@ services:
     hostname: sentinel
     entrypoint: >
       sh -c "
-        sudo chown -R redis:redis /etc/redis-config &&
+         chown -R redis:redis /etc/redis-config &&
         exec redis-sentinel /etc/redis-config/redis.conf --sentinel
       "
     command:

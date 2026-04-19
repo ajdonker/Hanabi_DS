@@ -1,57 +1,16 @@
-from server.application.commands.commands import Command
 from server.application import lobbyInitializer
-from server.presentation.websocket_handler import Event
+from server.events import Event
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService
 
-class CreateLobbyCommand(Command):
+class CreateLobbyCommand():
+    def __init__(self, lobby_id: str, max_users: int, user_creator: str):
+        self.lobby_id = lobby_id
+        self.max_users = max_users
+        self.user_creator = user_creator
 
-    def __init__(self, matchmaking_service: MatchmakingService):
-        self.matchmaking_service = matchmaking_service
 
-    def execute(self, message):
-
-        player = WaitingPlayer(player_id= generate_id(), name = message.user_creator)
-
-        self.matchmaking_service.create_lobby(
-            message.lobby_id,
-            message.max_users,
-            player
-        )
-
-        return Event("LOBBY_CREATED", {"lobby_id": message.lobby_id})
-
-#example of JSON request to join a lobby:
-# { lobby_id: "lobby1", 
-#   user_joined: "bob"
-# }
-
-class JoinLobbyCommand(Command):
-
-    def __init__(self, matchmaking_service: MatchmakingService):
-        self.matchmaking_service = matchmaking_service
-
-    def execute(self, message):
-
-        player = WaitingPlayer(player_id=generate_id(), name=message.user_joined)
-
-        result = self.matchmaking_service.join_lobby(
-            message.lobby_id,
-            player
-        )
-
-        if result == "WAITING":
-            return Event(result, {})
-
-        elif result == "MATCH_FOUND":
-            return Event(result, {
-                "game_id": result.game_id,
-                "host": result.host,
-                "port": result.port
-            })
-        else :
-            pass #unknown error
-
-def generate_id():
-    import uuid
-    return str(uuid.uuid4())[:8]
+class JoinLobbyCommand():
+    def __init__(self, lobby_id: str, user_joined: str):
+        self.lobby_id = lobby_id
+        self.user_joined = user_joined

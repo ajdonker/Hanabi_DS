@@ -1,8 +1,8 @@
 class GameResult:
     def __init__(self):
-        self.game_over = None | int
-        self.next_player = None | str
-        self.success = False
+        self.game_over: int | None = None
+        self.next_player: str | None = None
+        self.success: bool = False
     
     def setGameOver(self, score : int):
         self.game_over = score
@@ -24,7 +24,7 @@ class PlayDiscardCardResult(GameResult):
 class HintResult(GameResult):
     def __init__(self):
         super().__init__()    
-        self.tokensLeft = None | int
+        self.tokensLeft: int | None = None
     
     def setTokensLeft(self, tokens : int):
         self.tokensLeft = tokens
