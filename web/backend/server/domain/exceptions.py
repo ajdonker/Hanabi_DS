@@ -22,6 +22,6 @@ class MisfireException(GameException):
 ###################
 
 
-
-
+class LobbyException(Exception):
+    pass
 
