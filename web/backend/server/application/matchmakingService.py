@@ -4,6 +4,7 @@ import threading
 from server.application.gameInformation import GameInformation
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.gameServerManager import GameServerManager
+from server.events import Event
 from database.RedisRepository import RedisRepository
 from server.domain.exceptions import LobbyException
 

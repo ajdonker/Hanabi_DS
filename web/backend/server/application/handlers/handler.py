@@ -1,5 +1,6 @@
 from abc import ABC,abstractmethod
-class Command(ABC):
+
+class IHandler(ABC):
         
     @abstractmethod
     def execute(self,msg):

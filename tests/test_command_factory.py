@@ -2,9 +2,8 @@ import json
 from dataclasses import dataclass
 from typing import Any, Optional
 from uuid import uuid4
-from server.application.command_dispatcher import CommandDispatcher
+from web.backend.server.application.command_dispatcher import CommandDispatcher
 from server.presentation.command_factory import CommandFactory
-from server.presentation.command_message import CommandMessage
 from server.events import Event
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -18,7 +17,13 @@ class CommandError(Exception):
         self.details = details or {}
 
 
-
+@dataclass
+class CommandMessage:
+    type: str
+    action: str
+    data: dict[str, Any]
+    request_id: Optional[str] = None
+    connection_id: Optional[str] = None
 
 
 # @dataclass(frozen=True)

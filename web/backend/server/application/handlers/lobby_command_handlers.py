@@ -1,0 +1,65 @@
+from database.repos import IGameRepository
+from server.events import Event
+from.handler import IHandler
+from server.domain.exceptions import *
+from server.domain.exceptionMapper import ExceptionMapper
+from server.application.commands.lobby_commands import CreateLobbyCommand,JoinLobbyCommand
+import uuid
+from server.application.waitingPlayer import WaitingPlayer
+from server.application.matchmakingService import MatchmakingService
+
+def generate_id():
+    return str(uuid.uuid4())[:8]
+
+
+class CreateLobbyHandler:
+    def __init__(self, matchmaking_service: MatchmakingService):
+        self.matchmaking_service = matchmaking_service
+
+    def execute(self, command: CreateLobbyCommand) -> list[Event]:
+        player = WaitingPlayer(
+            player_id=generate_id(),
+            name=command.user_creator,
+            lobby_id=command.lobby_id,
+        )
+
+        self.matchmaking_service.create_lobby(
+            command.lobby_id,
+            command.max_users,
+            player.name,   # or player, depending on your actual create_lobby signature
+        )
+
+        return [Event("LOBBY_CREATED", {"lobby_id": command.lobby_id})]
+
+
+class JoinLobbyHandler:
+    def __init__(self, matchmaking_service: MatchmakingService):
+        self.matchmaking_service = matchmaking_service
+
+    def execute(self, command: JoinLobbyCommand) -> list[Event]:
+        player = WaitingPlayer(
+            player_id=generate_id(),
+            name=command.user_joined,
+            lobby_id=command.lobby_id,
+        )
+
+        result = self.matchmaking_service.join_lobby(
+            command.lobby_id,
+            player
+        )
+
+        if result == "WAITING":
+            return [Event("WAITING", {})]
+
+        if result == "MATCH_FOUND":
+            game = self.matchmaking_service.find_game_by_player(command.user_joined)
+            if game is None:
+                return [Event("error", {"message": "Match found but game not found"})]
+
+            return [Event("MATCH_FOUND", {
+                "game_id": game.game_id,
+                "host": game.host,
+                "port": game.port
+            })]
+
+        return [Event("error", {"message": "Unknown matchmaking result"})]

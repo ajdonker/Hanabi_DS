@@ -1,67 +1,16 @@
-from server.application.commands.commands import Command
 from server.application import lobbyInitializer
-from server.presentation.websocket_handler import Event
+from server.events import Event
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService
-from server.domain.exceptions import LobbyException
-class CreateLobbyCommand(Command):
 
-    def __init__(self, matchmaking_service: MatchmakingService):
-        self.matchmaking_service = matchmaking_service
+class CreateLobbyCommand():
+    def __init__(self, lobby_id: str, max_users: int, user_creator: str):
+        self.lobby_id = lobby_id
+        self.max_users = max_users
+        self.user_creator = user_creator
 
-    def execute(self, message):
 
-        userCreator = message["user_creator"]
-        lobbyID = message["lobby_id"]
-        maxUsers = message["maxUsers"]
-
-        player = WaitingPlayer(player_id= generate_id(), name = userCreator)
-
-        try :
-            result = self.matchmaking_service.create_lobby(lobbyID, maxUsers,player)
-        except LobbyException :
-            return Event("error", {"message" : "Lobby already exist"})
-
-        return Event(result, {"lobby_id": lobbyID})
-
-#example of JSON request to join a lobby:
-# { lobby_id: "lobby1", 
-#   user_joined: "bob"
-# }
-
-class JoinLobbyCommand(Command):
-
-    def __init__(self, matchmaking_service: MatchmakingService):
-        self.matchmaking_service = matchmaking_service
-
-    def execute(self, message):
-
-        lobbyID = message["lobby_id"]
-        userJoined = message["user_joined"]
-
-        events = []
-
-        player = WaitingPlayer(player_id=generate_id(), name = userJoined)
-
-        try :
-            result = self.matchmaking_service.join_lobby(lobbyID,player)
-        except LobbyException :
-            return Event("error", {"message" : "Lobby not found"})
-
-        events.append(Event("user_joined", {"lobby_id": lobbyID, "user_joined" : userJoined}))
-
-        if result == "WAITING":
-            return Event(result, {})
-
-        elif result == "MATCH_FOUND":
-            return Event(result, {
-                "game_id": result.game_id,
-                "host": result.host,
-                "port": result.port
-            })
-        else :
-            pass #unknown error
-
-def generate_id():
-    import uuid
-    return str(uuid.uuid4())[:8]
+class JoinLobbyCommand():
+    def __init__(self, lobby_id: str, user_joined: str):
+        self.lobby_id = lobby_id
+        self.user_joined = user_joined
