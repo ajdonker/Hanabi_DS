@@ -1,5 +1,6 @@
 from database.repos import IUserRepository
 from server.events import Event
+from server.presentation.connection_manager import ConnectionManager
 from.handler import IHandler
 from server.domain.exceptions import *
 from server.domain.exceptionMapper import ExceptionMapper
@@ -25,16 +26,28 @@ class RegisterHandler(IHandler):
         return [Event("registration_success", {"message": "Registration successful"})]
     
 class LoginHandler(IHandler):
-    def __init__(self, repository: IUserRepository = None):
-        self.userRepository = repository
-
+    def __init__(self, userRepository: IUserRepository, connectionManager : ConnectionManager):
+        self.userRepository = userRepository
+        self.connectionManager = connectionManager
+        
     def execute(self, command: LoginCommand):
 
-        user = self.userRepository.load_user(command.username)
+        username = command.username
+        password = command.password
+        
+        user = self.userRepository.load_user(username)
         if user is None :
             return [Event("error", {"message": "User not found"})]
         
-        if user._hashedPass != hashlib.sha256(command.password.encode('utf-8')).hexdigest():
+        if user._hashedPass != hashlib.sha256(password.encode('utf-8')).hexdigest():
             return [Event("error", {"message": "Invalid username or password"})]
-        
-        return [Event("login_success", {"message": "Login successful"})]
+           
+        game_id = self.userRepository.get_player_game_mapping(username)
+
+        if game_id:
+            # reconnect
+            connectionManager.join_game(player_id, game_id)
+            return [Event("player_reconnected", {...})]
+        else:
+            return [Event("player_logged", {})]
+

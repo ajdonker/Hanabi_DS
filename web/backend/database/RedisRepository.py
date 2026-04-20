@@ -1,3 +1,5 @@
+from typing import Optional
+
 from database.gameSerializer import GameSerializer
 from database.repos import IGameRepository, IUserRepository
 from server.application import user
@@ -37,6 +39,7 @@ class RedisRepository(IGameRepository, IUserRepository):
 
                 time.sleep(delay)
     
+    #-----------------------------------------GAME STATE-----------------------------------------
     def load_game(self, game_id) -> Game | None:
         key = f"hanabi:game:{game_id}"
         
@@ -59,6 +62,7 @@ class RedisRepository(IGameRepository, IUserRepository):
         
         self._retry(lambda: self.redis.set(key, payload)) 
 
+    #-----------------------------------------GAME INFO-----------------------------------------
     def save_game_information(self,game_info: GameInformation):
         key = f"hanabi:game_info:{game_info.game_id}"
     
@@ -69,7 +73,40 @@ class RedisRepository(IGameRepository, IUserRepository):
         })
 
         self._retry(lambda: self.redis.set(key, payload))
-             
+    
+    def load_game_information(self, game_id) -> GameInformation | None:
+        key = f"hanabi:game_info:{game_id}"
+        
+        raw = self._retry(lambda: self.redis.get(key))
+
+        if not raw:
+            return None
+
+        data = json.loads(raw)
+        
+        return GameInformation(
+            game_id=game_id,
+            players=[user.User(name) for name in data["players"]],
+            container_name=data["container"],
+            timestamp=data["timestamp"]
+        )  
+    #-----------------------------------------PLAYER-GAME MAPPING-----------------------------------------
+    
+    def save_player_game_mapping(self, player_id: str, game_id: str):
+        key = f"hanabi:player_game:{player_id}"
+        payload = json.dumps({"game_id": game_id})
+        self._retry(lambda: self.redis.set(key, payload))
+
+    def get_player_game_mapping(self, player_id: str) -> Optional[str]:
+        key = f"hanabi:player_game:{player_id}"
+        raw = self._retry(lambda: self.redis.get(key))
+        if raw:
+            data = json.loads(raw)
+            return data.get("game_id")
+        return None
+    
+
+    #-----------------------------------------USER -----------------------------------------
     def load_user(self, username : str) -> User | None:
         key = f"hanabi:user:{username}"
         

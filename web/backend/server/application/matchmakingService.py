@@ -85,6 +85,10 @@ class MatchmakingService:
                 timestamp = time.time()
             )
             self.repo.save_game_information(game)
+            
+            for player in lobby_players:
+                self.repo.save_player_game_mapping(player.name, game_id)
+            
             self.active_games[game_id] = game
             return game
     
