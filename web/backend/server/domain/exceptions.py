@@ -1,3 +1,6 @@
+from typing import Any, Optional
+
+
 class GameException(Exception):
     pass
 
@@ -25,3 +28,8 @@ class MisfireException(GameException):
 class LobbyException(Exception):
     pass
 
+class CommandError(Exception):
+    def __init__(self, message: str, details: Optional[dict[str, Any]] = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.details = details or {}

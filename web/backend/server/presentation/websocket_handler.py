@@ -7,24 +7,20 @@ from server.presentation.command_factory import CommandFactory
 from server.presentation.command_message import CommandMessage
 from server.events import Event
 from fastapi import WebSocket, WebSocketDisconnect
-
+from server.domain.exceptions import CommandError
 from server.presentation.connection_manager import ConnectionManager
-
-
-class CommandError(Exception):
-    def __init__(self, message: str, details: Optional[dict[str, Any]] = None) -> None:
-        super().__init__(message)
-        self.message = message
-        self.details = details or {}
-
-
-
-
 
 # @dataclass(frozen=True)
 # class Event:  
 #     event: str
 #     data: dict[str, Any]
+@dataclass
+class CommandMessage:
+    type: str
+    action: str
+    data: dict[str, Any]
+    request_id: Optional[str] = None
+    connection_id: Optional[str] = None
 
 class WebSocketHandler:
     def __init__(self, connection_manager: ConnectionManager, dispatcher: CommandDispatcher, command_factory: CommandFactory) -> None:
@@ -71,6 +67,16 @@ class WebSocketHandler:
     def serialize(self, message: dict[str, Any]) -> str:
         return json.dumps(message)
 
+    async def main(self, websocket: WebSocket) -> None:
+        conn_id = await self.on_connect(websocket)
+        try:
+            while True:
+                raw_text = await websocket.receive_text()
+                await self.on_message(conn_id, raw_text)
+        except WebSocketDisconnect:
+            await self.on_disconnect(conn_id)
+
+
     async def on_connect(self, websocket: WebSocket) -> str:
         await websocket.accept()
         return self.connection_manager.add_connection(websocket)
@@ -105,6 +111,7 @@ class WebSocketHandler:
         command = self.command_factory.create(message)
         return self.dispatcher.dispatch(command)
 
+    ''' testing login player
     def _handle_player_login(self, message: CommandMessage) -> list[Event]:
         username = message.data.get("username")
         user_id = str(uuid4())
@@ -118,6 +125,8 @@ class WebSocketHandler:
                 },
             )
         ]
+    '''
+    
     async def broadcast(
         self,
         conn_id: str,
@@ -130,14 +139,6 @@ class WebSocketHandler:
             return
         await websocket.send_text(self.serialize(payload))
 
-    async def main(self, websocket: WebSocket) -> None:
-        conn_id = await self.on_connect(websocket)
-        try:
-            while True:
-                raw_text = await websocket.receive_text()
-                await self.on_message(conn_id, raw_text)
-        except WebSocketDisconnect:
-            await self.on_disconnect(conn_id)
 
     def _sync_connections(self, conn_id: str, events: list[Event]) -> None:
         for event in events:
@@ -179,3 +180,4 @@ class WebSocketHandler:
             payload["requestId"] = request_id
 
         await websocket.send_text(self.serialize(payload))
+
