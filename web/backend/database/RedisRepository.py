@@ -11,6 +11,9 @@ import json, time, random, os
 class RedisRepository(IGameRepository, IUserRepository):
     '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
     def __init__(self, redis_client=None):
+        
+        self._games = []
+        
         if redis_client:
             self.redis = redis_client
         else:
@@ -61,6 +64,10 @@ class RedisRepository(IGameRepository, IUserRepository):
         payload = json.dumps(GameSerializer.to_dict(game))
         
         self._retry(lambda: self.redis.set(key, payload)) 
+        self._games.append(game)
+        
+    def get_all_games(self) -> list[Game]:
+        return list(self._games.values())        
 
     #-----------------------------------------GAME INFO-----------------------------------------
     def save_game_information(self,game_info: GameInformation):

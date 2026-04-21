@@ -38,10 +38,10 @@ _websocket_handler = WebSocketHandler(
     connection_manager=_connection_manager,
     dispatcher= _dispatcher,
     command_factory= _command_factory
-
 )
 
 
 @ws_router.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
     await _websocket_handler.main(websocket)
+
