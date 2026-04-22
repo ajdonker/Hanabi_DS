@@ -8,10 +8,10 @@ from fastapi import WebSocket
 
 class ConnectionManager:
     def __init__(self) -> None:
-        self._connections: dict[str, WebSocket] = {}
-        self.player_connections: dict[str, str] = {}
-        self.game_connections: dict[str, set[str]] = defaultdict(set)
-        self._conn_players: dict[str, str] = {}
+        self._connections: dict[str, WebSocket] = {} #conn_id -> websocket
+        self.player_connections: dict[str, str] = {} #
+        self.game_connections: dict[str, set[str]] = defaultdict(set) #game_id -> set of conn_ids
+        self._conn_players: dict[str, str] = {} #conn_id -> player_id
         self._lock = Lock()
 
     def add_connection(self, websocket: WebSocket) -> str:

@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Optional
 from uuid import uuid4
+from server import events
 from server.application.command_dispatcher import CommandDispatcher
 from server.presentation.command_factory import CommandFactory
 from server.presentation.command_message import CommandMessage
@@ -76,7 +77,6 @@ class WebSocketHandler:
         except WebSocketDisconnect:
             await self.on_disconnect(conn_id)
 
-
     async def on_connect(self, websocket: WebSocket) -> str:
         await websocket.accept()
         return self.connection_manager.add_connection(websocket)
@@ -104,7 +104,7 @@ class WebSocketHandler:
             )
             return
 
-        self._sync_connections(conn_id, events)
+        #self._sync_connections(conn_id, events)
         await self.broadcast(conn_id, events, request_id=message.request_id)
 
     def _handle_command(self, message: CommandMessage) -> list[Event]:
@@ -139,14 +139,27 @@ class WebSocketHandler:
             return
         await websocket.send_text(self.serialize(payload))
 
+    async def broadcast_to_game(
+        self,
+        game_id: str,
+        events: list[Event],
+    ):
+        
+        payload = self._event_batch_payload(events)
+        connections = self.connection_manager.get_game_connections(game_id)
 
+        for websocket in connections:
+            await websocket.send_text(self.serialize(payload))
+
+    ''' sync_connection
     def _sync_connections(self, conn_id: str, events: list[Event]) -> None:
         for event in events:
             if event.event == "player_logged":
                 player_id = event.data.get("playerId")
                 if isinstance(player_id, str) and player_id:
                     self.connection_manager.bind_player(conn_id, player_id)
-
+    '''
+    
     def _event_batch_payload(
         self,
         events: list[Event],

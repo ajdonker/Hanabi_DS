@@ -26,9 +26,8 @@ class RegisterHandler(IHandler):
         return [Event("registration_success", {"message": "Registration successful"})]
     
 class LoginHandler(IHandler):
-    def __init__(self, userRepository: IUserRepository, connectionManager : ConnectionManager):
-        self.userRepository = userRepository
-        self.connectionManager = connectionManager
+    def __init__(self, repository: IUserRepository = None):
+        self.userRepository = repository
         
     def execute(self, command: LoginCommand):
 
@@ -45,9 +44,7 @@ class LoginHandler(IHandler):
         game_id = self.userRepository.get_player_game_mapping(username)
 
         if game_id:
-            # reconnect
-            connectionManager.join_game(player_id, game_id)
-            return [Event("player_reconnected", {...})]
+            return [Event("player_reconnected", {"player_name": username, "game_id": game_id})]
         else:
-            return [Event("player_logged", {})]
+            return [Event("login_success", {"message": "Login successful", "player_name": username})]
 

@@ -12,7 +12,7 @@ class RedisRepository(IGameRepository, IUserRepository):
     '''Stores game states per game_id and game session related metadata - player -> game, game -> players, game ->server'''
     def __init__(self, redis_client=None):
         
-        self._games = []
+        self._games: dict[str, Game] = {}
         
         if redis_client:
             self.redis = redis_client
@@ -64,8 +64,8 @@ class RedisRepository(IGameRepository, IUserRepository):
         payload = json.dumps(GameSerializer.to_dict(game))
         
         self._retry(lambda: self.redis.set(key, payload)) 
-        self._games.append(game)
-        
+        self._games[game.gameID] = game    
+    
     def get_all_games(self) -> list[Game]:
         return list(self._games.values())        
 
@@ -97,8 +97,8 @@ class RedisRepository(IGameRepository, IUserRepository):
             container_name=data["container"],
             timestamp=data["timestamp"]
         )  
-    #-----------------------------------------PLAYER-GAME MAPPING-----------------------------------------
-    
+   
+    #-----------------------------------------PLAYER-GAME MAPPING----------------------------------------- 
     def save_player_game_mapping(self, player_id: str, game_id: str):
         key = f"hanabi:player_game:{player_id}"
         payload = json.dumps({"game_id": game_id})
@@ -112,7 +112,6 @@ class RedisRepository(IGameRepository, IUserRepository):
             return data.get("game_id")
         return None
     
-
     #-----------------------------------------USER -----------------------------------------
     def load_user(self, username : str) -> User | None:
         key = f"hanabi:user:{username}"
