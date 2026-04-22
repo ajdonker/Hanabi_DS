@@ -15,8 +15,8 @@ class MatchmakingService:
     def __init__(self, repo=None):
         self.waiting_players = [] # list of WaitingPlayer objects, example: [WaitingPlayer(player_id="1234", name="alice", lobby_id="lobby1")]
         self.active_games = {} #list of GameInformation objects, example: {"game_id": GameInformation}
-        self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
-        self.lobbies = {} # example: {"players": ["alice", "bob"], max_players: 4}
+        self.active_player_names = {str, dict[str,int]} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
+        self.lobbies = {int, dict[list[str], int]} # example: {"lobby_id" : 123, {"players": ["alice", "bob"], max_players: 4}}
         self.repo = repo if repo is not None else RedisRepository()
         self.gameServerManager = GameServerManager()
         self.lock = threading.RLock()
@@ -51,6 +51,7 @@ class MatchmakingService:
         
         self.waiting_players.append(player)
         lobby = self.lobbies[lobby_id]    
+        lobby.players.append(player.name)
         #count all players in the pool that are in the same lobby
         lobby_players = [p for p in self.waiting_players if p.lobby_id == lobby_id]
         

@@ -2,15 +2,12 @@ from collections import defaultdict
 from threading import Lock
 from typing import Optional
 from uuid import uuid4
-
 from fastapi import WebSocket
-
-
 class ConnectionManager:
     def __init__(self) -> None:
-        self._connections: dict[str, WebSocket] = {} #conn_id -> websocket
-        self.player_connections: dict[str, str] = {} #
-        self.game_connections: dict[str, set[str]] = defaultdict(set) #game_id -> set of conn_ids
+        self._connections: dict[str, WebSocket] = {} #conn_id <-> websocket
+        self.player_connections: dict[str, str] = {} #player_id <-> conn_id
+        self.game_connections: dict[str, set[str]] = defaultdict(set) #game_id <-> set[conn_id]
         self._conn_players: dict[str, str] = {} #conn_id -> player_id
         self._lock = Lock()
 

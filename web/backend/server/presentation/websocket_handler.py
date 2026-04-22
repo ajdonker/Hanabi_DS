@@ -104,7 +104,9 @@ class WebSocketHandler:
             )
             return
 
-        #self._sync_connections(conn_id, events)
+        self._sync_connections(conn_id, events)
+        player_id = self.connection_manager.get_player_for_connection(conn_id)
+        game_id = ... # devi averlo (mapping player → game)
         await self.broadcast(conn_id, events, request_id=message.request_id)
 
     def _handle_command(self, message: CommandMessage) -> list[Event]:
@@ -151,15 +153,19 @@ class WebSocketHandler:
         for websocket in connections:
             await websocket.send_text(self.serialize(payload))
 
-    ''' sync_connection
+
     def _sync_connections(self, conn_id: str, events: list[Event]) -> None:
         for event in events:
             if event.event == "player_logged":
                 player_id = event.data.get("playerId")
                 if isinstance(player_id, str) and player_id:
                     self.connection_manager.bind_player(conn_id, player_id)
-    '''
-    
+
+            elif event.event == "player_joined_game":
+                player_id = event.data.get("player_name")
+                game_id = event.data.get("game_id")
+                self.connection_manager.join_game(player_id, game_id)
+            
     def _event_batch_payload(
         self,
         events: list[Event],
