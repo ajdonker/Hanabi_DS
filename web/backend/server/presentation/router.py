@@ -1,5 +1,4 @@
 from fastapi import APIRouter, WebSocket
-from server.presentation import SessionService
 from server.presentation.connection_manager import ConnectionManager
 from server.presentation.websocket_handler import WebSocketHandler
 from server.application.command_dispatcher import CommandDispatcher
@@ -35,13 +34,10 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         JoinLobbyCommand: JoinLobbyHandler(matchmaking_service),
     })
     
-    _session_service = SessionService(repo)
-    
     _websocket_handler = WebSocketHandler(
         connection_manager=_connection_manager,
         dispatcher= _dispatcher,
         command_factory= _command_factory,
-        session_service= _session_service
     )
 
     

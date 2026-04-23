@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 from uuid import uuid4
 from server.application.command_dispatcher import CommandDispatcher
-from server.presentation import SessionService
 from server.presentation.command_factory import CommandFactory
 from server.presentation.command_message import CommandMessage
 from server.events import Event
@@ -24,11 +23,10 @@ class CommandMessage:
     connection_id: Optional[str] = None
 
 class WebSocketHandler:
-    def __init__(self, connection_manager: ConnectionManager, dispatcher: CommandDispatcher, command_factory: CommandFactory, session_service : SessionService) -> None:
+    def __init__(self, connection_manager: ConnectionManager, dispatcher: CommandDispatcher, command_factory: CommandFactory) -> None:
         self.connection_manager = connection_manager
         self.dispatcher = dispatcher
         self.command_factory = command_factory
-        self.session_service = session_service
 
     def deserialize(self, raw_text: str) -> CommandMessage:
         try:
@@ -106,8 +104,7 @@ class WebSocketHandler:
             return
 
         self._sync_connections(conn_id, events)
-        player_id = self.connection_manager.get_player_for_connection(conn_id)
-        game_id = self.session_service.get_game_id(player_id)       
+        game_id = self.connection_manager.get_game_for_connection(conn_id)    
         #await self.broadcast(conn_id, events, request_id=message.request_id)
         await self.broadcast_to_game(game_id, events)
 
