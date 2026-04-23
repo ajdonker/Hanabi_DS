@@ -74,14 +74,11 @@ class MatchmakingService:
             player_names = [p.name for p in lobby_players]
             host, port, container_name = self.gameServerManager.spawn_server_container(game_id,player_names)
             
-            # for player_name in player_names:
-            #     self.repo.save_player_game_mapping(player_name, game_id) save player game mapping left out for now
-            
             game = GameInformation(
                 game_id= game_id,
                 container_name = container_name,
-                # host = host,
-                # port = port,
+                host = host,
+                port = port,
                 players = lobby_players,
                 timestamp = time.time()
             )

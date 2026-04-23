@@ -47,10 +47,12 @@ class LoginHandler(IHandler):
             game_info = self.repository.load_game_information(game_id)
             
             return [Event("player_reconnected", {
-                          "player_name": username,
-                          "game_id": game_id,
-                          "container": game_info.container_name
+                "player_name": username,
+                "game_id": game_id,
+                "host": game_info["host"],
+                "port": game_info["port"]
             })]
+            
         else:
             return [Event("login_success", {"message": "Login successful", "player_name": username})]
 
