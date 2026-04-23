@@ -15,8 +15,8 @@ class MatchmakingService:
     def __init__(self, repo=None):
         self.waiting_players = [] # list of WaitingPlayer objects, example: [WaitingPlayer(player_id="1234", name="alice", lobby_id="lobby1")]
         self.active_games = {} #list of GameInformation objects, example: {"game_id": GameInformation}
-        self.active_player_names = {str, dict[str,int]} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
-        self.lobbies = {int, dict[list[str], int]} # example: {"lobby_id" : 123, {"players": ["alice", "bob"], max_players: 4}}
+        self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
+        self.lobbies: dict[str, dict] = {} # example: {"lobby_id" : 123, {"players": ["alice", "bob"], max_players: 4}}
         self.repo = repo if repo is not None else RedisRepository()
         self.gameServerManager = GameServerManager()
         self.lock = threading.RLock()
@@ -38,7 +38,7 @@ class MatchmakingService:
     def join_lobby(self, lobby_id: str, player : WaitingPlayer) -> str:
         with self.lock:
             if lobby_id not in self.lobbies:
-                raise LobbyException
+                raise LobbyException("Lobby does not exist")
 
             result = self.add_player_to_pool(player, lobby_id)
         
@@ -46,19 +46,25 @@ class MatchmakingService:
     
     def add_player_to_pool(self, player: WaitingPlayer, lobby_id: str) -> str: 
         
-        if any(p.name == player.name and p.lobby_id == lobby_id for p in self.waiting_players):
+        if any(p.name == player.name for p in self.waiting_players):
             return "ALREADY_IN_QUEUE"
         
+        lobby = self.lobbies[lobby_id]
+        
+        if player.name not in lobby["players"]:
+            lobby["players"].append(player.name)
+        
         self.waiting_players.append(player)
-        lobby = self.lobbies[lobby_id]    
-        lobby.players.append(player.name)
+        
         #count all players in the pool that are in the same lobby
         lobby_players = [p for p in self.waiting_players if p.lobby_id == lobby_id]
         
         if len(lobby_players) < lobby["max_users"]:
             return "WAITING"
 
+        #If lobby is full, remove waiting players from pool
         self.waiting_players = [p for p in self.waiting_players if p.lobby_id != lobby_id]
+        
         game_id = str(uuid.uuid4())[:8]
 
         self.create_game(lobby_players, game_id)
