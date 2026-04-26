@@ -2,7 +2,7 @@
 import asyncio
 
 from fastapi import FastAPI
-from server.presentation.router import ws_router
+from server.presentation.router import _connection_manager, ws_router
 from database.RedisRepository import RedisRepository
 from server.presentation.turnWatcher import TurnWatcher
 
@@ -16,8 +16,8 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
-@app.lifespan("startup")
+@app.on_event("startup")
 async def startup():
-    watcher = TurnWatcher(repo)
+    watcher = TurnWatcher(repo, _connection_manager)
     asyncio.create_task(watcher.start())
     print("[Server] TurnWatcher started")
