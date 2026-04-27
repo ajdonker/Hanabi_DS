@@ -9,19 +9,30 @@ class GameServerManager:
     def spawn_server_container(self, game_id, player_names):
         """Spawn a game server container and return host, port, container_name."""
         container_name = f"hanabi-game-{game_id}"
+        container_port = "8000"
 
         container = self.docker_client.containers.run(
             image="hanabi-server",
             detach=True,
             name=container_name,
+            command=[
+                "python",
+                "-m",
+                "uvicorn",
+                "server.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                container_port,
+            ],
             environment={
                 "GAME_ID": game_id,
                 "PLAYERS_JSON": json.dumps(player_names),
-                "PORT": "12345",
+                "PORT": container_port,
                 "SENTINEL_NODES": os.getenv("SENTINEL_NODES", "sentinel:26379"),
                 "SENTINEL_MASTER_NAME": os.getenv("SENTINEL_MASTER_NAME", "mymaster"),
             },
-            ports={"12345/tcp": None},
+            ports={f"{container_port}/tcp": None},
             network=os.getenv("DOCKER_NETWORK", "backend_hanabi_net"),
             restart_policy={"Name": "unless-stopped"},
         )
@@ -29,7 +40,7 @@ class GameServerManager:
         time.sleep(1)
         container.reload()
 
-        port_info = container.attrs["NetworkSettings"]["Ports"]["12345/tcp"]
+        port_info = container.attrs["NetworkSettings"]["Ports"][f"{container_port}/tcp"]
         if not port_info:
             print("[MATCHMAKER] full attrs ports:", port_info)
             try:
@@ -37,7 +48,7 @@ class GameServerManager:
                 print(container.logs().decode())
             except Exception as e:
                 print("[MATCHMAKER] could not read logs:", e)
-            raise RuntimeError("Container started but port 12345/tcp was not published")
+            raise RuntimeError(f"Container started but port {container_port}/tcp was not published")
 
         host = port_info[0]["HostIp"]
         if host == "0.0.0.0":
