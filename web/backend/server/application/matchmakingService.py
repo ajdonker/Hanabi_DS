@@ -34,6 +34,19 @@ class MatchmakingService:
 
         return "LOBBY_CREATED"
 
+    def list_lobbies(self) -> list[dict]:
+        with self.lock:
+            return [
+                {
+                    "lobbyId": lobby_id,
+                    "name": f"Game {lobby_id}",
+                    "maxUser": lobby["max_users"],
+                    "numUser": len(lobby["players"]),
+                    "currentUsers": list(lobby["players"]),
+                }
+                for lobby_id, lobby in self.lobbies.items()
+            ]
+
     #added
     def join_lobby(self, lobby_id: str, player : WaitingPlayer) -> str:
         with self.lock:

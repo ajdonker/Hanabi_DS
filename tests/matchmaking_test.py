@@ -64,6 +64,30 @@ def test_multiple_lobbies_isolated(matchmaking):
     assert res2 == "MATCH_FOUND"
     assert len(matchmaking.active_games) == 2
 
+def test_list_lobbies_returns_lobby_summaries(matchmaking):
+    matchmaking.create_lobby("l1", 3, "alice")
+    matchmaking.create_lobby("l2", 4, "charlie")
+    matchmaking.join_lobby("l1", WaitingPlayer("2", "bob", "l1"))
+
+    lobbies = matchmaking.list_lobbies()
+
+    assert lobbies == [
+        {
+            "lobbyId": "l1",
+            "name": "Game l1",
+            "maxUser": 3,
+            "numUser": 2,
+            "currentUsers": ["alice", "bob"],
+        },
+        {
+            "lobbyId": "l2",
+            "name": "Game l2",
+            "maxUser": 4,
+            "numUser": 1,
+            "currentUsers": ["charlie"],
+        },
+    ]
+
 def test_duplicate_player_not_added_twice(matchmaking):
     matchmaking.create_lobby("l1", 2, "alice")
 
