@@ -3,7 +3,7 @@ from server.events import Event
 from.handler import IHandler
 from server.domain.exceptions import *
 from server.domain.exceptionMapper import ExceptionMapper
-from server.application.commands.lobby_commands import CreateLobbyCommand,JoinLobbyCommand
+from server.application.commands.lobby_commands import CreateLobbyCommand,JoinLobbyCommand,ListLobbiesCommand
 import uuid
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService
@@ -29,7 +29,23 @@ class CreateLobbyHandler:
             player.name,   # or player, depending on your actual create_lobby signature
         )
 
-        return [Event("LOBBY_CREATED", {"lobby_id": command.lobby_id})]
+        return [Event("lobby_created", {
+            "lobbyId": command.lobby_id,
+            "name": f"Game {command.lobby_id}",
+            "maxUser": command.max_users,
+            "numUser": 1,
+            "currentUsers": [player.name],
+        })]
+
+
+class ListLobbiesHandler:
+    def __init__(self, matchmaking_service: MatchmakingService):
+        self.matchmaking_service = matchmaking_service
+
+    def execute(self, command: ListLobbiesCommand) -> list[Event]:
+        return [Event("lobby_list", {
+            "lobbies": self.matchmaking_service.list_lobbies()
+        })]
 
 
 class JoinLobbyHandler:

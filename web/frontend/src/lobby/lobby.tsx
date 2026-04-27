@@ -1,5 +1,16 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  LOBBY_CREATE_COMMAND,
+  LOBBY_JOIN_COMMAND,
+  LOBBY_LIST_COMMAND,
+} from "../network/commandTypes";
+import {
+  LOBBY_CREATED_EVENT,
+  LOBBY_LIST_EVENT,
+  MATCH_FOUND_EVENT,
+  WAITING_EVENT,
+} from "../network/eventTypes";
 import { getEventData, wsClient } from "../network/wsClient";
 import "./lobby.css";
 
@@ -21,6 +32,12 @@ type LobbyListEvent = {
   lobbies: LobbyWire[];
 };
 
+type MatchFoundEvent = {
+  game_id: string;
+  host: string;
+  port: number;
+};
+
 export default function Lobby() {
   const navigate = useNavigate();
   const [tables, setTables] = useState<Table[]>([]);
@@ -38,6 +55,10 @@ export default function Lobby() {
     };
   }
 
+  function generateLobbyId(): string {
+    return `table-${crypto.randomUUID().slice(0, 8)}`;
+  }
+
   useEffect(() => {
     let isMounted = true;
 
@@ -45,10 +66,10 @@ export default function Lobby() {
       try {
         setIsLoadingTables(true);
         const events = await wsClient.command<Record<string, never>>(
-          "player.list_lobbies",
+          LOBBY_LIST_COMMAND,
           {},
         );
-        const payload = getEventData<LobbyListEvent>(events, "lobby_list");
+        const payload = getEventData<LobbyListEvent>(events, LOBBY_LIST_EVENT);
         if (!payload) {
           throw new Error("Unable to parse lobby list.");
         }
@@ -79,18 +100,34 @@ export default function Lobby() {
       navigate("/login");
       return;
     }
+    const username = localStorage.getItem("hanabi.username") || playerId;
 
     try {
       setMessage("");
       setJoiningLobbyId(table.id);
-      const events = await wsClient.command<{ playerId: string; lobbyId: string }>(
-        "player.join_lobby",
-        { playerId, lobbyId: table.id },
+      const events = await wsClient.command<{ lobbyId: string; userJoined: string }>(
+        LOBBY_JOIN_COMMAND,
+        { lobbyId: table.id, userJoined: username },
       );
 
-      const joined = getEventData<LobbyWire>(events, "player_joined");
+      const match = getEventData<MatchFoundEvent>(events, MATCH_FOUND_EVENT);
+      if (match) {
+        localStorage.setItem("hanabi.gameId", match.game_id);
+        localStorage.setItem(
+          "hanabi.gameWsUrl",
+          `ws://${match.host}:${match.port}/ws`,
+        );
+        navigate(`/game/${match.game_id}`);
+        return;
+      }
+
+      const waiting = getEventData<Record<string, never>>(events, WAITING_EVENT);
+      if (!waiting) {
+        throw new Error("Join lobby failed: invalid server response.");
+      }
+
       navigate(`/waiting/${table.id}`, {
-        state: { tableSize: joined?.maxUser ?? table.maxPlayers },
+        state: { tableSize: table.maxPlayers },
       });
     } catch (error) {
       console.error("Failed to join lobby:", error);
@@ -118,6 +155,7 @@ export default function Lobby() {
       navigate("/login");
       return;
     }
+    const username = localStorage.getItem("hanabi.username") || playerId;
     if (isCreatingTable) {
       return;
     }
@@ -125,11 +163,16 @@ export default function Lobby() {
     try {
       setIsCreatingTable(true);
       setMessage("");
-      const events = await wsClient.command<{ playerId: string; maxUser: number }>(
-        "player.create_lobby",
-        { playerId, maxUser: requestedPlayers },
+      const lobbyId = generateLobbyId();
+      const events = await wsClient.command<{
+        lobbyId: string;
+        maxUsers: number;
+        userCreator: string;
+      }>(
+        LOBBY_CREATE_COMMAND,
+        { lobbyId, maxUsers: requestedPlayers, userCreator: username },
       );
-      const created = getEventData<LobbyWire>(events, "lobby_created");
+      const created = getEventData<LobbyWire>(events, LOBBY_CREATED_EVENT);
       if (!created) {
         throw new Error("Create lobby failed: missing lobby_created event.");
       }

@@ -13,3 +13,7 @@ class JoinLobbyCommand():
     def __init__(self, lobby_id: str, user_joined: str):
         self.lobby_id = lobby_id
         self.user_joined = user_joined
+
+
+class ListLobbiesCommand():
+    pass
