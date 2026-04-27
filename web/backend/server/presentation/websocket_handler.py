@@ -76,7 +76,6 @@ class WebSocketHandler:
         except WebSocketDisconnect:
             await self.on_disconnect(conn_id)
 
-
     async def on_connect(self, websocket: WebSocket) -> str:
         await websocket.accept()
         return self.connection_manager.add_connection(websocket)
@@ -105,7 +104,9 @@ class WebSocketHandler:
             return
 
         self._sync_connections(conn_id, events)
-        await self.broadcast(conn_id, events, request_id=message.request_id)
+        game_id = self.connection_manager.get_game_for_connection(conn_id)    
+        #await self.broadcast(conn_id, events, request_id=message.request_id)
+        await self.broadcast_to_game(game_id, events)
 
     def _handle_command(self, message: CommandMessage) -> list[Event]:
         command = self.command_factory.create(message)
@@ -139,6 +140,18 @@ class WebSocketHandler:
             return
         await websocket.send_text(self.serialize(payload))
 
+    async def broadcast_to_game(
+        self,
+        game_id: str,
+        events: list[Event],
+    ):
+        
+        payload = self._event_batch_payload(events)
+        connections = self.connection_manager.get_game_connections(game_id)
+
+        for websocket in connections:
+            await websocket.send_text(self.serialize(payload))
+
 
     def _sync_connections(self, conn_id: str, events: list[Event]) -> None:
         for event in events:
@@ -147,6 +160,11 @@ class WebSocketHandler:
                 if isinstance(player_id, str) and player_id:
                     self.connection_manager.bind_player(conn_id, player_id)
 
+            elif event.event == "player_joined_game":
+                player_id = event.data.get("player_name")
+                game_id = event.data.get("game_id")
+                self.connection_manager.join_game(player_id, game_id)
+            
     def _event_batch_payload(
         self,
         events: list[Event],

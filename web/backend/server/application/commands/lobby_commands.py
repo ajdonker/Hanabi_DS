@@ -1,4 +1,3 @@
-from server.application import lobbyInitializer
 from server.events import Event
 from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService

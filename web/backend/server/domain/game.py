@@ -1,3 +1,5 @@
+import time
+
 from server.domain.cards import Color, Deck, HandCard, Number, Card
 from server.domain.player import Player
 from server.domain.exceptions import *
@@ -73,6 +75,8 @@ class Game(GameInterface):
         self._turnOrder = [p._username for p in players] #list of usernames in the order of the turns
         self._playerTurn = playerTurn 
         self._finalTurn = False
+        self._turnStartedAt: float
+        self._turnDeadline: float
 
     @property
     def gameID(self) -> int:
@@ -295,6 +299,11 @@ class Game(GameInterface):
         if(self._finalTurn):
             self._players[playerTurn].setLastTurn(True)
         
+        #started timer
+        now = time.time()
+        self._turnStartedAt = now
+        self._turnDeadline = now + 60
+        
     def checkGameOver(self) -> int | None: 
         
         if self._board._misfires == 0:
@@ -307,6 +316,9 @@ class Game(GameInterface):
             return self._board.calculateScore()
 
         return None
+    
+    def isTurnExpired(self) -> bool:
+        return time.time() > self._turnDeadline
     
     def debugPrintState(self):
         print("\n" + "="*60)

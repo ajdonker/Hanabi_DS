@@ -2,16 +2,14 @@ from collections import defaultdict
 from threading import Lock
 from typing import Optional
 from uuid import uuid4
-
 from fastapi import WebSocket
-
-
 class ConnectionManager:
     def __init__(self) -> None:
-        self._connections: dict[str, WebSocket] = {}
-        self.player_connections: dict[str, str] = {}
-        self.game_connections: dict[str, set[str]] = defaultdict(set)
-        self._conn_players: dict[str, str] = {}
+        self._connections: dict[str, WebSocket] = {} #conn_id <-> websocket
+        self.player_connections: dict[str, str] = {} #player_id <-> conn_id
+        self.game_connections: dict[str, set[str]] = defaultdict(set) #game_id <-> set[conn_id]
+        self._conn_players: dict[str, str] = {} #conn_id -> player_id
+        self._conn_games: dict[str, str] = {} #conn_id --> game_id
         self._lock = Lock()
 
     def add_connection(self, websocket: WebSocket) -> str:
@@ -24,6 +22,10 @@ class ConnectionManager:
         with self._lock:
             self._connections.pop(conn_id, None)
 
+            game_id = self._conn_games.pop(conn_id, None)
+            if game_id:
+                self.game_connections[game_id].discard(conn_id)
+                
             player_id = self._conn_players.pop(conn_id, None)
             if player_id is not None:
                 self.player_connections.pop(player_id, None)
@@ -53,7 +55,9 @@ class ConnectionManager:
             conn_id = self.player_connections.get(player_id)
             if conn_id is None:
                 return
+
             self.game_connections[game_id].add(conn_id)
+            self._conn_games[conn_id] = game_id
 
     def leave_game(self, player_id: str, game_id: str) -> None:
         with self._lock:
@@ -87,3 +91,7 @@ class ConnectionManager:
     def get_conn_ids_for_game(self, game_id: str) -> list[str]:
         with self._lock:
             return list(self.game_connections.get(game_id, set()))
+
+    def get_game_for_connection(self, conn_id: str) -> Optional[str]:
+        with self._lock:
+            return self._conn_games.get(conn_id)

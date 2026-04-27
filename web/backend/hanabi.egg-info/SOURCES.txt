@@ -22,8 +22,6 @@ web/backend/server/main.py
 web/backend/server/server.py
 web/backend/server/application/gameInformation.py
 web/backend/server/application/gameManagerService.py
-web/backend/server/application/lobby.py
-web/backend/server/application/lobbyInitializer.py
 web/backend/server/application/matchmakingService.py
 web/backend/server/application/user.py
 web/backend/server/application/waitingPlayer.py

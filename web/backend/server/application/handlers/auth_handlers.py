@@ -1,5 +1,6 @@
-from database.repos import IUserRepository
+from database.RedisRepository import RedisRepository, IUserRepository
 from server.events import Event
+from server.presentation.connection_manager import ConnectionManager
 from.handler import IHandler
 from server.domain.exceptions import *
 from server.domain.exceptionMapper import ExceptionMapper
@@ -25,16 +26,33 @@ class RegisterHandler(IHandler):
         return [Event("registration_success", {"message": "Registration successful"})]
     
 class LoginHandler(IHandler):
-    def __init__(self, repository: IUserRepository = None):
-        self.userRepository = repository
-
+    def __init__(self, repository: RedisRepository = None):
+        self.repository = repository
+        
     def execute(self, command: LoginCommand):
 
-        user = self.userRepository.load_user(command.username)
+        username = command.username
+        password = command.password
+        
+        user = self.repository.load_user(username)
         if user is None :
             return [Event("error", {"message": "User not found"})]
         
-        if user._hashedPass != hashlib.sha256(command.password.encode('utf-8')).hexdigest():
+        if user._hashedPass != hashlib.sha256(password.encode('utf-8')).hexdigest():
             return [Event("error", {"message": "Invalid username or password"})]
-        
-        return [Event("login_success", {"message": "Login successful"})]
+           
+        game_id = self.repository.get_player_game_mapping(username)
+
+        if game_id: #there's already a valid game for that player
+            game_info = self.repository.load_game_information(game_id)
+            
+            return [Event("player_reconnected", {
+                "player_name": username,
+                "game_id": game_id,
+                "host": game_info["host"],
+                "port": game_info["port"]
+            })]
+            
+        else:
+            return [Event("login_success", {"message": "Login successful", "player_name": username})]
+
