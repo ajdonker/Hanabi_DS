@@ -115,7 +115,7 @@ export default function Register() {
             <span>Email</span>
             <input
               type="email"
-              placeholder="ada@example.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
