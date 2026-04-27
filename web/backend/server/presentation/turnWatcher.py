@@ -17,19 +17,20 @@ class TurnWatcher:
                 for game in games:
                     if game.isTurnExpired():
                         game.changeTurn()
+                        self.repo.save_game(game)
 
-                connections = self.connection_manager.get_game_connections(game.gameID)
+                        connections = self.connection_manager.get_game_connections(game.gameID)
 
-                payload = {
-                    "type": "event_batch",
-                    "events": [ {
-                            "event": "turn_changed",
-                            "data": {"nextPlayer": game.playerTurn}
-                            }]
-                }
+                        payload = {
+                            "type": "event_batch",
+                            "events": [ {
+                                    "event": "turn_changed",
+                                    "data": {"nextPlayer": game.playerTurn}
+                                    }]
+                        }
 
-                for ws in connections:
-                    await ws.send_text(json.dumps(payload))
+                        for ws in connections:
+                            await ws.send_text(json.dumps(payload))
                                     
                 await asyncio.sleep(1)
             
