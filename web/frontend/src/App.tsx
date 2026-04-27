@@ -1,5 +1,6 @@
 import { Routes, Route, Outlet, Link } from "react-router-dom";
 import Login from "./login/login";
+import Register from "./register/register";
 import Lobby from "./lobby/lobby";
 import Waiting from "./waiting/waiting";
 import Game from "./game";
@@ -9,6 +10,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
         <Route path="lobby" element={<Lobby />} />
         <Route path="waiting/:tableId" element={<Waiting />} />
         <Route path="game/:tableId" element={<Game />} />

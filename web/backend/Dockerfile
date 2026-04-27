@@ -8,5 +8,5 @@ COPY server ./server
 COPY database ./database
 #COPY commands ./server/commands
 COPY infrastructure ./infrastructure
-EXPOSE 12345
-CMD ["python","-m","server.server"]
+EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]

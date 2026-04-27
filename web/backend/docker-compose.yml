@@ -78,8 +78,12 @@ services:
     environment:
       SENTINEL_NODES: "sentinel:26379"
       SENTINEL_MASTER_NAME: "mymaster"
+      DOCKER_NETWORK: "backend_hanabi_net"
+      PYTHONUNBUFFERED: "1"
     ports:
-      - "12345:12345"
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - hanabi_net
   

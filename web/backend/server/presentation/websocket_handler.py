@@ -105,8 +105,10 @@ class WebSocketHandler:
 
         self._sync_connections(conn_id, events)
         game_id = self.connection_manager.get_game_for_connection(conn_id)    
-        #await self.broadcast(conn_id, events, request_id=message.request_id)
-        await self.broadcast_to_game(game_id, events)
+        if game_id:
+            await self.broadcast_to_game(game_id, events, request_id=message.request_id)
+        else:
+            await self.broadcast(conn_id, events, request_id=message.request_id)
 
     def _handle_command(self, message: CommandMessage) -> list[Event]:
         command = self.command_factory.create(message)
@@ -144,9 +146,10 @@ class WebSocketHandler:
         self,
         game_id: str,
         events: list[Event],
+        request_id: Optional[str] = None,
     ):
         
-        payload = self._event_batch_payload(events)
+        payload = self._event_batch_payload(events, request_id=request_id)
         connections = self.connection_manager.get_game_connections(game_id)
 
         for websocket in connections:
@@ -198,4 +201,3 @@ class WebSocketHandler:
             payload["requestId"] = request_id
 
         await websocket.send_text(self.serialize(payload))
-
