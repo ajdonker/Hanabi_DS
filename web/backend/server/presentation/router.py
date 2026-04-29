@@ -5,10 +5,10 @@ from server.application.command_dispatcher import CommandDispatcher
 from database.RedisRepository import RedisRepository
 from server.application.commands.game_commands import PlayCardCommand,DiscardCardCommand,GiveHintCommand
 from server.application.commands.auth_commands import RegisterCommand,LoginCommand
-from server.application.commands.lobby_commands import CreateLobbyCommand,JoinLobbyCommand,ListLobbiesCommand
+from server.application.commands.lobby_commands import CreateLobbyCommand,JoinLobbyCommand,ListLobbiesCommand,LobbyDetailCommand
 from server.application.handlers.game_command_handlers import PlayCardHandler, GiveHintHandler, DiscardCardHandler
 from server.application.handlers.auth_handlers import RegisterHandler,LoginHandler
-from server.application.handlers.lobby_command_handlers import CreateLobbyHandler,JoinLobbyHandler,ListLobbiesHandler
+from server.application.handlers.lobby_command_handlers import CreateLobbyHandler,JoinLobbyHandler,ListLobbiesHandler,LobbyDetailHandler
 from server.presentation.command_factory import CommandFactory
 from server.application.matchmakingService import MatchmakingService
 
@@ -33,6 +33,7 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         CreateLobbyCommand: CreateLobbyHandler(matchmaking_service),
         JoinLobbyCommand: JoinLobbyHandler(matchmaking_service),
         ListLobbiesCommand: ListLobbiesHandler(matchmaking_service),
+        LobbyDetailCommand: LobbyDetailHandler(matchmaking_service),
     })
     
     _websocket_handler = WebSocketHandler(

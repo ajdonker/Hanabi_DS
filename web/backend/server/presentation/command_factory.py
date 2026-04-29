@@ -1,6 +1,6 @@
 from server.application.commands.game_commands import PlayCardCommand,DiscardCardCommand,GiveHintCommand
 from server.application.commands.auth_commands import RegisterCommand,LoginCommand
-from server.application.commands.lobby_commands import JoinLobbyCommand,CreateLobbyCommand,ListLobbiesCommand
+from server.application.commands.lobby_commands import JoinLobbyCommand,CreateLobbyCommand,ListLobbiesCommand,LobbyDetailCommand
 from server.presentation.command_message import CommandMessage
 from server.domain.cards import Color, Number
 
@@ -59,5 +59,11 @@ class CommandFactory:
 
         if message.action == "lobby.list":
             return ListLobbiesCommand()
+
+        if message.action == "lobby.detail":
+            return LobbyDetailCommand(
+                lobby_id=message.data["lobbyId"],
+                player_name=message.data["playerName"],
+            )
 
         raise ValueError(f"Unknown action: {message.action}")

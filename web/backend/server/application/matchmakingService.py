@@ -31,21 +31,48 @@ class MatchmakingService:
                 "players": [user_creator],
                 "max_users": max_users
             }
+            self.waiting_players.append(
+                WaitingPlayer(user_creator, user_creator, lobby_id)
+            )
 
         return "LOBBY_CREATED"
 
     def list_lobbies(self) -> list[dict]:
         with self.lock:
             return [
-                {
-                    "lobbyId": lobby_id,
-                    "name": f"Game {lobby_id}",
-                    "maxUser": lobby["max_users"],
-                    "numUser": len(lobby["players"]),
-                    "currentUsers": list(lobby["players"]),
-                }
+                self._create_lobby_description(lobby_id, lobby)
                 for lobby_id, lobby in self.lobbies.items()
             ]
+
+    def get_lobby_detail(self, lobby_id: str, player_name: str) -> dict | None:
+        with self.lock:
+            game_status = self.active_player_names.get(player_name)
+            if game_status:
+                game = self.active_games.get(game_status["game_id"])
+                if game is not None:
+                    return {
+                        "status": "MATCH_FOUND",
+                        "game_id": game.game_id,
+                        "host": game.host,
+                        "port": game.port,
+                    }
+
+            lobby = self.lobbies.get(lobby_id)
+            if lobby is None:
+                return None
+
+            detail = self._create_lobby_description(lobby_id, lobby)
+            detail["status"] = "WAITING"
+            return detail
+
+    def _create_lobby_description(self, lobby_id: str, lobby: dict) -> dict:
+        return {
+            "lobbyId": lobby_id,
+            "name": f"Game {lobby_id}",
+            "maxUser": lobby["max_users"],
+            "numUser": len(lobby["players"]),
+            "currentUsers": list(lobby["players"]),
+        }
 
     #added
     def join_lobby(self, lobby_id: str, player : WaitingPlayer) -> str:
