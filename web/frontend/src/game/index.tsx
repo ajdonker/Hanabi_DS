@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import "./game.css";
 import CardActionPopup from "./components/CardActionPopup";
 import CardHintPopup from "./components/CardHintPopup";
@@ -28,6 +28,8 @@ import type {
 type GameState = {
   tableSize?: number;
 };
+
+type GameSocketStatus = "missing" | "connecting" | "connected" | "closed" | "error";
 
 type SelectedCardHint = {
   color: CardColor;
@@ -98,8 +100,12 @@ function createDemoHandsByPlayer(players: Player[]): Record<number, HandCard[]> 
 
 export default function Game() {
   const location = useLocation();
+  const { tableId: routeGameId } = useParams();
   const state = location.state as GameState | null;
   const tableSize = Math.max(2, Math.min(4, state?.tableSize ?? 4));
+  const gameSocketRef = useRef<WebSocket | null>(null);
+  const [gameSocketStatus, setGameSocketStatus] = useState<GameSocketStatus>("connecting");
+  const [gameSocketUrl, setGameSocketUrl] = useState("");
 
   const players: Player[] = Array.from({ length: tableSize }, (_, index) => ({
     id: index + 1,
@@ -150,6 +156,53 @@ export default function Game() {
   const leftPlayerCards = leftPlayer ? handCardsByPlayer[leftPlayer.id] ?? [] : [];
   const rightPlayerCards = rightPlayer ? handCardsByPlayer[rightPlayer.id] ?? [] : [];
   const tableClass = tableSize <= 2 ? "players-2" : tableSize === 3 ? "players-3" : "players-4";
+
+  useEffect(() => {
+    const storedGameId = localStorage.getItem("hanabi.gameId");
+    const storedGameWsUrl = localStorage.getItem("hanabi.gameWsUrl");
+
+    if (!storedGameWsUrl) {
+      setGameSocketStatus("missing");
+      return;
+    }
+
+    setGameSocketUrl(storedGameWsUrl);
+    setGameSocketStatus("connecting");
+
+    const socket = new WebSocket(storedGameWsUrl);
+    gameSocketRef.current = socket;
+
+    socket.onopen = () => {
+      setGameSocketStatus("connected");
+      console.log("Connected to game WebSocket", {
+        gameId: storedGameId ?? routeGameId,
+        url: storedGameWsUrl,
+      });
+    };
+
+    socket.onmessage = (event) => {
+      console.log("Game WebSocket message", event.data);
+    };
+
+    socket.onerror = () => {
+      setGameSocketStatus("error");
+    };
+
+    socket.onclose = () => {
+      if (gameSocketRef.current === socket) {
+        gameSocketRef.current = null;
+      }
+      setGameSocketStatus("closed");
+    };
+
+    return () => {
+      socket.close();
+      if (gameSocketRef.current === socket) {
+        gameSocketRef.current = null;
+      }
+    };
+  }, [routeGameId]);
+
   const applyHintToMatchingCards = (
     targetPlayerId: number,
     hintType: "color" | "number",
@@ -442,6 +495,10 @@ export default function Game() {
   return (
     <section className="game-page">
       <GameHeader activePlayer={activePlayer} />
+      <div className={`game-socket-status is-${gameSocketStatus}`}>
+        Game server: {gameSocketStatus}
+        {gameSocketUrl ? ` (${gameSocketUrl})` : ""}
+      </div>
 
       <div className={`game-table ${tableClass}`.trim()}>
         {leftPlayer && (
