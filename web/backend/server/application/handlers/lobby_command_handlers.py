@@ -63,6 +63,7 @@ class JoinLobbyHandler:
             command.lobby_id,
             player
         )
+        print(f"dale: {result}", flush=True)
 
         if result == "WAITING":
             return [Event("WAITING", {})]
@@ -77,5 +78,4 @@ class JoinLobbyHandler:
                 "host": game.host,
                 "port": game.port
             })]
-
         return [Event("error", {"message": "Unknown matchmaking result"})]

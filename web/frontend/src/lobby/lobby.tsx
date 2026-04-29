@@ -18,6 +18,7 @@ type Table = {
   id: string;
   players: number;
   maxPlayers: number;
+  currentUsers: string[];
 };
 
 type LobbyWire = {
@@ -52,6 +53,7 @@ export default function Lobby() {
       id: lobby.lobbyId,
       players: lobby.numUser,
       maxPlayers: lobby.maxUser,
+      currentUsers: lobby.currentUsers,
     };
   }
 
@@ -101,6 +103,18 @@ export default function Lobby() {
       return;
     }
     const username = localStorage.getItem("hanabi.username") || playerId;
+    const isCurrentUserInLobby = table.currentUsers.includes(username);
+    const isLobbyFull = table.players >= table.maxPlayers;
+
+    if (isLobbyFull) {
+      navigate(`/game/${table.id}`);
+      return;
+    }
+
+    if (isCurrentUserInLobby) {
+      navigate(`/waiting/${table.id}/${table.maxPlayers}`);
+      return;
+    }
 
     try {
       setMessage("");
@@ -123,7 +137,9 @@ export default function Lobby() {
 
       const waiting = getEventData<Record<string, never>>(events, WAITING_EVENT);
       if (!waiting) {
-        throw new Error("Join lobby failed: invalid server response.");
+        const errorMsg = getEventData<{ message: string }>(events, "error");
+        setMessage(errorMsg ? errorMsg.message : "Unknown error joining lobby.");
+        return;
       }
 
       navigate(`/waiting/${table.id}/${table.maxPlayers}`);
