@@ -90,12 +90,6 @@ export default function Lobby() {
     }
     const username = localStorage.getItem("hanabi.username") || playerId;
     const isCurrentUserInLobby = table.currentUsers.includes(username);
-    const isLobbyFull = table.numUser >= table.maxUser;
-
-    if (isLobbyFull) {
-      navigate(`/game/${table.lobbyId}`);
-      return;
-    }
 
     if (isCurrentUserInLobby) {
       navigate(`/waiting/${table.lobbyId}/${table.maxUser}`);
