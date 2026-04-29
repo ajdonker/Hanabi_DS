@@ -32,13 +32,9 @@ export default function Waiting() {
   const navigate = useNavigate();
   const { tableId, tableSize: tableSizeParam } = useParams();
   const parsedTableSize = Number(tableSizeParam);
-  const fallbackTableSize =
-    Number.isInteger(parsedTableSize) && parsedTableSize > 0
-      ? parsedTableSize
-      : 4;
   const [currentUsers, setCurrentUsers] = useState<string[]>([]);
   const [numUser, setNumUser] = useState(0);
-  const [maxUser, setMaxUser] = useState(fallbackTableSize);
+  const [maxUser, setMaxUser] = useState(parsedTableSize);
   const [status, setStatus] = useState("Waiting for players...");
   const [message, setMessage] = useState("");
   const progressPercent =

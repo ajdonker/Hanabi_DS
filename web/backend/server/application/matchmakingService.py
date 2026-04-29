@@ -7,6 +7,7 @@ from server.application.gameServerManager import GameServerManager
 from server.events import Event
 from database.RedisRepository import RedisRepository
 from server.domain.exceptions import LobbyException
+from server.domain.game import Game
 
 SERVER_TIMEOUT_TIME = 50000
 
@@ -45,6 +46,7 @@ class MatchmakingService:
             ]
 
     def get_lobby_detail(self, lobby_id: str, player_name: str) -> dict | None:
+        print(f"dale: {lobby_id}, player_name: {player_name}")
         with self.lock:
             game_status = self.active_player_names.get(player_name)
             if game_status:
@@ -119,6 +121,8 @@ class MatchmakingService:
             
             player_names = [p.name for p in lobby_players]
             host, port, container_name = self.gameServerManager.spawn_server_container(game_id,player_names)
+            game_state = Game._create_initial_game(game_id, player_names)
+            self.repo.save_game(game_state)
             
             game = GameInformation(
                 game_id= game_id,
