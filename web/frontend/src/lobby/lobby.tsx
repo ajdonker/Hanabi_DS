@@ -126,9 +126,7 @@ export default function Lobby() {
         throw new Error("Join lobby failed: invalid server response.");
       }
 
-      navigate(`/waiting/${table.id}`, {
-        state: { tableSize: table.maxPlayers },
-      });
+      navigate(`/waiting/${table.id}/${table.maxPlayers}`);
     } catch (error) {
       console.error("Failed to join lobby:", error);
       setMessage(error instanceof Error ? error.message : "Unable to join lobby.");
@@ -145,9 +143,9 @@ export default function Lobby() {
     if (
       !Number.isInteger(requestedPlayers) ||
       requestedPlayers < 2 ||
-      requestedPlayers > 5
+      requestedPlayers > 4
     ) {
-      setMessage("Please enter a valid number of players between 2 and 5.");
+      setMessage("Please enter a valid number of players between 2 and 4.");
       return;
     }
     if (!playerId) {
@@ -182,9 +180,7 @@ export default function Lobby() {
         const withoutCreated = current.filter((table) => table.id !== createdTable.id);
         return [createdTable, ...withoutCreated];
       });
-      navigate(`/waiting/${createdTable.id}`, {
-        state: { tableSize: createdTable.maxPlayers },
-      });
+      navigate(`/waiting/${createdTable.id}/${createdTable.maxPlayers}`);
     } catch (error) {
       console.error("Failed to create table:", error);
       setMessage(error instanceof Error ? error.message : "Unable to reach backend.");
@@ -229,7 +225,7 @@ export default function Lobby() {
             disabled={joiningLobbyId === table.id}
             onClick={() => joinTable(table)}
           >
-            <h3>Game {table.id.replace("table-", "")}</h3>
+            <h3>GameId: {table.id.replace("table-", "")}</h3>
             <p>
               Players: {table.players}/{table.maxPlayers}
             </p>

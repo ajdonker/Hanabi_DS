@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./waiting.css";
-
-type WaitingState = {
-  tableSize?: number;
-};
 
 export default function Waiting() {
   const navigate = useNavigate();
-  const { tableId } = useParams();
-  const location = useLocation();
-  const state = location.state as WaitingState | null;
-  const tableSize = state?.tableSize ?? 4;
+  const { tableId, tableSize: tableSizeParam } = useParams();
+  const parsedTableSize = Number(tableSizeParam);
+  const tableSize =
+    Number.isInteger(parsedTableSize) && parsedTableSize > 0
+      ? parsedTableSize
+      : 4;
   const [acceptedPlayers, setAcceptedPlayers] = useState(0);
   const [status, setStatus] = useState("Click Accept when you are ready.");
   const [isAccepted, setIsAccepted] = useState(false);
