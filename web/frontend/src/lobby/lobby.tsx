@@ -14,13 +14,6 @@ import {
 import { getEventData, wsClient } from "../network/wsClient";
 import "./lobby.css";
 
-type Table = {
-  id: string;
-  players: number;
-  maxPlayers: number;
-  currentUsers: string[];
-};
-
 type LobbyWire = {
   lobbyId: string;
   name: string;
@@ -28,6 +21,8 @@ type LobbyWire = {
   numUser: number;
   currentUsers: string[];
 };
+
+type Table = LobbyWire;
 
 type LobbyListEvent = {
   lobbies: LobbyWire[];
@@ -48,15 +43,6 @@ export default function Lobby() {
   const [isCreatingTable, setIsCreatingTable] = useState(false);
   const [joiningLobbyId, setJoiningLobbyId] = useState<string | null>(null);
 
-  function toTable(lobby: LobbyWire): Table {
-    return {
-      id: lobby.lobbyId,
-      players: lobby.numUser,
-      maxPlayers: lobby.maxUser,
-      currentUsers: lobby.currentUsers,
-    };
-  }
-
   function generateLobbyId(): string {
     return `table-${crypto.randomUUID().slice(0, 8)}`;
   }
@@ -76,7 +62,7 @@ export default function Lobby() {
           throw new Error("Unable to parse lobby list.");
         }
         if (isMounted) {
-          setTables(payload.lobbies.map(toTable));
+          setTables(payload.lobbies);
         }
       } catch (error) {
         if (isMounted) {
@@ -104,24 +90,24 @@ export default function Lobby() {
     }
     const username = localStorage.getItem("hanabi.username") || playerId;
     const isCurrentUserInLobby = table.currentUsers.includes(username);
-    const isLobbyFull = table.players >= table.maxPlayers;
+    const isLobbyFull = table.numUser >= table.maxUser;
 
     if (isLobbyFull) {
-      navigate(`/game/${table.id}`);
+      navigate(`/game/${table.lobbyId}`);
       return;
     }
 
     if (isCurrentUserInLobby) {
-      navigate(`/waiting/${table.id}/${table.maxPlayers}`);
+      navigate(`/waiting/${table.lobbyId}/${table.maxUser}`);
       return;
     }
 
     try {
       setMessage("");
-      setJoiningLobbyId(table.id);
+      setJoiningLobbyId(table.lobbyId);
       const events = await wsClient.command<{ lobbyId: string; userJoined: string }>(
         LOBBY_JOIN_COMMAND,
-        { lobbyId: table.id, userJoined: username },
+        { lobbyId: table.lobbyId, userJoined: username },
       );
 
       const match = getEventData<MatchFoundEvent>(events, MATCH_FOUND_EVENT);
@@ -142,7 +128,7 @@ export default function Lobby() {
         return;
       }
 
-      navigate(`/waiting/${table.id}/${table.maxPlayers}`);
+      navigate(`/waiting/${table.lobbyId}/${table.maxUser}`);
     } catch (error) {
       console.error("Failed to join lobby:", error);
       setMessage(error instanceof Error ? error.message : "Unable to join lobby.");
@@ -190,13 +176,12 @@ export default function Lobby() {
       if (!created) {
         throw new Error("Create lobby failed: missing lobby_created event.");
       }
-      const createdTable = toTable(created);
 
       setTables((current) => {
-        const withoutCreated = current.filter((table) => table.id !== createdTable.id);
-        return [createdTable, ...withoutCreated];
+        const withoutCreated = current.filter((table) => table.lobbyId !== created.lobbyId);
+        return [created, ...withoutCreated];
       });
-      navigate(`/waiting/${createdTable.id}/${createdTable.maxPlayers}`);
+      navigate(`/waiting/${created.lobbyId}/${created.maxUser}`);
     } catch (error) {
       console.error("Failed to create table:", error);
       setMessage(error instanceof Error ? error.message : "Unable to reach backend.");
@@ -235,17 +220,17 @@ export default function Lobby() {
         {!isLoadingTables && tables.length === 0 && <p>No lobbies available yet.</p>}
         {tables.map((table) => (
           <button
-            key={table.id}
+            key={table.lobbyId}
             className="lobby-card"
             type="button"
-            disabled={joiningLobbyId === table.id}
+            disabled={joiningLobbyId === table.lobbyId}
             onClick={() => joinTable(table)}
           >
-            <h3>GameId: {table.id.replace("table-", "")}</h3>
+            <h3>GameId: {table.lobbyId.replace("table-", "")}</h3>
             <p>
-              Players: {table.players}/{table.maxPlayers}
+              Players: {table.numUser}/{table.maxUser}
             </p>
-            <span>{joiningLobbyId === table.id ? "JOINING..." : "JOIN"}</span>
+            <span>{joiningLobbyId === table.lobbyId ? "JOINING..." : "JOIN"}</span>
           </button>
         ))}
       </div>
