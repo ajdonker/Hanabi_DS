@@ -24,20 +24,34 @@ type PendingRequest = {
   timer: number;
 };
 
-type EventListener = (events: ServerEvent[]) => void;
+export type EventListener = (events: ServerEvent[]) => void;
 
-class HanabiWsClient {
+type EndpointProvider = string | (() => string);
+
+function getDefaultEndpoint(): string {
+  const configured = (import.meta.env.VITE_BACKEND_WS_URL as string | undefined)?.trim();
+  if (configured) {
+    return configured;
+  }
+  return "ws://localhost:8000/ws";
+}
+
+export class HanabiWsClient {
   private socket: WebSocket | null = null;
   private connecting: Promise<WebSocket> | null = null;
   private pending = new Map<string, PendingRequest>();
   private listeners = new Set<EventListener>();
 
+  constructor(private endpoint?: EndpointProvider) {}
+
   private getEndpoint(): string {
-    const configured = (import.meta.env.VITE_BACKEND_WS_URL as string | undefined)?.trim();
-    if (configured) {
-      return configured;
+    if (typeof this.endpoint === "function") {
+      return this.endpoint();
     }
-    return "ws://localhost:8000/ws";
+    if (this.endpoint) {
+      return this.endpoint;
+    }
+    return getDefaultEndpoint();
   }
 
   private async ensureConnection(): Promise<WebSocket> {
@@ -50,6 +64,7 @@ class HanabiWsClient {
 
     this.connecting = new Promise((resolve, reject) => {
       const socket = new WebSocket(this.getEndpoint());
+      this.socket = socket;
 
       socket.onopen = () => {
         this.socket = socket;
@@ -69,7 +84,12 @@ class HanabiWsClient {
       };
 
       socket.onclose = () => {
-        this.socket = null;
+        if (this.socket === socket) {
+          this.socket = null;
+        }
+        if (this.connecting) {
+          reject(new Error("WebSocket connection closed."));
+        }
         this.connecting = null;
         this.rejectAllPending("WebSocket connection closed.");
       };
@@ -153,6 +173,15 @@ class HanabiWsClient {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  close(): void {
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+    this.connecting = null;
+    this.rejectAllPending("WebSocket connection closed.");
   }
 
   async command<TPayload = Record<string, unknown>>(
