@@ -2,7 +2,6 @@ from typing import Optional
 
 from database.gameSerializer import GameSerializer
 from database.repos import IGameRepository, IUserRepository
-from server.application import user
 from server.application.user import User
 from server.domain.game import Game
 from server.application.gameInformation import GameInformation
@@ -77,6 +76,8 @@ class RedisRepository(IGameRepository, IUserRepository):
             "players": [p.name for p in game_info.players],
             "container": game_info.container_name,
             "timestamp": game_info.timestamp,
+            "host": game_info.host,
+            "port": game_info.port,
         })
 
         self._retry(lambda: self.redis.set(key, payload))
@@ -93,9 +94,11 @@ class RedisRepository(IGameRepository, IUserRepository):
         
         return GameInformation(
             game_id=game_id,
-            players=[user.User(name) for name in data["players"]],
+            players=data["players"],
             container_name=data["container"],
-            timestamp=data["timestamp"]
+            timestamp=data["timestamp"],
+            host=data.get("host"),
+            port=data.get("port"),
         )  
    
     #-----------------------------------------PLAYER-GAME MAPPING----------------------------------------- 

@@ -30,7 +30,6 @@ class LoginHandler(IHandler):
         self.repository = repository
         
     def execute(self, command: LoginCommand):
-
         username = command.username
         password = command.password
         
@@ -49,10 +48,9 @@ class LoginHandler(IHandler):
             return [Event("player_reconnected", {
                 "player_name": username,
                 "game_id": game_id,
-                "host": game_info["host"],
-                "port": game_info["port"]
+                "host": game_info.host,
+                "port": game_info.port
             })]
             
         else:
             return [Event("login_success", {"message": "Login successful", "player_name": username})]
-
