@@ -46,7 +46,6 @@ class MatchmakingService:
             ]
 
     def get_lobby_detail(self, lobby_id: str, player_name: str) -> dict | None:
-        print(f"dale: {lobby_id}, player_name: {player_name}")
         with self.lock:
             game_status = self.active_player_names.get(player_name)
             if game_status:
