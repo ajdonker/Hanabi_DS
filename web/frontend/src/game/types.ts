@@ -5,7 +5,8 @@ export type Player = {
 
 export type CardColor = "Green" | "White" | "Red" | "Blue" | "Yellow";
 export type Direction = "left" | "right" | "top" | "bottom";
-export type CardValue = 0 | 1 | 2 | 3 | 4 | 5;
+export type CardValue = 1 | 2 | 3 | 4 | 5;
+export type FireworkValue = 0 | CardValue;
 export type HandCard = {
   color: CardColor;
   value: CardValue;

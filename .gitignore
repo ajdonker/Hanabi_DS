@@ -4,6 +4,7 @@ web/backend/tests
 .pytest_cache/
 tests/__pycache__/
 **/__pycache__/
+web/backend/data
 *.py[cod]
 *$py.class
 .pytest_cache/

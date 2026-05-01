@@ -4,14 +4,19 @@ import docker, json, os, time
 class GameServerManager:
 
     def __init__(self):
-        self.docker_client = docker.from_env()
+        self.docker_client = None
+
+    def _client(self):
+        if self.docker_client is None:
+            self.docker_client = docker.from_env()
+        return self.docker_client
 
     def spawn_server_container(self, game_id, player_names):
         """Spawn a game server container and return host, port, container_name."""
         container_name = f"hanabi-game-{game_id}"
         container_port = "8000"
 
-        container = self.docker_client.containers.run(
+        container = self._client().containers.run(
             image="hanabi-server",
             detach=True,
             name=container_name,
@@ -61,7 +66,7 @@ class GameServerManager:
     def get_container_status(self, container_name):
         """Return Docker container status, or None if container does not exist."""
         try:
-            container = self.docker_client.containers.get(container_name)
+            container = self._client().containers.get(container_name)
             container.reload()
             return container.status
         except Exception:
@@ -70,7 +75,7 @@ class GameServerManager:
     def remove_container(self, container_name):
         """Stop and remove a container if it exists."""
         try:
-            container = self.docker_client.containers.get(container_name)
+            container = self._client().containers.get(container_name)
             container.stop(timeout=2)
             container.remove()
             return True
@@ -81,7 +86,7 @@ class GameServerManager:
     def cleanup_leftover_games(self):
         """Remove all old hanabi game containers."""
         try:
-            containers = self.docker_client.containers.list(
+            containers = self._client().containers.list(
                 all=True,
                 filters={"name": "hanabi-game-"}
             )

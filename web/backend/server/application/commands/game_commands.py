@@ -22,3 +22,8 @@ class GiveHintCommand():
         self.to_player = to_player
         self.color = color
         self.number = number
+
+
+class GetGameStateCommand():
+    def __init__(self, game_id: str):
+        self.game_id = game_id
