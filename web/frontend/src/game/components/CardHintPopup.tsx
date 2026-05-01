@@ -20,10 +20,6 @@ const VALUE_WORDS: Record<CardValue, { single: string; plural: string }> = {
   3: { single: "Three", plural: "Threes" },
   4: { single: "Four", plural: "Fours" },
   5: { single: "Five", plural: "Fives" },
-  0: {
-    single: "",
-    plural: ""
-  }
 };
 
 export default function CardHintPopup({

@@ -6,6 +6,7 @@ import type {
   CardHintMarkers,
   CardValue,
   DiscardTableData,
+  FireworkValue,
   HandCard,
   Player,
 } from "./types";
@@ -72,16 +73,15 @@ const VALUE_BY_BACKEND: Record<BackendNumber, CardValue> = {
 };
 
 function createPlaceholderHandsByPlayer(players: Player[]): Record<number, HandCard[]> {
-  return {
-    0: [
-      { color: "Blue", value: 1 }
-    ]
-  };
+  return players.reduce<Record<number, HandCard[]>>((hands, player) => {
+    hands[player.id] = [{ color: "Blue", value: 1 }];
+    return hands;
+  }, {});
 }
 
 function createEmptyDiscardByColor(): DiscardTableData {
   return colors.reduce<DiscardTableData>((discardByColor, color) => {
-    discardByColor[color] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    discardByColor[color] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     return discardByColor;
   }, {} as DiscardTableData);
 }
@@ -127,7 +127,7 @@ export function useGameState(routeGameId: string | undefined) {
   const [cardHintsByPlayer, setCardHintsByPlayer] = useState<
     Record<number, Record<number, CardHintMarkers>>
   >({});
-  const [fireworkValues, setFireworkValues] = useState<CardValue[]>([0, 0, 0, 0, 0]);
+  const [fireworkValues, setFireworkValues] = useState<FireworkValue[]>([0, 0, 0, 0, 0]);
   const [hints, setHints] = useState(8);
   const [misfires, setMisfires] = useState(0);
   const [deckCount, setDeckCount] = useState(0);
@@ -204,7 +204,7 @@ export function useGameState(routeGameId: string | undefined) {
         colors.map((color) => {
           const backendColor = BACKEND_COLOR_BY_FRONTEND[color];
           const pileValue = gameState.board.piles[backendColor] ?? 0;
-          return Math.max(0, Math.min(5, pileValue)) as CardValue;
+          return Math.max(0, Math.min(5, pileValue)) as FireworkValue;
         }),
       );
       setDiscardByColor(nextDiscardByColor);
