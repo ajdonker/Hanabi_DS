@@ -13,15 +13,12 @@ import type {
 
 export type GameSocketStatus = "missing" | "connecting" | "connected" | "closed" | "error";
 
-type BackendColor = "RED" | "YELLOW" | "GREEN" | "BLUE" | "WHITE";
-type BackendNumber = "ONE" | "TWO" | "THREE" | "FOUR" | "FIVE";
-
 type BackendHandCard = {
-  number: BackendNumber;
-  color: BackendColor;
+  number: CardValue;
+  color: CardColor;
   hints: {
-    color: BackendColor | null;
-    number: BackendNumber | null;
+    color: CardColor | null;
+    number: CardValue | null;
   };
 };
 
@@ -37,10 +34,10 @@ type BackendGameState = {
   final_turn: boolean;
   players: BackendPlayer[];
   board: {
-    piles: Record<BackendColor, number>;
+    piles: Partial<Record<CardColor, number>>;
     discards: Array<{
-      number: BackendNumber;
-      color: BackendColor;
+      number: CardValue;
+      color: CardColor;
     }>;
     tokens: number;
     misfires: number;
@@ -48,7 +45,7 @@ type BackendGameState = {
   };
 };
 
-const COLOR_BY_BACKEND: Record<BackendColor, CardColor> = {
+const COLOR_BY_BACKEND: Record<string, CardColor> = {
   RED: "Red",
   YELLOW: "Yellow",
   GREEN: "Green",
@@ -56,15 +53,7 @@ const COLOR_BY_BACKEND: Record<BackendColor, CardColor> = {
   WHITE: "White",
 };
 
-const BACKEND_COLOR_BY_FRONTEND: Record<CardColor, BackendColor> = {
-  Red: "RED",
-  Yellow: "YELLOW",
-  Green: "GREEN",
-  Blue: "BLUE",
-  White: "WHITE",
-};
-
-const VALUE_BY_BACKEND: Record<BackendNumber, CardValue> = {
+const VALUE_BY_BACKEND: Record<string, CardValue> = {
   ONE: 1,
   TWO: 2,
   THREE: 3,
@@ -86,10 +75,51 @@ function createEmptyDiscardByColor(): DiscardTableData {
   }, {} as DiscardTableData);
 }
 
+function normalizeColor(color: string): CardColor {
+  return COLOR_BY_BACKEND[color] ?? (color as CardColor);
+}
+
+function normalizeValue(value: string | number): CardValue {
+  return VALUE_BY_BACKEND[String(value)] ?? (value as CardValue);
+}
+
+function normalizeGameState(gameState: BackendGameState): BackendGameState {
+  return {
+    ...gameState,
+    players: gameState.players.map((player) => ({
+      ...player,
+      hand: player.hand.map((card) => ({
+        ...card,
+        number: normalizeValue(card.number),
+        color: normalizeColor(card.color),
+        hints: {
+          ...card.hints,
+          color: card.hints.color ? normalizeColor(card.hints.color) : null,
+          number: card.hints.number ? normalizeValue(card.hints.number) : null,
+        },
+      })),
+    })),
+    board: {
+      ...gameState.board,
+      piles: Object.fromEntries(
+        Object.entries(gameState.board.piles).map(([color, value]) => [
+          normalizeColor(color),
+          value,
+        ]),
+      ) as Partial<Record<CardColor, number>>,
+      discards: gameState.board.discards.map((card) => ({
+        ...card,
+        number: normalizeValue(card.number),
+        color: normalizeColor(card.color),
+      })),
+    },
+  };
+}
+
 function toFrontendCard(card: BackendHandCard): HandCard {
   return {
-    color: COLOR_BY_BACKEND[card.color],
-    value: VALUE_BY_BACKEND[card.number],
+    color: card.color,
+    value: card.number,
   };
 }
 
@@ -176,10 +206,10 @@ export function useGameState(routeGameId: string | undefined) {
         backendPlayer.hand.forEach((card, cardIndex) => {
           const hintsForCard: CardHintMarkers = {};
           if (card.hints.color) {
-            hintsForCard.colorHint = COLOR_BY_BACKEND[card.hints.color];
+            hintsForCard.colorHint = card.hints.color;
           }
           if (card.hints.number) {
-            hintsForCard.numberHint = VALUE_BY_BACKEND[card.hints.number];
+            hintsForCard.numberHint = card.hints.number;
           }
           if (hintsForCard.colorHint || hintsForCard.numberHint) {
             nextHintsByPlayer[playerId] = {
@@ -192,8 +222,8 @@ export function useGameState(routeGameId: string | undefined) {
 
       const nextDiscardByColor = createEmptyDiscardByColor();
       gameState.board.discards.forEach((card) => {
-        const color = COLOR_BY_BACKEND[card.color];
-        const value = VALUE_BY_BACKEND[card.number];
+        const color = card.color;
+        const value = card.number;
         nextDiscardByColor[color][value] += 1;
       });
 
@@ -202,8 +232,7 @@ export function useGameState(routeGameId: string | undefined) {
       setCardHintsByPlayer(nextHintsByPlayer);
       setFireworkValues(
         colors.map((color) => {
-          const backendColor = BACKEND_COLOR_BY_FRONTEND[color];
-          const pileValue = gameState.board.piles[backendColor] ?? 0;
+          const pileValue = gameState.board.piles[color] ?? 0;
           return Math.max(0, Math.min(5, pileValue)) as FireworkValue;
         }),
       );
@@ -225,7 +254,7 @@ export function useGameState(routeGameId: string | undefined) {
           setGameSocketStatus("error");
           return;
         }
-        applyGameState(gameState);
+        applyGameState(normalizeGameState(gameState));
         setGameSocketStatus("connected");
       })
       .catch((error) => {
