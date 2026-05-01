@@ -70,7 +70,6 @@ export default function Waiting() {
 
         const match = getEventData<MatchFoundEvent>(events, MATCH_FOUND_EVENT);
         if (match) {
-          localStorage.setItem("hanabi.gameId", match.game_id);
           localStorage.setItem(
             "hanabi.gameWsUrl",
             `ws://${match.host}:${match.port}/ws`,
