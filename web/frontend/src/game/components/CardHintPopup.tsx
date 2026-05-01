@@ -10,8 +10,6 @@ type CardHintPopupProps = {
   isSending?: boolean;
   onSelectColor: () => void;
   onSelectNumber: () => void;
-  onPlay: () => void;
-  onDiscard: () => void;
 };
 
 const VALUE_WORDS: Record<CardValue, { single: string; plural: string }> = {
@@ -32,8 +30,6 @@ export default function CardHintPopup({
   isSending = false,
   onSelectColor,
   onSelectNumber,
-  onPlay,
-  onDiscard
 }: CardHintPopupProps) {
   const normalizedColor = color.toLowerCase();
   const pluralValueWord = VALUE_WORDS[value].plural;
@@ -74,8 +70,6 @@ export default function CardHintPopup({
           </>
         )}
       </button>
-      <span onClick={onPlay}>play</span>
-      <span onClick={onDiscard}>discard</span>
     </aside>
   );
 }

@@ -297,42 +297,6 @@ export default function Game() {
     }
   };
 
-  const testPlayOrDiscard = async (actionType: "play" | "discard") => {
-
-    const ownCardAction = selectedOhterCard;
-    if (!ownCardAction) {
-      return;
-    }
-    ownCardAction.anchorRect.width = CARD_WIDTH;
-    ownCardAction.anchorRect.height = CARD_HEIGHT;
-    try {
-      setHandCardsByPlayer((current) => {
-        const ownCards = current[2] ?? [];
-        return {
-          ...current,
-          [2]: ownCards.filter((_, index) => index !== ownCardAction.cardIndex),
-        };
-      });
-      setSelectedOhterCard(null);
-      const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
-      
-      await playAnimationPromise;
-
-      if (actionType == "play") {
-        // todo show some error message to user
-        const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
-        await discardAnimationPromise;
-      }
-    } catch (error) {
-      console.log("in catch block, before animation");
-      console.error("Failed to send own card action to backend:", error);
-      
-    } finally {
-      setIsSendingOwnCardAction(false);
-      setSelectedOwnCard(null);
-    }
-  };
-
   const handleTestDrawCard = async (playerId: number) => {
     let playerDirection: Direction;
     if (playerId == topPlayer?.id) {
@@ -500,12 +464,6 @@ export default function Game() {
           }}
           onSelectNumber={() => {
             void submitHint("number");
-          }}
-          onPlay={() => {
-            void testPlayOrDiscard("play");
-          }}
-          onDiscard={() => {
-            void testPlayOrDiscard("discard");
           }}
         />
       )}
