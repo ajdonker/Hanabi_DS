@@ -51,7 +51,7 @@ class Board() :
         return True
 
     def discardMisfire(self):
-        self._misfires -= 1
+        self._misfires += 1
 
     def updatePiles(self, card): #when a card is correctly played, the board is updated
         value = card.number.value
@@ -306,7 +306,7 @@ class Game(GameInterface):
         
     def checkGameOver(self) -> int | None: 
         
-        if self._board._misfires == 0:
+        if self._board._misfires == 3:
             return self._board.calculateScore()
 
         if self._board.completedPiles():

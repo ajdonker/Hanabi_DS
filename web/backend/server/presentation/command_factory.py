@@ -31,8 +31,8 @@ class CommandFactory:
                 game_id=message.data["gameId"],
                 from_player=message.data["fromPlayerId"],
                 to_player=message.data["toPlayerId"],
-                color=Color(message.data["color"]),
-                number=Number(message.data["number"]),
+                color=Color[message.data["color"]] if message.data.get("color") else None,
+                number=Number[message.data["number"]] if message.data.get("number") else None,
             )
         
         if message.action == "player.register":

@@ -36,6 +36,7 @@ class GameServerManager:
                 "PORT": container_port,
                 "SENTINEL_NODES": os.getenv("SENTINEL_NODES", "sentinel:26379"),
                 "SENTINEL_MASTER_NAME": os.getenv("SENTINEL_MASTER_NAME", "mymaster"),
+                "PYTHONUNBUFFERED": "1",
             },
             ports={f"{container_port}/tcp": None},
             network=os.getenv("DOCKER_NETWORK", "backend_hanabi_net"),

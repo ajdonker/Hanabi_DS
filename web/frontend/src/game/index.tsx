@@ -12,11 +12,10 @@ import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
 import { toRectShape, animateOwnCardAction, drawCardToPlayerHand } from "./animate";
-import { CARD_WIDTH, CARD_HEIGHT, colors } from "./config";
+import { colors } from "./config";
 import { useGameState } from "./useGameState";
 import type {
   CardColor,
-  CardHintMarkers,
   CardValue,
   HandCard,
   Player,
@@ -30,7 +29,6 @@ type SelectedCardHint = {
   value: CardValue;
   sameColorCount: number;
   sameValueCount: number;
-  targetPlayerId: number;
   targetPlayerName: string;
   cardIndex: number;
   left: number;
@@ -43,9 +41,6 @@ const HINT_POPUP_HEIGHT = 82;
 const ACTION_POPUP_WIDTH = 200;
 const ACTION_POPUP_HEIGHT = 82;
 const POPUP_GAP = 10;
-const HINT_API_ENDPOINT = "/api/hanabi/hint";
-const PLAY_CARD_API_ENDPOINT = "/api/hanabi/play";
-const DISCARD_CARD_API_ENDPOINT = "/api/hanabi/discard";
 function computePopupPosition(
   anchorRect: DOMRect,
   popupWidth: number,
@@ -80,19 +75,22 @@ export default function Game() {
     deckCount,
     discardByColor,
     fireworkValues,
+    gameActionError,
     gameSocketStatus,
     gameSocketUrl,
+    giveHint,
     handCardsByPlayer,
     hints,
+    lastGameEventMessage,
     misfires,
+    playCard,
     players,
-    setCardHintsByPlayer,
+    discardCard,
     setHandCardsByPlayer,
   } = useGameState(routeGameId);
   const currentPlayer = players[0];
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
   const [selectedOwnCard, setSelectedOwnCard] = useState<SelectedOwnCardAction | null>(null);
-  const [selectedOhterCard, setSelectedOhterCard] = useState<SelectedOwnCardAction | null>(null);
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [isSendingHint, setIsSendingHint] = useState(false);
   const [isSendingOwnCardAction, setIsSendingOwnCardAction] = useState(false);
@@ -119,41 +117,6 @@ export default function Game() {
   const rightPlayerCards = rightPlayer ? handCardsByPlayer[rightPlayer.id] ?? [] : [];
   const tableClass = effectiveTableSize <= 2 ? "players-2" : effectiveTableSize === 3 ? "players-3" : "players-4";
 
-  const applyHintToMatchingCards = (
-    targetPlayerId: number,
-    hintType: "color" | "number",
-    hintValue: CardColor | CardValue,
-  ) => {
-    const targetCards = handCardsByPlayer[targetPlayerId] ?? [];
-
-    setCardHintsByPlayer((current) => {
-      const existingHintsForPlayer = current[targetPlayerId] ?? {};
-      const nextHintsForPlayer: Record<number, CardHintMarkers> = {
-        ...existingHintsForPlayer,
-      };
-
-      targetCards.forEach((card, cardIndex) => {
-        const isMatchingCard =
-          hintType === "color" ? card.color === hintValue : card.value === hintValue;
-
-        if (!isMatchingCard) {
-          return;
-        }
-
-        const existingCardHints = nextHintsForPlayer[cardIndex] ?? {};
-        nextHintsForPlayer[cardIndex] =
-          hintType === "color"
-            ? { ...existingCardHints, colorHint: hintValue as CardColor }
-            : { ...existingCardHints, numberHint: hintValue as CardValue };
-      });
-
-      return {
-        ...current,
-        [targetPlayerId]: nextHintsForPlayer,
-      };
-    });
-  };
-
   const handleOtherCardSelect = ({
     color,
     value,
@@ -176,20 +139,11 @@ export default function Game() {
       value,
       sameColorCount,
       sameValueCount,
-      targetPlayerId: player.id,
       targetPlayerName: player.name,
       cardIndex,
       left,
       top,
     });
-    setSelectedOhterCard({
-      color,
-      value,
-      cardIndex,
-      left,
-      top,
-      anchorRect: toRectShape(anchorRect),
-    })
     setSelectedOwnCard(null);
   };
 
@@ -219,25 +173,12 @@ export default function Game() {
 
     try {
       setIsSendingHint(true);
-      applyHintToMatchingCards(selectedHint.targetPlayerId, hintType, hintValue);
-      await fetch(HINT_API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          hintType,
-          hintValue,
-          fromPlayerId: currentPlayer.id,
-          targetPlayerId: selectedHint.targetPlayerId,
-          targetPlayerName: selectedHint.targetPlayerName,
-          selectedCard: {
-            index: selectedHint.cardIndex,
-            color: selectedHint.color,
-            value: selectedHint.value,
-          },
-        }),
-      });
+      await giveHint(
+        currentPlayer.name,
+        selectedHint.targetPlayerName,
+        hintType,
+        hintValue,
+      );
     } catch (error) {
       console.error("Failed to send hint selection to backend:", error);
     } finally {
@@ -252,38 +193,16 @@ export default function Game() {
     }
 
     const ownCardAction = selectedOwnCard;
-    const endpoint =
-      actionType === "play" ? PLAY_CARD_API_ENDPOINT : DISCARD_CARD_API_ENDPOINT;
+    const command = actionType === "play" ? playCard : discardCard;
 
     try {
       setIsSendingOwnCardAction(true);
-      setHandCardsByPlayer((current) => {
-        const ownCards = current[currentPlayer.id] ?? [];
-        return {
-          ...current,
-          [currentPlayer.id]: ownCards.filter((_, index) => index !== ownCardAction.cardIndex),
-        };
-      });
       setSelectedOwnCard(null);
+      const result = await command(currentPlayer.name, ownCardAction.cardIndex);
       const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
-      await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          actionType,
-          playerId: currentPlayer.id,
-          color: ownCardAction.color,
-          value: ownCardAction.value,
-          cardIndex: ownCardAction.cardIndex,
-        }),
-      });
       await playAnimationPromise;
-      // todo if drop wrong card, revise
-      console.log("in try block, after play animation");
-      if (actionType == "play") {
-        // todo show some error message to user
+      const playedWrongCard = result.events.some((event) => event.event === "card_wrong");
+      if (actionType === "play" && playedWrongCard) {
         const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
         await discardAnimationPromise;
       }
@@ -379,6 +298,11 @@ export default function Game() {
         Game server: {gameSocketStatus}
         {gameSocketUrl ? ` (${gameSocketUrl})` : ""}
       </div>
+      {(gameActionError || lastGameEventMessage) && (
+        <div className={`game-event-message ${gameActionError ? "is-error" : ""}`.trim()}>
+          {gameActionError || lastGameEventMessage}
+        </div>
+      )}
 
       <div className={`game-table ${tableClass}`.trim()}>
         {leftPlayer && (

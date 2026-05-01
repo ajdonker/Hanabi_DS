@@ -37,7 +37,7 @@ class PlayCardHandler(IHandler):
                         
             result = game.playCard(command.player_id, command.card_index) #can raise exceptions
 
-            self.repo.save_game(command.game_id,game.to_dict()) 
+            self.repo.save_game(game) 
             
             events = []
 
@@ -48,7 +48,7 @@ class PlayCardHandler(IHandler):
                 events.append(Event("misfire", {"playerId": command.player_id, "misfire" : result.misfire}))
             
             if result.game_over is not None:
-                events.append(Event("game_over", {"score" : result.score}))
+                events.append(Event("game_over", {"score" : result.game_over}))
                 return events
 
             events.append(Event("turn_change", {"next_player" : result.next_player}))
@@ -75,7 +75,7 @@ class DiscardCardHandler(IHandler):
         
             result = game.discardCard(command.player_id, command.card_index)
 
-            self.repo.save_game(command.game_id, game.to_dict())
+            self.repo.save_game(game)
 
             events = []
             
@@ -85,7 +85,7 @@ class DiscardCardHandler(IHandler):
                 pass # it's impossible failing to discard a card
             
             if result.game_over is not None :
-                events.append(Event("game_over", {"score" : result.score}))
+                events.append(Event("game_over", {"score" : result.game_over}))
                     
             events.append(Event("turn_change", {"next_player" : result.next_player}))
                         
@@ -115,7 +115,7 @@ class GiveHintHandler(IHandler):
                 command.number
             )
 
-            self.repo.save_game(command.game_id, game.to_dict())
+            self.repo.save_game(game)
 
             events = []
 
@@ -123,21 +123,21 @@ class GiveHintHandler(IHandler):
                 events.append(Event("hint_given", {
                     "fromPlayerId": command.from_player,
                     "toPlayerId": command.to_player,
-                    "color": command.color.value,
-                    "number": command.number.value,
+                    "color": command.color.name if command.color else None,
+                    "number": command.number.name if command.number else None,
                     "tokensLeft": result.tokensLeft
                 }))
             else:
                 events.append(Event("hint_failed", {
                     "fromPlayerId": command.from_player,
                     "toPlayerId": command.to_player,
-                    "color": command.color.value,
-                    "number": command.number.value,
+                    "color": command.color.name if command.color else None,
+                    "number": command.number.name if command.number else None,
                     "tokensLeft": result.tokensLeft
                 }))
 
             if result.game_over is not None:
-                events.append(Event("game_over", {"score": result.score})) #score and tokensLeft not in result currently
+                events.append(Event("game_over", {"score": result.game_over}))
 
             events.append(Event("turn_change", {"next_player": result.next_player}))
             return events
