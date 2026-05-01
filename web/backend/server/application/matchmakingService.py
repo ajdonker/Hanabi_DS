@@ -13,15 +13,20 @@ SERVER_TIMEOUT_TIME = 50000
 
 class MatchmakingService:
 
-    def __init__(self, repo=None):
+    def __init__(self, repo=None, game_server_manager = None):
         self.waiting_players = [] # list of WaitingPlayer objects, example: [WaitingPlayer(player_id="1234", name="alice", lobby_id="lobby1")]
         self.active_games = {} #list of GameInformation objects, example: {"game_id": GameInformation}
         self.active_player_names = {} #example: {"alice": {"status": "active","game_id": "1234"}, "bob": {"status": "active","game_id": "1234"}}
         self.lobbies: dict[str, dict] = {} # example: {"lobby_id" : 123, {"players": ["alice", "bob"], max_players: 4}}
         self.repo = repo if repo is not None else RedisRepository()
-        self.gameServerManager = GameServerManager()
+        self._gameServerManager = game_server_manager
         self.lock = threading.RLock()
-        
+    
+    @property 
+    def gameServerManager(self):
+        if self._gameServerManager is None:
+            self._gameServerManager = GameServerManager()
+        return self._gameServerManager
     #added
     def create_lobby(self, lobby_id: str, max_users: int, user_creator : str) -> str:
         with self.lock:
@@ -146,7 +151,7 @@ class MatchmakingService:
                 return
             
             for p in game.players:
-                self.active_games.pop(p.name, None)
+                self.active_player_names.pop(p.name, None)
 
         removed = self.gameServerManager.remove_container(game.container_name)
         if not removed:
