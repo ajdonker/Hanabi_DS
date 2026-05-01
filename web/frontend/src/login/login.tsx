@@ -66,7 +66,6 @@ export default function Login() {
       if (reconnect) {
         localStorage.setItem("hanabi.playerId", reconnect.player_name);
         localStorage.setItem("hanabi.username", reconnect.player_name);
-        localStorage.setItem("hanabi.gameId", reconnect.game_id);
         localStorage.setItem(
           "hanabi.gameWsUrl",
           `ws://${reconnect.host}:${reconnect.port}/ws`,

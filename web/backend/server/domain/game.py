@@ -129,7 +129,7 @@ class Game(GameInterface):
             piles={c: 0 for c in Color},
             discards=[],
             token=8,
-            misfires=3
+            misfires=0
         )
 
         return Game(

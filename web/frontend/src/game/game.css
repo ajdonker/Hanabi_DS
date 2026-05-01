@@ -44,6 +44,33 @@
   color: #0096d6;
 }
 
+.game-socket-status {
+  position: absolute;
+  top: 4.25rem;
+  right: 1rem;
+  z-index: 12;
+  max-width: min(420px, calc(100vw - 2rem));
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 6px;
+  background: rgba(248, 250, 252, 0.92);
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-socket-status.is-connected {
+  color: #166534;
+}
+
+.game-socket-status.is-error,
+.game-socket-status.is-missing {
+  color: #991b1b;
+}
+
 .game-table {
   display: grid;
   grid-template-rows: auto auto auto auto;
@@ -422,7 +449,7 @@
   position: fixed;
   z-index: 16;
   box-sizing: border-box;
-  width: 200px;
+  width: 210px;
   background: #f3f4f6;
   color: #0f172a;
   border: 2px solid #cbd5e1;

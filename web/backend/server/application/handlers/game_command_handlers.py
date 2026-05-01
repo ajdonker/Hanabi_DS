@@ -1,9 +1,29 @@
 from database.repos import IGameRepository
+from database.gameSerializer import GameSerializer
 from server.events import Event
 from.handler import IHandler
 from server.domain.exceptions import *
 from server.domain.exceptionMapper import ExceptionMapper
-from server.application.commands.game_commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand
+from server.application.commands.game_commands import PlayCardCommand,GiveHintCommand,DiscardCardCommand,GetGameStateCommand
+
+
+class GetGameStateHandler(IHandler):
+    def __init__(self, repo: IGameRepository):
+        self.repo = repo
+
+    def execute(self, command: GetGameStateCommand) -> list[Event]:
+        try:
+            game = self.repo.load_game(command.game_id)
+            if game is None:
+                raise GameNotFoundException()
+
+            return [Event("game_state", GameSerializer.to_dict(game))]
+
+        except GameException as ex:
+            return ExceptionMapper.to_events(ex)
+
+        except RuntimeError:
+            return [Event("error", {"message": "Temporary server issue"})]
 
 class PlayCardHandler(IHandler):
     def __init__(self,repo: IGameRepository):

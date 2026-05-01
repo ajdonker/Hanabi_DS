@@ -12,7 +12,7 @@ export default function App() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="lobby" element={<Lobby />} />
-        <Route path="waiting/:tableId" element={<Waiting />} />
+        <Route path="waiting/:tableId/:tableSize" element={<Waiting />} />
         <Route path="game/:tableId" element={<Game />} />
         <Route path="*" element={<NoMatch />} />
       </Route>

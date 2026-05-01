@@ -14,12 +14,6 @@ import {
 import { getEventData, wsClient } from "../network/wsClient";
 import "./lobby.css";
 
-type Table = {
-  id: string;
-  players: number;
-  maxPlayers: number;
-};
-
 type LobbyWire = {
   lobbyId: string;
   name: string;
@@ -27,6 +21,8 @@ type LobbyWire = {
   numUser: number;
   currentUsers: string[];
 };
+
+type Table = LobbyWire;
 
 type LobbyListEvent = {
   lobbies: LobbyWire[];
@@ -47,14 +43,6 @@ export default function Lobby() {
   const [isCreatingTable, setIsCreatingTable] = useState(false);
   const [joiningLobbyId, setJoiningLobbyId] = useState<string | null>(null);
 
-  function toTable(lobby: LobbyWire): Table {
-    return {
-      id: lobby.lobbyId,
-      players: lobby.numUser,
-      maxPlayers: lobby.maxUser,
-    };
-  }
-
   function generateLobbyId(): string {
     return `table-${crypto.randomUUID().slice(0, 8)}`;
   }
@@ -74,7 +62,7 @@ export default function Lobby() {
           throw new Error("Unable to parse lobby list.");
         }
         if (isMounted) {
-          setTables(payload.lobbies.map(toTable));
+          setTables(payload.lobbies);
         }
       } catch (error) {
         if (isMounted) {
@@ -101,18 +89,23 @@ export default function Lobby() {
       return;
     }
     const username = localStorage.getItem("hanabi.username") || playerId;
+    const isCurrentUserInLobby = table.currentUsers.includes(username);
+
+    if (isCurrentUserInLobby) {
+      navigate(`/waiting/${table.lobbyId}/${table.maxUser}`);
+      return;
+    }
 
     try {
       setMessage("");
-      setJoiningLobbyId(table.id);
+      setJoiningLobbyId(table.lobbyId);
       const events = await wsClient.command<{ lobbyId: string; userJoined: string }>(
         LOBBY_JOIN_COMMAND,
-        { lobbyId: table.id, userJoined: username },
+        { lobbyId: table.lobbyId, userJoined: username },
       );
 
       const match = getEventData<MatchFoundEvent>(events, MATCH_FOUND_EVENT);
       if (match) {
-        localStorage.setItem("hanabi.gameId", match.game_id);
         localStorage.setItem(
           "hanabi.gameWsUrl",
           `ws://${match.host}:${match.port}/ws`,
@@ -123,12 +116,12 @@ export default function Lobby() {
 
       const waiting = getEventData<Record<string, never>>(events, WAITING_EVENT);
       if (!waiting) {
-        throw new Error("Join lobby failed: invalid server response.");
+        const errorMsg = getEventData<{ message: string }>(events, "error");
+        setMessage(errorMsg ? errorMsg.message : "Unknown error joining lobby.");
+        return;
       }
 
-      navigate(`/waiting/${table.id}`, {
-        state: { tableSize: table.maxPlayers },
-      });
+      navigate(`/waiting/${table.lobbyId}/${table.maxUser}`);
     } catch (error) {
       console.error("Failed to join lobby:", error);
       setMessage(error instanceof Error ? error.message : "Unable to join lobby.");
@@ -145,9 +138,9 @@ export default function Lobby() {
     if (
       !Number.isInteger(requestedPlayers) ||
       requestedPlayers < 2 ||
-      requestedPlayers > 5
+      requestedPlayers > 4
     ) {
-      setMessage("Please enter a valid number of players between 2 and 5.");
+      setMessage("Please enter a valid number of players between 2 and 4.");
       return;
     }
     if (!playerId) {
@@ -176,15 +169,12 @@ export default function Lobby() {
       if (!created) {
         throw new Error("Create lobby failed: missing lobby_created event.");
       }
-      const createdTable = toTable(created);
 
       setTables((current) => {
-        const withoutCreated = current.filter((table) => table.id !== createdTable.id);
-        return [createdTable, ...withoutCreated];
+        const withoutCreated = current.filter((table) => table.lobbyId !== created.lobbyId);
+        return [created, ...withoutCreated];
       });
-      navigate(`/waiting/${createdTable.id}`, {
-        state: { tableSize: createdTable.maxPlayers },
-      });
+      navigate(`/waiting/${created.lobbyId}/${created.maxUser}`);
     } catch (error) {
       console.error("Failed to create table:", error);
       setMessage(error instanceof Error ? error.message : "Unable to reach backend.");
@@ -223,17 +213,17 @@ export default function Lobby() {
         {!isLoadingTables && tables.length === 0 && <p>No lobbies available yet.</p>}
         {tables.map((table) => (
           <button
-            key={table.id}
+            key={table.lobbyId}
             className="lobby-card"
             type="button"
-            disabled={joiningLobbyId === table.id}
+            disabled={joiningLobbyId === table.lobbyId}
             onClick={() => joinTable(table)}
           >
-            <h3>Game {table.id.replace("table-", "")}</h3>
+            <h3>GameId: {table.lobbyId.replace("table-", "")}</h3>
             <p>
-              Players: {table.players}/{table.maxPlayers}
+              Players: {table.numUser}/{table.maxUser}
             </p>
-            <span>{joiningLobbyId === table.id ? "JOINING..." : "JOIN"}</span>
+            <span>{joiningLobbyId === table.lobbyId ? "JOINING..." : "JOIN"}</span>
           </button>
         ))}
       </div>

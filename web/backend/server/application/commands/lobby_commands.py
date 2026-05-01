@@ -17,3 +17,9 @@ class JoinLobbyCommand():
 
 class ListLobbiesCommand():
     pass
+
+
+class LobbyDetailCommand():
+    def __init__(self, lobby_id: str, player_name: str):
+        self.lobby_id = lobby_id
+        self.player_name = player_name
