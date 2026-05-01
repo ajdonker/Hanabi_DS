@@ -1,39 +1,44 @@
-
 networks:
   hanabi_net:
     driver: bridge
     name: backend_hanabi_net
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
 
 services:
   redis-master:
     image: redis:7
     container_name: redis-master
-    user: root
-    entrypoint: >
-      sh -c "
-         chown -R redis:redis /etc/redis-config &&
-        exec redis-server /etc/redis-config/redis.conf
-      "
     hostname: redis-master
-    command: ["redis-server", "/etc/redis-config/redis.conf"]
+    user: root
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        chown -R redis:redis /etc/redis-config /data
+        exec redis-server /etc/redis-config/redis.conf
     ports:
       - "6379:6379"
     volumes:
       - "./data/master:/data"
       - "./config/redis-master:/etc/redis-config"
     networks:
-      - hanabi_net
+      hanabi_net:
+        ipv4_address: 172.28.0.10
 
   redis-replica:
     image: redis:7
     container_name: redis-replica
     hostname: redis-replica
     user: root
-    entrypoint: >
-      sh -c "
-         chown -R redis:redis /etc/redis-config &&
-        exec redis-server /etc/redis-config/redis.conf --replicaof redis-master 6379 --replica-announce-ip redis-replica
-      "
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        chown -R redis:redis /etc/redis-config /data
+        exec redis-server /etc/redis-config/redis.conf \
+          --replicaof 172.28.0.10 6379 \
+          --replica-announce-ip 172.28.0.11 \
+          --replica-announce-port 6379
     ports:
       - "6380:6379"
     depends_on:
@@ -42,31 +47,37 @@ services:
       - "./data/replica:/data"
       - "./config/redis-replica:/etc/redis-config"
     networks:
-      - hanabi_net
+      hanabi_net:
+        ipv4_address: 172.28.0.11
 
   sentinel:
     image: redis:7
-    user: root
     container_name: sentinel
     hostname: sentinel
-    entrypoint: >
-      sh -c "
-         chown -R redis:redis /etc/redis-config &&
-        exec redis-sentinel /etc/redis-config/redis.conf --sentinel
-      "
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - redis-sentinel
-      - "/etc/redis-config/redis.conf"
-      - "--sentinel"
+      - |
+        printf '%s\n' \
+          'port 26379' \
+          'bind 0.0.0.0' \
+          'protected-mode no' \
+          'dir /tmp' \
+          'sentinel monitor mymaster 172.28.0.10 6379 1' \
+          'sentinel down-after-milliseconds mymaster 10000' \
+          'sentinel failover-timeout mymaster 30000' \
+          'sentinel parallel-syncs mymaster 1' \
+          > /tmp/sentinel.conf
+
+        cat /tmp/sentinel.conf
+        exec redis-sentinel /tmp/sentinel.conf --sentinel
     ports:
       - "26379:26379"
     depends_on:
       - redis-master
       - redis-replica
-    volumes:
-      - "./config/redis-sentinel:/etc/redis-config"
     networks:
-      - hanabi_net
+      hanabi_net:
+        ipv4_address: 172.28.0.12
 
   server:
     build: .
@@ -86,27 +97,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - hanabi_net
-  
 
-  # service used to fail using sentinel. might try whether depends_on would fix that 
-  # matchmaker:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: matchmaker
-  #   command: python -m matchmaker.matchmaker
-  #   ports:
-  #     - "9000:9000"
-  #   environment:
-  #     REDIS_HOST: "redis-master"
-  #     REDIS_PORT: "6379"
-  #     DOCKER_NETWORK: "backend_hanabi_net"
-  #     PYTHONUNBUFFERED: "1"
-  #   depends_on:
-  #     - redis-master
-  #     - redis-replica
-  #     - sentinel
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   networks:
-  #     - hanabi_net

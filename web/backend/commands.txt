@@ -9,3 +9,82 @@ redis-cli -p 26379 SENTINEL masters
 redis-cli -p 26379 SENTINEL get-master-addr-by-name mymaster
 redis-cli -p 26379 SENTINEL replicas mymaster
 redis-cli -p 26379 SENTINEL sentinels mymaster
+
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker stop redis-master
+redis-master
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ redis-cli -p 26379 SENTINEL get-master-addr-by-name mymaster
+1) "172.28.0.11"
+2) "6379"
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ redis-cli -p 26379 SENTINEL replicas mymaster
+1)  1) "name"
+    2) "172.28.0.10:6379"
+    3) "ip"
+    4) "172.28.0.10"
+    5) "port"
+    6) "6379"
+    7) "runid"
+    8) ""
+    9) "flags"
+   10) "s_down,slave"
+   11) "link-pending-commands"
+   12) "49"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "34255"
+   17) "last-ok-ping-reply"
+   18) "34255"
+   19) "last-ping-reply"
+   20) "34255"
+   21) "s-down-time"
+   22) "24200"
+   23) "down-after-milliseconds"
+   24) "10000"
+   25) "info-refresh"
+   26) "0"
+   27) "role-reported"
+   28) "slave"
+   29) "role-reported-time"
+   30) "34255"
+   31) "master-link-down-time"
+   32) "0"
+   33) "master-link-status"
+   34) "err"
+   35) "master-host"
+   36) "?"
+   37) "master-port"
+   38) "0"
+   39) "slave-priority"
+   40) "100"
+   41) "slave-repl-offset"
+   42) "0"
+   43) "replica-announced"
+   44) "1"
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ grep -RniE "replicaof|slaveof|sentinel known|sentinel config-epoch|sentinel current-epoch" ./config ./data
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker inspect -f '{{.Name}} {{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master redis-replica sentinel
+/redis-master invalid IP
+/redis-replica 172.28.0.11
+/sentinel 172.28.0.12
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec sentinel redis-cli -p 26379 SENTINEL get-master-addr-by-name mymaster
+172.28.0.11
+6379
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec redis-replica redis-cli INFO replication | grep role
+role:master
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec redis-replica redis-cli SET failover:test "works"
+OK
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec redis-replica redis-cli GET failover:test
+works
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec -it hanabi-server python -c "from database.RedisRepository import RedisRepository; r=RedisRepository(); r.redis.set('backend:failover:test','ok'); print(r.redis.get('backend:failover:test'))"
+ok
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker start redis-master
+redis-master
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec redis-master redis-cli INFO replication | grep -E "role|master_host|master_link_status"
+role:master
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec redis-master redis-cli REPLICAOF 172.28.0.11 6379^C
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker stop redis-replica
+redis-replica
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec sentinel redis-cli -p 26379 SENTINEL get-master-addr-by-name mymaster
+172.28.0.11
+6379
+ajdonker@fedora:~/Documents/DS/Hanabi_DS/web/backend$ docker exec redis-master redis-cli INFO replication | grep role
+role:master

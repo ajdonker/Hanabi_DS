@@ -29,6 +29,7 @@ class GameServerManager:
                 "GAME_ID": game_id,
                 "PLAYERS_JSON": json.dumps(player_names),
                 "PORT": container_port,
+                "IS_GAME_SERVER": "1",
                 "SENTINEL_NODES": os.getenv("SENTINEL_NODES", "sentinel:26379"),
                 "SENTINEL_MASTER_NAME": os.getenv("SENTINEL_MASTER_NAME", "mymaster"),
             },

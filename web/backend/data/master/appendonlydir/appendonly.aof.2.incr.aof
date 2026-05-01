@@ -1,0 +1,52 @@
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$27
+e2e:sentinel-after-failover
+$2
+ok
+*3
+$3
+SET
+$27
+e2e:sentinel-after-failover
+$2
+ok
+*3
+$3
+SET
+$25
+hanabi:game_info:2c38ee70
+$98
+{"players": ["alice", "bob"], "container": "hanabi-game-2c38ee70", "timestamp": 1777635067.597452}
+*3
+$3
+SET
+$24
+hanabi:player_game:alice
+$23
+{"game_id": "2c38ee70"}
+*3
+$3
+SET
+$22
+hanabi:player_game:bob
+$23
+{"game_id": "2c38ee70"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$20
+hanabi:user:ajdonker
+$146
+{"fullName": "Blagoja Savevski", "email": "blagojamu03@gmail.com", "password": "c035e9e33112378eb3f578fcdb2d2f6f9d621a0fb082c0bbfd278b3f174b0c7a"}
