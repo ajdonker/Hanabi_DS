@@ -16,7 +16,7 @@ class DiscardCardCommand():
         self.card_index = card_index
         
 class GiveHintCommand():
-    def __init__(self,game_id: str, from_player: str,to_player: str,color: Color, number: Number):
+    def __init__(self,game_id: str, from_player: str,to_player: str,color: Color | None, number: Number | None):
         self.game_id = game_id
         self.from_player = from_player
         self.to_player = to_player
@@ -25,5 +25,6 @@ class GiveHintCommand():
 
 
 class GetGameStateCommand():
-    def __init__(self, game_id: str):
+    def __init__(self, game_id: str, player_name: str | None = None):
         self.game_id = game_id
+        self.player_name = player_name

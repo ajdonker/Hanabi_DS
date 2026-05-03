@@ -51,7 +51,7 @@ class Board() :
         return True
 
     def discardMisfire(self):
-        self._misfires -= 1
+        self._misfires += 1
 
     def updatePiles(self, card): #when a card is correctly played, the board is updated
         value = card.number.value
@@ -181,6 +181,7 @@ class Game(GameInterface):
         
         if(cardDrawn != None): 
             player.addCard(HandCard(cardDrawn))
+            result.setDrawnCard(cardDrawn, 0)
         
         #check gameover
         score = self.checkGameOver()
@@ -266,8 +267,9 @@ class Game(GameInterface):
             self._finalTurn = True
             player.setLastTurn(True)
             
-        if(cardDrawn != None): player.addCardAt(cardIndex,HandCard(cardDrawn))
-        print("AFTER INSERT:", [id(c) for c in player._hand])
+        if(cardDrawn != None):
+            player.addCardAt(cardIndex,HandCard(cardDrawn))
+            result.setDrawnCard(cardDrawn, 0)
 
         #check gameover
         score = self.checkGameOver()
@@ -306,7 +308,7 @@ class Game(GameInterface):
         
     def checkGameOver(self) -> int | None: 
         
-        if self._board._misfires == 0:
+        if self._board._misfires == 3:
             return self._board.calculateScore()
 
         if self._board.completedPiles():

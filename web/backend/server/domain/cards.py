@@ -93,6 +93,13 @@ class Deck():
         deck._cards = [None] * count
         deck._deck_count = count
         return deck
+
+    @staticmethod
+    def from_cards(cards: list[Card]):
+        deck = Deck()
+        deck._cards = cards
+        deck._deck_count = len(cards)
+        return deck
     
     def shuffle(self):
         random.shuffle(self._cards)
@@ -109,3 +116,6 @@ class Deck():
     
     def get_deck_count(self):
         return len(self._cards)
+
+    def get_cards(self):
+        return self._cards

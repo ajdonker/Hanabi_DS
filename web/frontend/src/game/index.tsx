@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./game.css";
 import CardActionPopup from "./components/CardActionPopup";
@@ -12,13 +12,10 @@ import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
 import { toRectShape, animateOwnCardAction, drawCardToPlayerHand } from "./animate";
-import { CARD_WIDTH, CARD_HEIGHT, colors } from "./config";
 import { useGameState } from "./useGameState";
 import type {
   CardColor,
-  CardHintMarkers,
   CardValue,
-  HandCard,
   Player,
   FlyingCard,
   SelectedOwnCardAction,
@@ -30,7 +27,6 @@ type SelectedCardHint = {
   value: CardValue;
   sameColorCount: number;
   sameValueCount: number;
-  targetPlayerId: number;
   targetPlayerName: string;
   cardIndex: number;
   left: number;
@@ -43,9 +39,6 @@ const HINT_POPUP_HEIGHT = 82;
 const ACTION_POPUP_WIDTH = 200;
 const ACTION_POPUP_HEIGHT = 82;
 const POPUP_GAP = 10;
-const HINT_API_ENDPOINT = "/api/hanabi/hint";
-const PLAY_CARD_API_ENDPOINT = "/api/hanabi/play";
-const DISCARD_CARD_API_ENDPOINT = "/api/hanabi/discard";
 function computePopupPosition(
   anchorRect: DOMRect,
   popupWidth: number,
@@ -80,22 +73,28 @@ export default function Game() {
     deckCount,
     discardByColor,
     fireworkValues,
+    gameActionError,
     gameSocketStatus,
     gameSocketUrl,
+    giveHint,
     handCardsByPlayer,
     hints,
+    lastCardAction,
+    lastGameEventMessage,
     misfires,
+    playCard,
     players,
-    setCardHintsByPlayer,
+    discardCard,
+    refreshGameState,
     setHandCardsByPlayer,
   } = useGameState(routeGameId);
   const currentPlayer = players[0];
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
   const [selectedOwnCard, setSelectedOwnCard] = useState<SelectedOwnCardAction | null>(null);
-  const [selectedOhterCard, setSelectedOhterCard] = useState<SelectedOwnCardAction | null>(null);
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [isSendingHint, setIsSendingHint] = useState(false);
   const [isSendingOwnCardAction, setIsSendingOwnCardAction] = useState(false);
+  const processedCardActionSequenceRef = useRef<number | null>(null);
   let topPlayer: Player | undefined;
   let leftPlayer: Player | undefined;
   let rightPlayer: Player | undefined;
@@ -119,40 +118,63 @@ export default function Game() {
   const rightPlayerCards = rightPlayer ? handCardsByPlayer[rightPlayer.id] ?? [] : [];
   const tableClass = effectiveTableSize <= 2 ? "players-2" : effectiveTableSize === 3 ? "players-3" : "players-4";
 
-  const applyHintToMatchingCards = (
-    targetPlayerId: number,
-    hintType: "color" | "number",
-    hintValue: CardColor | CardValue,
-  ) => {
-    const targetCards = handCardsByPlayer[targetPlayerId] ?? [];
+  const getPlayerDirection = useCallback((playerName: string): Direction | null => {
+    if (playerName === currentPlayer.name) {
+      return "bottom";
+    }
+    if (playerName === topPlayer?.name) {
+      return "top";
+    }
+    if (playerName === leftPlayer?.name) {
+      return "left";
+    }
+    if (playerName === rightPlayer?.name) {
+      return "right";
+    }
+    return null;
+  }, [currentPlayer.name, leftPlayer?.name, rightPlayer?.name, topPlayer?.name]);
 
-    setCardHintsByPlayer((current) => {
-      const existingHintsForPlayer = current[targetPlayerId] ?? {};
-      const nextHintsForPlayer: Record<number, CardHintMarkers> = {
-        ...existingHintsForPlayer,
-      };
+  const getPlayerIdByName = useCallback((playerName: string): number | null => {
+    const player = players.find((entry) => entry.name === playerName);
+    return player?.id ?? null;
+  }, [players]);
 
-      targetCards.forEach((card, cardIndex) => {
-        const isMatchingCard =
-          hintType === "color" ? card.color === hintValue : card.value === hintValue;
-
-        if (!isMatchingCard) {
-          return;
-        }
-
-        const existingCardHints = nextHintsForPlayer[cardIndex] ?? {};
-        nextHintsForPlayer[cardIndex] =
-          hintType === "color"
-            ? { ...existingCardHints, colorHint: hintValue as CardColor }
-            : { ...existingCardHints, numberHint: hintValue as CardValue };
-      });
-
+  const removeCardFromPlayer = useCallback((playerId: number, cardIndex: number) => {
+    setHandCardsByPlayer((current) => {
+      const cards = current[playerId] ?? [];
       return {
         ...current,
-        [targetPlayerId]: nextHintsForPlayer,
+        [playerId]: cards.filter((_, index) => index !== cardIndex),
       };
     });
-  };
+  }, [setHandCardsByPlayer]);
+
+  const addCardToPlayer = useCallback((
+    playerId: number,
+    cardIndex: number,
+    card: { color: CardColor; value: CardValue },
+  ) => {
+    setHandCardsByPlayer((current) => {
+      const cards = current[playerId] ?? [];
+      const insertAt = Math.max(0, Math.min(cardIndex, cards.length));
+      return {
+        ...current,
+        [playerId]: [
+          ...cards.slice(0, insertAt),
+          card,
+          ...cards.slice(insertAt),
+        ],
+      };
+    });
+  }, [setHandCardsByPlayer]);
+
+  const waitForNextPaint = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => resolve());
+      });
+    });
+  }, []);
 
   const handleOtherCardSelect = ({
     color,
@@ -176,20 +198,11 @@ export default function Game() {
       value,
       sameColorCount,
       sameValueCount,
-      targetPlayerId: player.id,
       targetPlayerName: player.name,
       cardIndex,
       left,
       top,
     });
-    setSelectedOhterCard({
-      color,
-      value,
-      cardIndex,
-      left,
-      top,
-      anchorRect: toRectShape(anchorRect),
-    })
     setSelectedOwnCard(null);
   };
 
@@ -219,25 +232,12 @@ export default function Game() {
 
     try {
       setIsSendingHint(true);
-      applyHintToMatchingCards(selectedHint.targetPlayerId, hintType, hintValue);
-      await fetch(HINT_API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          hintType,
-          hintValue,
-          fromPlayerId: currentPlayer.id,
-          targetPlayerId: selectedHint.targetPlayerId,
-          targetPlayerName: selectedHint.targetPlayerName,
-          selectedCard: {
-            index: selectedHint.cardIndex,
-            color: selectedHint.color,
-            value: selectedHint.value,
-          },
-        }),
-      });
+      await giveHint(
+        currentPlayer.name,
+        selectedHint.targetPlayerName,
+        hintType,
+        hintValue,
+      );
     } catch (error) {
       console.error("Failed to send hint selection to backend:", error);
     } finally {
@@ -252,41 +252,39 @@ export default function Game() {
     }
 
     const ownCardAction = selectedOwnCard;
-    const endpoint =
-      actionType === "play" ? PLAY_CARD_API_ENDPOINT : DISCARD_CARD_API_ENDPOINT;
+    const command = actionType === "play" ? playCard : discardCard;
 
     try {
       setIsSendingOwnCardAction(true);
-      setHandCardsByPlayer((current) => {
-        const ownCards = current[currentPlayer.id] ?? [];
-        return {
-          ...current,
-          [currentPlayer.id]: ownCards.filter((_, index) => index !== ownCardAction.cardIndex),
-        };
-      });
       setSelectedOwnCard(null);
+      const result = await command(currentPlayer.name, ownCardAction.cardIndex);
+      const cardAction = result.cardAction;
+      if (cardAction) {
+        const playerId = getPlayerIdByName(cardAction.playerName);
+        if (playerId !== null) {
+          removeCardFromPlayer(playerId, cardAction.removedCardIndex);
+        }
+      }
       const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
-      await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          actionType,
-          playerId: currentPlayer.id,
-          color: ownCardAction.color,
-          value: ownCardAction.value,
-          cardIndex: ownCardAction.cardIndex,
-        }),
-      });
       await playAnimationPromise;
-      // todo if drop wrong card, revise
-      console.log("in try block, after play animation");
-      if (actionType == "play") {
-        // todo show some error message to user
+      const playedWrongCard = result.events.some((event) => event.event === "card_wrong");
+      if (actionType === "play" && playedWrongCard) {
         const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
         await discardAnimationPromise;
       }
+      if (result.drawnCard) {
+        const playerDirection = getPlayerDirection(result.drawnCard.playerName);
+        if (playerDirection) {
+          await drawCardToPlayerHand(result.drawnCard.card, playerDirection, setFlyingCard);
+        }
+      }
+      if (cardAction?.drawnCard) {
+        const playerId = getPlayerIdByName(cardAction.playerName);
+        if (playerId !== null) {
+          addCardToPlayer(playerId, cardAction.drawnCard.cardIndex, cardAction.drawnCard.card);
+        }
+      }
+      await refreshGameState();
     } catch (error) {
       console.log("in catch block, before animation");
       console.error("Failed to send own card action to backend:", error);
@@ -297,40 +295,46 @@ export default function Game() {
     }
   };
 
-  const handleTestDrawCard = async (playerId: number) => {
-    let playerDirection: Direction;
-    if (playerId == topPlayer?.id) {
-      playerDirection = 'top';
-    } else if (playerId === leftPlayer?.id) {
-      playerDirection = 'left';
-    } else if (playerId === rightPlayer?.id) {
-      playerDirection = 'right';
-    } else {
-      playerDirection = 'bottom';
+  useEffect(() => {
+    if (!lastCardAction) {
+      return;
+    }
+    if (processedCardActionSequenceRef.current === lastCardAction.sequence) {
+      return;
+    }
+    processedCardActionSequenceRef.current = lastCardAction.sequence;
+
+    const playerDirection = getPlayerDirection(lastCardAction.playerName);
+    const playerId = getPlayerIdByName(lastCardAction.playerName);
+    if (!playerDirection || playerId === null) {
+      return;
     }
 
-    const newCard: HandCard = {
-      color: colors[Math.floor(Math.random() * colors.length)],
-      value: (Math.floor(Math.random() * 5) + 1) as CardValue,
-    };
+    removeCardFromPlayer(playerId, lastCardAction.removedCardIndex);
 
-    await drawCardToPlayerHand(newCard, playerDirection, setFlyingCard);
-
-    setHandCardsByPlayer((current) => {
-      const ownCards = current[playerId] ?? [];
-      let newCards: HandCard[];
-      if (playerDirection === 'bottom' || playerDirection === 'left') {
-        newCards = [newCard, ...ownCards];
-        
-      } else {
-        newCards = [...ownCards, newCard];
+    void (async () => {
+      await waitForNextPaint();
+      if (lastCardAction.drawnCard) {
+        await drawCardToPlayerHand(lastCardAction.drawnCard.card, playerDirection, setFlyingCard);
+        addCardToPlayer(
+          playerId,
+          lastCardAction.drawnCard.cardIndex,
+          lastCardAction.drawnCard.card,
+        );
       }
-      return {
-        ...current,
-        [playerId]: newCards,
-      };
+      await refreshGameState();
+    })().catch((error) => {
+      console.error("Failed to animate card action:", error);
     });
-  };
+  }, [
+    addCardToPlayer,
+    getPlayerDirection,
+    getPlayerIdByName,
+    lastCardAction,
+    refreshGameState,
+    removeCardFromPlayer,
+    waitForNextPaint,
+  ]);
 
   useEffect(() => {
     if (!selectedHint && !selectedOwnCard) {
@@ -379,6 +383,11 @@ export default function Game() {
         Game server: {gameSocketStatus}
         {gameSocketUrl ? ` (${gameSocketUrl})` : ""}
       </div>
+      {(gameActionError || lastGameEventMessage) && (
+        <div className={`game-event-message ${gameActionError ? "is-error" : ""}`.trim()}>
+          {gameActionError || lastGameEventMessage}
+        </div>
+      )}
 
       <div className={`game-table ${tableClass}`.trim()}>
         {leftPlayer && (
@@ -427,7 +436,6 @@ export default function Game() {
         )}
 
         <main className="center-zone">
-          <button onClick={() => handleTestDrawCard(4)}>Draw Card</button>
           <Deckcount deckCount={deckCount} />
           <FireworksPanel values={fireworkValues} misfires={misfires} />
           
