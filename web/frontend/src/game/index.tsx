@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./game.css";
 import CardActionPopup from "./components/CardActionPopup";
@@ -12,12 +12,10 @@ import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
 import { toRectShape, animateOwnCardAction, drawCardToPlayerHand } from "./animate";
-import { colors } from "./config";
 import { useGameState } from "./useGameState";
 import type {
   CardColor,
   CardValue,
-  HandCard,
   Player,
   FlyingCard,
   SelectedOwnCardAction,
@@ -81,11 +79,13 @@ export default function Game() {
     giveHint,
     handCardsByPlayer,
     hints,
+    lastCardAction,
     lastGameEventMessage,
     misfires,
     playCard,
     players,
     discardCard,
+    refreshGameState,
     setHandCardsByPlayer,
   } = useGameState(routeGameId);
   const currentPlayer = players[0];
@@ -94,6 +94,7 @@ export default function Game() {
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [isSendingHint, setIsSendingHint] = useState(false);
   const [isSendingOwnCardAction, setIsSendingOwnCardAction] = useState(false);
+  const processedCardActionSequenceRef = useRef<number | null>(null);
   let topPlayer: Player | undefined;
   let leftPlayer: Player | undefined;
   let rightPlayer: Player | undefined;
@@ -116,6 +117,64 @@ export default function Game() {
   const leftPlayerCards = leftPlayer ? handCardsByPlayer[leftPlayer.id] ?? [] : [];
   const rightPlayerCards = rightPlayer ? handCardsByPlayer[rightPlayer.id] ?? [] : [];
   const tableClass = effectiveTableSize <= 2 ? "players-2" : effectiveTableSize === 3 ? "players-3" : "players-4";
+
+  const getPlayerDirection = useCallback((playerName: string): Direction | null => {
+    if (playerName === currentPlayer.name) {
+      return "bottom";
+    }
+    if (playerName === topPlayer?.name) {
+      return "top";
+    }
+    if (playerName === leftPlayer?.name) {
+      return "left";
+    }
+    if (playerName === rightPlayer?.name) {
+      return "right";
+    }
+    return null;
+  }, [currentPlayer.name, leftPlayer?.name, rightPlayer?.name, topPlayer?.name]);
+
+  const getPlayerIdByName = useCallback((playerName: string): number | null => {
+    const player = players.find((entry) => entry.name === playerName);
+    return player?.id ?? null;
+  }, [players]);
+
+  const removeCardFromPlayer = useCallback((playerId: number, cardIndex: number) => {
+    setHandCardsByPlayer((current) => {
+      const cards = current[playerId] ?? [];
+      return {
+        ...current,
+        [playerId]: cards.filter((_, index) => index !== cardIndex),
+      };
+    });
+  }, [setHandCardsByPlayer]);
+
+  const addCardToPlayer = useCallback((
+    playerId: number,
+    cardIndex: number,
+    card: { color: CardColor; value: CardValue },
+  ) => {
+    setHandCardsByPlayer((current) => {
+      const cards = current[playerId] ?? [];
+      const insertAt = Math.max(0, Math.min(cardIndex, cards.length));
+      return {
+        ...current,
+        [playerId]: [
+          ...cards.slice(0, insertAt),
+          card,
+          ...cards.slice(insertAt),
+        ],
+      };
+    });
+  }, [setHandCardsByPlayer]);
+
+  const waitForNextPaint = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => resolve());
+      });
+    });
+  }, []);
 
   const handleOtherCardSelect = ({
     color,
@@ -199,6 +258,13 @@ export default function Game() {
       setIsSendingOwnCardAction(true);
       setSelectedOwnCard(null);
       const result = await command(currentPlayer.name, ownCardAction.cardIndex);
+      const cardAction = result.cardAction;
+      if (cardAction) {
+        const playerId = getPlayerIdByName(cardAction.playerName);
+        if (playerId !== null) {
+          removeCardFromPlayer(playerId, cardAction.removedCardIndex);
+        }
+      }
       const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
       await playAnimationPromise;
       const playedWrongCard = result.events.some((event) => event.event === "card_wrong");
@@ -206,6 +272,19 @@ export default function Game() {
         const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
         await discardAnimationPromise;
       }
+      if (result.drawnCard) {
+        const playerDirection = getPlayerDirection(result.drawnCard.playerName);
+        if (playerDirection) {
+          await drawCardToPlayerHand(result.drawnCard.card, playerDirection, setFlyingCard);
+        }
+      }
+      if (cardAction?.drawnCard) {
+        const playerId = getPlayerIdByName(cardAction.playerName);
+        if (playerId !== null) {
+          addCardToPlayer(playerId, cardAction.drawnCard.cardIndex, cardAction.drawnCard.card);
+        }
+      }
+      await refreshGameState();
     } catch (error) {
       console.log("in catch block, before animation");
       console.error("Failed to send own card action to backend:", error);
@@ -216,40 +295,46 @@ export default function Game() {
     }
   };
 
-  const handleTestDrawCard = async (playerId: number) => {
-    let playerDirection: Direction;
-    if (playerId == topPlayer?.id) {
-      playerDirection = 'top';
-    } else if (playerId === leftPlayer?.id) {
-      playerDirection = 'left';
-    } else if (playerId === rightPlayer?.id) {
-      playerDirection = 'right';
-    } else {
-      playerDirection = 'bottom';
+  useEffect(() => {
+    if (!lastCardAction) {
+      return;
+    }
+    if (processedCardActionSequenceRef.current === lastCardAction.sequence) {
+      return;
+    }
+    processedCardActionSequenceRef.current = lastCardAction.sequence;
+
+    const playerDirection = getPlayerDirection(lastCardAction.playerName);
+    const playerId = getPlayerIdByName(lastCardAction.playerName);
+    if (!playerDirection || playerId === null) {
+      return;
     }
 
-    const newCard: HandCard = {
-      color: colors[Math.floor(Math.random() * colors.length)],
-      value: (Math.floor(Math.random() * 5) + 1) as CardValue,
-    };
+    removeCardFromPlayer(playerId, lastCardAction.removedCardIndex);
 
-    await drawCardToPlayerHand(newCard, playerDirection, setFlyingCard);
-
-    setHandCardsByPlayer((current) => {
-      const ownCards = current[playerId] ?? [];
-      let newCards: HandCard[];
-      if (playerDirection === 'bottom' || playerDirection === 'left') {
-        newCards = [newCard, ...ownCards];
-        
-      } else {
-        newCards = [...ownCards, newCard];
+    void (async () => {
+      await waitForNextPaint();
+      if (lastCardAction.drawnCard) {
+        await drawCardToPlayerHand(lastCardAction.drawnCard.card, playerDirection, setFlyingCard);
+        addCardToPlayer(
+          playerId,
+          lastCardAction.drawnCard.cardIndex,
+          lastCardAction.drawnCard.card,
+        );
       }
-      return {
-        ...current,
-        [playerId]: newCards,
-      };
+      await refreshGameState();
+    })().catch((error) => {
+      console.error("Failed to animate card action:", error);
     });
-  };
+  }, [
+    addCardToPlayer,
+    getPlayerDirection,
+    getPlayerIdByName,
+    lastCardAction,
+    refreshGameState,
+    removeCardFromPlayer,
+    waitForNextPaint,
+  ]);
 
   useEffect(() => {
     if (!selectedHint && !selectedOwnCard) {
@@ -351,7 +436,6 @@ export default function Game() {
         )}
 
         <main className="center-zone">
-          <button onClick={() => handleTestDrawCard(4)}>Draw Card</button>
           <Deckcount deckCount={deckCount} />
           <FireworksPanel values={fireworkValues} misfires={misfires} />
           

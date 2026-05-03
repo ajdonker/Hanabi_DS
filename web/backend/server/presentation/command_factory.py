@@ -17,6 +17,7 @@ class CommandFactory:
         if message.action == "game.get_state":
             return GetGameStateCommand(
                 game_id=message.data["gameId"],
+                player_name=message.data.get("playerName"),
             )
 
         if message.action == "game.discard_card":

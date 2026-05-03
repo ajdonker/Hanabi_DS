@@ -17,9 +17,15 @@ class PlayDiscardCardResult(GameResult):
     def __init__(self):
         super().__init__()
         self.misfire = 0
+        self.drawn_card = None
+        self.drawn_card_index: int | None = None
 
     def setMisfire(self, misfire : int):
         self.misfire = misfire
+
+    def setDrawnCard(self, card, card_index: int):
+        self.drawn_card = card
+        self.drawn_card_index = card_index
     
 class HintResult(GameResult):
     def __init__(self):

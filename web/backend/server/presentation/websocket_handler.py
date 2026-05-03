@@ -166,7 +166,9 @@ class WebSocketHandler:
             elif event.event == "player_joined_game":
                 player_id = event.data.get("player_name")
                 game_id = event.data.get("game_id")
-                self.connection_manager.join_game(player_id, game_id)
+                if isinstance(player_id, str) and player_id and isinstance(game_id, str) and game_id:
+                    self.connection_manager.bind_player(conn_id, player_id)
+                    self.connection_manager.join_game(player_id, game_id)
             
     def _event_batch_payload(
         self,

@@ -123,20 +123,18 @@ export class HanabiWsClient {
       return;
     }
 
-    this.emit(envelope.events);
     const requestId = envelope.requestId;
-    if (!requestId) {
-      return;
+    if (requestId) {
+      const pending = this.pending.get(requestId);
+      if (pending) {
+        window.clearTimeout(pending.timer);
+        this.pending.delete(requestId);
+        pending.resolve(envelope.events);
+        return;
+      }
     }
 
-    const pending = this.pending.get(requestId);
-    if (!pending) {
-      return;
-    }
-
-    window.clearTimeout(pending.timer);
-    this.pending.delete(requestId);
-    pending.resolve(envelope.events);
+    this.emit(envelope.events);
   }
 
   private handleError(message: ErrorMessage): void {

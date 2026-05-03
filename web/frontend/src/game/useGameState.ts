@@ -14,6 +14,8 @@ import type {
 export type GameSocketStatus = "missing" | "connecting" | "connected" | "closed" | "error";
 
 export type GameCommandResult = {
+  cardAction: CardActionAnimationEvent | null;
+  drawnCard: DrawnCardEvent | null;
   events: ServerEvent[];
   gameOverScore: number | null;
 };
@@ -22,6 +24,21 @@ type HandledGameEvents = GameCommandResult & {
   errorMessage: string;
   hasError: boolean;
   hasGameState: boolean;
+};
+
+export type DrawnCardEvent = {
+  card: HandCard;
+  cardIndex: number;
+  playerName: string;
+  sequence: number;
+};
+
+export type CardActionAnimationEvent = {
+  actionType: "play" | "discard";
+  drawnCard: DrawnCardEvent | null;
+  playerName: string;
+  removedCardIndex: number;
+  sequence: number;
 };
 
 type BackendHandCard = {
@@ -53,6 +70,15 @@ type BackendGameState = {
     tokens: number;
     misfires: number;
     deck_count: number;
+  };
+};
+
+type BackendDrawnCardEvent = {
+  playerId?: unknown;
+  cardIndex?: unknown;
+  card?: {
+    number?: unknown;
+    color?: unknown;
   };
 };
 
@@ -155,6 +181,32 @@ function toFrontendCard(card: BackendHandCard): HandCard {
   };
 }
 
+function toDrawnCardEvent(
+  data: Record<string, unknown>,
+  sequence: number,
+): DrawnCardEvent | null {
+  const event = data as BackendDrawnCardEvent;
+  if (
+    typeof event.playerId !== "string" ||
+    typeof event.cardIndex !== "number" ||
+    !event.card ||
+    typeof event.card.color !== "string" ||
+    typeof event.card.number !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    playerName: event.playerId,
+    cardIndex: event.cardIndex,
+    card: {
+      color: normalizeColor(event.card.color),
+      value: normalizeValue(event.card.number),
+    },
+    sequence,
+  };
+}
+
 function rotatePlayersForCurrentUser(
   players: BackendPlayer[],
   currentPlayerName: string | null,
@@ -179,6 +231,7 @@ function rotatePlayersForCurrentUser(
 
 export function useGameState(routeGameId: string | undefined) {
   const clientRef = useRef<HanabiWsClient | null>(null);
+  const cardActionSequenceRef = useRef(0);
   const placeholderPlayers: Player[] = [{
     id: 1,
     name: "Placeholder Player",
@@ -203,6 +256,7 @@ export function useGameState(routeGameId: string | undefined) {
   const [gameSocketUrl, setGameSocketUrl] = useState("");
   const [gameActionError, setGameActionError] = useState("");
   const [lastGameEventMessage, setLastGameEventMessage] = useState("");
+  const [lastCardAction, setLastCardAction] = useState<CardActionAnimationEvent | null>(null);
 
   const applyGameState = useCallback((gameState: BackendGameState) => {
     console.log("Received game state:", gameState);
@@ -271,7 +325,16 @@ export function useGameState(routeGameId: string | undefined) {
     return true;
   }, [applyGameState]);
 
-  const handleReturnedGameEvents = useCallback((events: ServerEvent[]): HandledGameEvents => {
+  const handleReturnedGameEvents = useCallback((
+    events: ServerEvent[],
+    options: { publishCardAction?: boolean } = {},
+  ): HandledGameEvents => {
+    let actionType: "play" | "discard" | null = null;
+    let actionPlayerName = "";
+    let removedCardIndex: number | null = null;
+    let cardAction: CardActionAnimationEvent | null = null;
+    let drawnCard: DrawnCardEvent | null = null;
+    let drawnCardSequence: number | null = null;
     let errorMessage = "";
     let hasError = false;
     let gameOverScore: number | null = null;
@@ -286,17 +349,41 @@ export function useGameState(routeGameId: string | undefined) {
       }
 
       if (event === "card_correct") {
+        if (typeof data.playerId === "string" && typeof data.cardIndex === "number") {
+          actionType = "play";
+          actionPlayerName = data.playerId;
+          removedCardIndex = data.cardIndex;
+        }
         setLastGameEventMessage("Card played.");
         return;
       }
 
       if (event === "card_wrong") {
+        if (typeof data.playerId === "string" && typeof data.cardIndex === "number") {
+          actionType = "play";
+          actionPlayerName = data.playerId;
+          removedCardIndex = data.cardIndex;
+        }
         setLastGameEventMessage("Card misfired.");
         return;
       }
 
       if (event === "card_discarded") {
+        if (typeof data.playerId === "string" && typeof data.cardIndex === "number") {
+          actionType = "discard";
+          actionPlayerName = data.playerId;
+          removedCardIndex = data.cardIndex;
+        }
         setLastGameEventMessage("Card discarded.");
+        return;
+      }
+
+      if (event === "card_drawn") {
+        const nextDrawnCard = toDrawnCardEvent(data, cardActionSequenceRef.current + 1);
+        if (nextDrawnCard) {
+          drawnCard = nextDrawnCard;
+          drawnCardSequence = nextDrawnCard.sequence;
+        }
         return;
       }
 
@@ -336,7 +423,24 @@ export function useGameState(routeGameId: string | undefined) {
       }
     });
 
+    if (actionType && actionPlayerName && removedCardIndex !== null) {
+      const nextSequence = drawnCardSequence ?? cardActionSequenceRef.current + 1;
+      cardActionSequenceRef.current = nextSequence;
+      cardAction = {
+        actionType,
+        drawnCard,
+        playerName: actionPlayerName,
+        removedCardIndex,
+        sequence: nextSequence,
+      };
+      if (options.publishCardAction) {
+        setLastCardAction(cardAction);
+      }
+    }
+
     return {
+      cardAction,
+      drawnCard,
       events,
       errorMessage,
       gameOverScore,
@@ -350,8 +454,9 @@ export function useGameState(routeGameId: string | undefined) {
       throw new Error("Missing game id.");
     }
 
-    const events = await client.command<{ gameId: string }>("game.get_state", {
+    const events = await client.command<{ gameId: string; playerName: string | null }>("game.get_state", {
       gameId: routeGameId,
+      playerName: getCurrentPlayerName(),
     });
     const error = getEventData<{ message?: string }>(events, "error");
     if (error) {
@@ -365,6 +470,14 @@ export function useGameState(routeGameId: string | undefined) {
     return events;
   }, [applyGameStateFromEvents, routeGameId]);
 
+  const refreshGameState = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client) {
+      return;
+    }
+    await loadLatestGameState(client);
+  }, [loadLatestGameState]);
+
   useEffect(() => {
     const storedGameWsUrl = localStorage.getItem("hanabi.gameWsUrl");
     const gameId = routeGameId;
@@ -377,6 +490,15 @@ export function useGameState(routeGameId: string | undefined) {
     let isMounted = true;
     const client = new HanabiWsClient(storedGameWsUrl);
     clientRef.current = client;
+    const unsubscribe = client.subscribe((events) => {
+      const result = handleReturnedGameEvents(events, { publishCardAction: true });
+      if (!result.hasError && !result.hasGameState && !result.cardAction) {
+        void loadLatestGameState(client).catch((error) => {
+          console.error("Failed to refresh game state after broadcast:", error);
+          setGameSocketStatus("error");
+        });
+      }
+    });
 
     setGameSocketUrl(storedGameWsUrl);
     setGameSocketStatus("connecting");
@@ -401,13 +523,15 @@ export function useGameState(routeGameId: string | undefined) {
       if (clientRef.current === client) {
         clientRef.current = null;
       }
+      unsubscribe();
       client.close();
     };
-  }, [loadLatestGameState, routeGameId]);
+  }, [handleReturnedGameEvents, loadLatestGameState, routeGameId]);
 
   const sendGameCommand = useCallback(async (
     action: string,
     data: Record<string, unknown>,
+    options: { refreshAfter?: boolean } = {},
   ): Promise<GameCommandResult> => {
     const client = clientRef.current;
     if (!client || !routeGameId) {
@@ -428,11 +552,13 @@ export function useGameState(routeGameId: string | undefined) {
       if (result.hasError) {
         throw new Error(result.errorMessage || "Game command failed.");
       }
-      if (!result.hasGameState) {
+      if (!result.hasGameState && options.refreshAfter !== false) {
         await loadLatestGameState(client);
       }
 
       return {
+        cardAction: result.cardAction,
+        drawnCard: result.drawnCard,
         events,
         gameOverScore: result.gameOverScore,
       };
@@ -447,14 +573,14 @@ export function useGameState(routeGameId: string | undefined) {
     return sendGameCommand("game.play_card", {
       playerId: playerName,
       cardIndex,
-    });
+    }, { refreshAfter: false });
   }, [sendGameCommand]);
 
   const discardCard = useCallback((playerName: string, cardIndex: number) => {
     return sendGameCommand("game.discard_card", {
       playerId: playerName,
       cardIndex,
-    });
+    }, { refreshAfter: false });
   }, [sendGameCommand]);
 
   const giveHint = useCallback((
@@ -483,12 +609,14 @@ export function useGameState(routeGameId: string | undefined) {
     gameSocketUrl,
     handCardsByPlayer,
     hints,
+    lastCardAction,
     lastGameEventMessage,
     misfires,
     players,
     discardCard,
     giveHint,
     playCard,
+    refreshGameState,
     setCardHintsByPlayer,
     setHandCardsByPlayer,
   };

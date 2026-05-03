@@ -181,6 +181,7 @@ class Game(GameInterface):
         
         if(cardDrawn != None): 
             player.addCard(HandCard(cardDrawn))
+            result.setDrawnCard(cardDrawn, 0)
         
         #check gameover
         score = self.checkGameOver()
@@ -266,8 +267,9 @@ class Game(GameInterface):
             self._finalTurn = True
             player.setLastTurn(True)
             
-        if(cardDrawn != None): player.addCardAt(cardIndex,HandCard(cardDrawn))
-        print("AFTER INSERT:", [id(c) for c in player._hand])
+        if(cardDrawn != None):
+            player.addCardAt(cardIndex,HandCard(cardDrawn))
+            result.setDrawnCard(cardDrawn, 0)
 
         #check gameover
         score = self.checkGameOver()

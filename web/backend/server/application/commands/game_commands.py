@@ -25,5 +25,6 @@ class GiveHintCommand():
 
 
 class GetGameStateCommand():
-    def __init__(self, game_id: str):
+    def __init__(self, game_id: str, player_name: str | None = None):
         self.game_id = game_id
+        self.player_name = player_name
