@@ -50,10 +50,9 @@ class ConnectionManager:
                 if not self.game_connections[game_id]:
                     self.game_connections.pop(game_id, None)
 
-    def join_game(self, player_id: str, game_id: str) -> None:
+    def join_game(self, conn_id: str, game_id: str) -> None:
         with self._lock:
-            conn_id = self.player_connections.get(player_id)
-            if conn_id is None:
+            if conn_id not in self._connections:
                 return
 
             self.game_connections[game_id].add(conn_id)

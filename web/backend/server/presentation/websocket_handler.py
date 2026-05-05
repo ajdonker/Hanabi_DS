@@ -84,6 +84,7 @@ class WebSocketHandler:
         self.connection_manager.remove_connection(conn_id)
 
     async def on_message(self, conn_id: str, raw_text: str) -> None:
+        print("ON MESSAGE", conn_id, raw_text, flush=True)
         try:
             message = self.deserialize(raw_text)
         except CommandError as error:
@@ -104,10 +105,13 @@ class WebSocketHandler:
             return
 
         self._sync_connections(conn_id, events)
+        
         game_id = self.connection_manager.get_game_for_connection(conn_id)    
+        print("AFTER SYNC GAME FOR CONN", conn_id, game_id, flush=True)
         if game_id:
             await self.broadcast_to_game(game_id, events, request_id=message.request_id)
         else:
+            print("NO GAME FOR CONN, PRIVATE SEND", conn_id, flush=True)
             await self.broadcast(conn_id, events, request_id=message.request_id)
 
     def _handle_command(self, message: CommandMessage) -> list[Event]:
@@ -151,22 +155,35 @@ class WebSocketHandler:
         
         payload = self._event_batch_payload(events, request_id=request_id)
         connections = self.connection_manager.get_game_connections(game_id)
-
+        print("BROADCAST GAME", game_id, "connections:", len(connections),"events:",
+        [(e.event, e.data) for e in events],flush=True)
         for websocket in connections:
             await websocket.send_text(self.serialize(payload))
 
 
     def _sync_connections(self, conn_id: str, events: list[Event]) -> None:
+        print("SYNC CONNECTIONS", conn_id, [(e.event, e.data) for e in events], flush=True)
         for event in events:
             if event.event == "player_logged":
                 player_id = event.data.get("playerId")
+                print("BIND PLAYER", conn_id, player_id, flush=True)
                 if isinstance(player_id, str) and player_id:
                     self.connection_manager.bind_player(conn_id, player_id)
 
             elif event.event == "player_joined_game":
                 player_id = event.data.get("player_name")
                 game_id = event.data.get("game_id")
-                self.connection_manager.join_game(player_id, game_id)
+                print("JOIN GAME EVENT", conn_id, player_id, game_id, flush=True)
+                if isinstance(player_id, str) and isinstance(game_id, str):
+                    self.connection_manager.bind_player(conn_id, player_id)
+                    #self.connection_manager.join_game(player_id, game_id)
+                    self.connection_manager.join_game(conn_id, game_id)
+            
+            elif event.event == "game_state":
+                game_id = event.data.get("game_id")
+                print("JOIN GAME FROM GAME_STATE", conn_id, game_id, flush=True)
+                if isinstance(game_id, str) and game_id:
+                    self.connection_manager.join_game(conn_id, game_id)
             
     def _event_batch_payload(
         self,

@@ -50,3 +50,283 @@ $20
 hanabi:user:ajdonker
 $146
 {"fullName": "Blagoja Savevski", "email": "blagojamu03@gmail.com", "password": "c035e9e33112378eb3f578fcdb2d2f6f9d621a0fb082c0bbfd278b3f174b0c7a"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$14
+hanabi:user:pp
+$124
+{"fullName": "P P", "email": "pp@gmail.com", "password": "d53315bea08cec50d2591fcaf3b32dc5d289cdc6c16b7e8bed8c8e3f7ceaa34e"}
+*3
+$3
+SET
+$20
+hanabi:game:a366a508
+$1126
+{"game_id": "a366a508", "player_turn": "ajdonker", "final_turn": false, "players": [{"username": "ajdonker", "hand": [{"number": "THREE", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "RED", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "BLUE", "hints": {"color": null, "number": null}}], "last_turn": false}, {"username": "pp", "hand": [{"number": "ONE", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "FIVE", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "RED", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "YELLOW", "hints": {"color": null, "number": null}}], "last_turn": false}], "board": {"piles": {"RED": 0, "YELLOW": 0, "GREEN": 0, "BLUE": 0, "WHITE": 0}, "discards": [], "tokens": 8, "misfires": 0, "deck_count": 40}}
+*3
+$3
+SET
+$25
+hanabi:game_info:a366a508
+$137
+{"players": ["ajdonker", "pp"], "container": "hanabi-game-a366a508", "timestamp": 1777708073.0370452, "host": "127.0.0.1", "port": 32769}
+*3
+$3
+SET
+$27
+hanabi:player_game:ajdonker
+$23
+{"game_id": "a366a508"}
+*3
+$3
+SET
+$21
+hanabi:player_game:pp
+$23
+{"game_id": "a366a508"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$13
+hanabi:user:1
+$121
+{"fullName": "1", "email": "1@gmail.com", "password": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"}
+*3
+$3
+SET
+$13
+hanabi:user:2
+$121
+{"fullName": "2", "email": "2@gmail.com", "password": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"}
+*3
+$3
+SET
+$13
+hanabi:user:3
+$121
+{"fullName": "3", "email": "3@gmail.com", "password": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"}
+*3
+$3
+SET
+$20
+hanabi:game:363eab5e
+$1111
+{"game_id": "363eab5e", "player_turn": "2", "final_turn": false, "players": [{"username": "2", "hand": [{"number": "TWO", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "RED", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "RED", "hints": {"color": null, "number": null}}], "last_turn": false}, {"username": "3", "hand": [{"number": "TWO", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "FIVE", "color": "YELLOW", "hints": {"color": null, "number": null}}], "last_turn": false}], "board": {"piles": {"RED": 0, "YELLOW": 0, "GREEN": 0, "BLUE": 0, "WHITE": 0}, "discards": [], "tokens": 8, "misfires": 0, "deck_count": 40}}
+*3
+$3
+SET
+$25
+hanabi:game_info:363eab5e
+$129
+{"players": ["2", "3"], "container": "hanabi-game-363eab5e", "timestamp": 1777708656.7669816, "host": "127.0.0.1", "port": 32770}
+*3
+$3
+SET
+$20
+hanabi:player_game:2
+$23
+{"game_id": "363eab5e"}
+*3
+$3
+SET
+$20
+hanabi:player_game:3
+$23
+{"game_id": "363eab5e"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$13
+hanabi:user:4
+$121
+{"fullName": "4", "email": "4@gmail.com", "password": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"}
+*3
+$3
+SET
+$20
+hanabi:game:098b1948
+$1109
+{"game_id": "098b1948", "player_turn": "4", "final_turn": false, "players": [{"username": "4", "hand": [{"number": "ONE", "color": "RED", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "BLUE", "hints": {"color": null, "number": null}}], "last_turn": false}, {"username": "1", "hand": [{"number": "ONE", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "GREEN", "hints": {"color": null, "number": null}}], "last_turn": false}], "board": {"piles": {"RED": 0, "YELLOW": 0, "GREEN": 0, "BLUE": 0, "WHITE": 0}, "discards": [], "tokens": 8, "misfires": 0, "deck_count": 40}}
+*3
+$3
+SET
+$25
+hanabi:game_info:098b1948
+$129
+{"players": ["4", "1"], "container": "hanabi-game-098b1948", "timestamp": 1777709471.9057374, "host": "127.0.0.1", "port": 32771}
+*3
+$3
+SET
+$20
+hanabi:player_game:4
+$23
+{"game_id": "098b1948"}
+*3
+$3
+SET
+$20
+hanabi:player_game:1
+$23
+{"game_id": "098b1948"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$13
+hanabi:user:5
+$121
+{"fullName": "5", "email": "5@gmail.com", "password": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d"}
+*3
+$3
+SET
+$13
+hanabi:user:6
+$121
+{"fullName": "6", "email": "6@gmail.com", "password": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683"}
+*3
+$3
+SET
+$20
+hanabi:game:3d619a44
+$1111
+{"game_id": "3d619a44", "player_turn": "6", "final_turn": false, "players": [{"username": "6", "hand": [{"number": "ONE", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "YELLOW", "hints": {"color": null, "number": null}}], "last_turn": false}, {"username": "5", "hand": [{"number": "ONE", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "FIVE", "color": "RED", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "BLUE", "hints": {"color": null, "number": null}}], "last_turn": false}], "board": {"piles": {"RED": 0, "YELLOW": 0, "GREEN": 0, "BLUE": 0, "WHITE": 0}, "discards": [], "tokens": 8, "misfires": 0, "deck_count": 40}}
+*3
+$3
+SET
+$25
+hanabi:game_info:3d619a44
+$128
+{"players": ["6", "5"], "container": "hanabi-game-3d619a44", "timestamp": 1777710037.289579, "host": "127.0.0.1", "port": 32772}
+*3
+$3
+SET
+$20
+hanabi:player_game:6
+$23
+{"game_id": "3d619a44"}
+*3
+$3
+SET
+$20
+hanabi:player_game:5
+$23
+{"game_id": "3d619a44"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$13
+hanabi:user:7
+$121
+{"fullName": "7", "email": "7@gmail.com", "password": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451"}
+*3
+$3
+SET
+$13
+hanabi:user:8
+$121
+{"fullName": "8", "email": "8@gmail.com", "password": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$20
+hanabi:game:985db348
+$1116
+{"game_id": "985db348", "player_turn": "8", "final_turn": false, "players": [{"username": "8", "hand": [{"number": "TWO", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "WHITE", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "ONE", "color": "WHITE", "hints": {"color": null, "number": null}}], "last_turn": false}, {"username": "7", "hand": [{"number": "ONE", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "YELLOW", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "WHITE", "hints": {"color": null, "number": null}}], "last_turn": false}], "board": {"piles": {"RED": 0, "YELLOW": 0, "GREEN": 0, "BLUE": 0, "WHITE": 0}, "discards": [], "tokens": 8, "misfires": 0, "deck_count": 40}}
+*3
+$3
+SET
+$25
+hanabi:game_info:985db348
+$129
+{"players": ["8", "7"], "container": "hanabi-game-985db348", "timestamp": 1777710517.7489097, "host": "127.0.0.1", "port": 32773}
+*3
+$3
+SET
+$20
+hanabi:player_game:8
+$23
+{"game_id": "985db348"}
+*3
+$3
+SET
+$20
+hanabi:player_game:7
+$23
+{"game_id": "985db348"}
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$14
+hanabi:user:10
+$123
+{"fullName": "10", "email": "10@gmail.com", "password": "4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5"}
+*3
+$3
+SET
+$14
+hanabi:user:11
+$123
+{"fullName": "11", "email": "11@gmail.com", "password": "4fc82b26aecb47d2868c4efbe3581732a3e7cbcc6c2efb32062c08170a05eeb8"}
+*3
+$3
+SET
+$20
+hanabi:game:9cc8165c
+$1112
+{"game_id": "9cc8165c", "player_turn": "11", "final_turn": false, "players": [{"username": "11", "hand": [{"number": "ONE", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "TWO", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "FIVE", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "FIVE", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "WHITE", "hints": {"color": null, "number": null}}], "last_turn": false}, {"username": "10", "hand": [{"number": "ONE", "color": "GREEN", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "BLUE", "hints": {"color": null, "number": null}}, {"number": "THREE", "color": "RED", "hints": {"color": null, "number": null}}, {"number": "FOUR", "color": "RED", "hints": {"color": null, "number": null}}, {"number": "FIVE", "color": "WHITE", "hints": {"color": null, "number": null}}], "last_turn": false}], "board": {"piles": {"RED": 0, "YELLOW": 0, "GREEN": 0, "BLUE": 0, "WHITE": 0}, "discards": [], "tokens": 8, "misfires": 0, "deck_count": 40}}
+*3
+$3
+SET
+$25
+hanabi:game_info:9cc8165c
+$129
+{"players": ["11", "10"], "container": "hanabi-game-9cc8165c", "timestamp": 1777710743.72191, "host": "127.0.0.1", "port": 32774}
+*3
+$3
+SET
+$21
+hanabi:player_game:11
+$23
+{"game_id": "9cc8165c"}
+*3
+$3
+SET
+$21
+hanabi:player_game:10
+$23
+{"game_id": "9cc8165c"}
