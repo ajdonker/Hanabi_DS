@@ -152,6 +152,7 @@ export const drawCardToPlayerHand = async (
       toRect,
       state: "idle",
       rotationDeg,
+      faceDown: true,
     });
 
     await new Promise<void>((resolve) => {
@@ -177,6 +178,7 @@ export const animateOwnCardAction = async (
       fromRect,
       toRect,
       state: "idle",
+      faceDown: false,
     });
 
     await new Promise<void>((resolve) => {

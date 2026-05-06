@@ -38,6 +38,7 @@ export type FlyingCard = {
   };
   state: "idle" | "moving" | "fading";
   rotationDeg?: number;
+  faceDown: boolean;
 };
 
 export type SelectedOwnCardAction = {
