@@ -12,3 +12,4 @@ web/backend/data
 web/backendd/__pycache__/
 web/backend/server/__pycache__/
 web/backend/server/application/commands/__pycache__/
+.DS_Store
