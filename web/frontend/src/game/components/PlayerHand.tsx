@@ -56,7 +56,12 @@ export default function PlayerHand({
       : undefined;
   const effectiveCardRotation = isCurrentPlayer ? 0 : cardRotationDeg;
   const effectiveNumberRotation = numberRotationDeg ?? -effectiveCardRotation;
-  const cardsData = handCards;
+  let cardsData: HandCard[] = [];
+  if (nameSide === "top"){
+    cardsData = [...handCards].reverse();
+  } else {
+    cardsData = handCards;
+  }
 
   const renderedCards = (
     <div className="hand-cards">

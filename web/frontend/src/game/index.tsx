@@ -117,7 +117,7 @@ export default function Game() {
   const leftPlayerCards = leftPlayer ? handCardsByPlayer[leftPlayer.id] ?? [] : [];
   const rightPlayerCards = rightPlayer ? handCardsByPlayer[rightPlayer.id] ?? [] : [];
   const tableClass = effectiveTableSize <= 2 ? "players-2" : effectiveTableSize === 3 ? "players-3" : "players-4";
-
+  
   const getPlayerDirection = useCallback((playerName: string): Direction | null => {
     if (playerName === currentPlayer.name) {
       return "bottom";
