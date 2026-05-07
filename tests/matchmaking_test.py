@@ -14,8 +14,7 @@ def matchmaking():
         "test-container"
     )
 
-    service = MatchmakingService(repo=mock_repo)
-    service.gameServerManager = mock_manager
+    service = MatchmakingService(repo=mock_repo, game_server_manager=mock_manager)
     return service
 
 
@@ -36,18 +35,6 @@ def test_matchmaking_creates_game(matchmaking):
     assert game.container_name == "test-container"
     assert [p.name for p in game.players] == ["alice", "bob"]
     assert matchmaking.repo.save_game_information.called
-
-
-def test_cleanup_removes_dead_game(matchmaking):
-    matchmaking.gameServerManager.get_container_status.return_value = "exited"
-
-    matchmaking.create_lobby("l1", 1, "alice")
-    p1 = WaitingPlayer("1", "alice", "l1")
-    matchmaking.join_lobby("l1", p1)
-
-    matchmaking.cleanup_games()
-
-    assert len(matchmaking.active_games) == 0
 
 def test_multiple_lobbies_isolated(matchmaking):
     matchmaking.create_lobby("l1", 2, "alice")
@@ -112,8 +99,8 @@ def test_remove_waiting_player(matchmaking):
 def test_cleanup_removes_dead_game(matchmaking):
     matchmaking.gameServerManager.get_container_status.return_value = "exited"
 
-    matchmaking.create_lobby("l1", 1, "alice")
-    matchmaking.join_lobby("l1", WaitingPlayer("1", "alice", "l1"))
+    matchmaking.create_lobby("l1", 2, "alice")
+    matchmaking.join_lobby("l1", WaitingPlayer("2", "bob", "l1"))
 
     assert len(matchmaking.active_games) == 1
 

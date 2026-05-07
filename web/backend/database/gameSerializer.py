@@ -35,9 +35,11 @@ class GameSerializer:
 
         # --- board ---
         board_data = data["board"]
-
         board = Board(
-            deck=Deck.from_count(board_data["deck_count"]), # deck count depends on discards and plays
+            deck=Deck.from_cards([
+                Card(Number[d["number"]], Color[d["color"]])
+                for d in board_data["deck"]
+            ]),
             piles={Color[c]: v for c, v in board_data["piles"].items()},
             discards=[
                 Card(Number[d["number"]], Color[d["color"]])
@@ -89,6 +91,10 @@ class GameSerializer:
                     "discards": [
                         {"number": c.number.name, "color": c.color.name}
                         for c in game.board._discards
+                    ],
+                    "deck": [
+                        {"number": c.number.name, "color": c.color.name}
+                        for c in game.board.deck.get_cards()
                     ],
                     "tokens": game.board.token,
                     "misfires": game.board.misfires,

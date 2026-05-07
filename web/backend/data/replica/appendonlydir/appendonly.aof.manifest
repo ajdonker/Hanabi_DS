@@ -1,2 +1,0 @@
-file appendonly.aof.15.base.rdb seq 15 type b
-file appendonly.aof.15.incr.aof seq 15 type i

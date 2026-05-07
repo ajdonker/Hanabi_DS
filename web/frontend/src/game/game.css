@@ -71,6 +71,27 @@
   color: #991b1b;
 }
 
+.game-event-message {
+  position: absolute;
+  top: 6.65rem;
+  right: 1rem;
+  z-index: 12;
+  max-width: min(360px, calc(100vw - 2rem));
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgba(21, 128, 61, 0.32);
+  border-radius: 6px;
+  background: rgba(240, 253, 244, 0.94);
+  color: #14532d;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.game-event-message.is-error {
+  border-color: rgba(185, 28, 28, 0.34);
+  background: rgba(254, 242, 242, 0.94);
+  color: #991b1b;
+}
+
 .game-table {
   display: grid;
   grid-template-rows: auto auto auto auto;

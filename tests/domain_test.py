@@ -50,7 +50,7 @@ def test_play_card_wrong(game): #ok
     # force wrong card
     game.playCard("P1", 0) #2 RED
 
-    assert game._board._misfires == 2
+    assert game._board._misfires == 1
 
 def test_hint_to_yourself (game): #fail --> not an exception anymore
     
@@ -117,7 +117,7 @@ def test_play_card_misfire_and_discard(): #ok
 
     game.playCard(player.getUsername , 0)
    
-    assert game._board.misfires == 2  # started at 3
+    assert game._board.misfires == 1  # started at 0
 
 def test_discard_clears_hints_and_draw(): #ok
     game = Game._create_initial_game("g1", ["P1", "P2"])
@@ -214,7 +214,7 @@ def test_check_end_conditions(): #ok
     game = Game._create_initial_game("g1", ["P1", "P2"])
 
     # misfire end
-    game._board._misfires = 0
+    game._board._misfires = 3
     assert game.checkGameOver() is not None
 
     # full board
