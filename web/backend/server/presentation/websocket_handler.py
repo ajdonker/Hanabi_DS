@@ -104,6 +104,7 @@ class WebSocketHandler:
             return
 
         self._sync_connections(conn_id, events)
+        events = self._delete_useless_events(events)
         game_id = self.connection_manager.get_game_for_connection(conn_id)    
         if game_id:
             await self.broadcast_to_game(game_id, events, request_id=message.request_id)
@@ -113,22 +114,6 @@ class WebSocketHandler:
     def _handle_command(self, message: CommandMessage) -> list[Event]:
         command = self.command_factory.create(message)
         return self.dispatcher.dispatch(command)
-
-    ''' testing login player
-    def _handle_player_login(self, message: CommandMessage) -> list[Event]:
-        username = message.data.get("username")
-        user_id = str(uuid4())
-        return [
-            Event(
-                event="player_logged",
-                data={
-                    "playerId": user_id,
-                    "username": username,
-                    "test": 131,
-                },
-            )
-        ]
-    '''
     
     async def broadcast(
         self,
@@ -169,6 +154,13 @@ class WebSocketHandler:
                 if isinstance(player_id, str) and player_id and isinstance(game_id, str) and game_id:
                     self.connection_manager.bind_player(conn_id, player_id)
                     self.connection_manager.join_game(player_id, game_id)
+
+    def _delete_useless_events(self, events: list[Event]) -> list[Event]:
+        return [
+            event
+            for event in events
+            if event.event != "player_joined_game"
+        ]
             
     def _event_batch_payload(
         self,

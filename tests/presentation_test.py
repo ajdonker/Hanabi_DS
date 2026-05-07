@@ -200,6 +200,39 @@ def test_on_message_player_logged_binds_player_and_returns_event_batch():
     assert manager.get_connection(player_id) is ws
 
 
+def test_on_message_player_joined_game_binds_player_without_returning_internal_event():
+    manager = ConnectionManager()
+    events = [
+        Event("player_joined_game", {"player_name": "P1", "game_id": "g1"}),
+        Event("game_state", {"game_id": "g1"}),
+    ]
+    handler = make_handler(manager, events=events)
+
+    ws = DummyWebSocket()
+    conn = manager.add_connection(ws)
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "anything",
+            "requestId": "r-200",
+            "data": {"gameId": "g1", "playerName": "P1"},
+        }
+    )
+    asyncio.run(handler.on_message(conn, raw))
+
+    assert manager.get_player_for_connection(conn) == "P1"
+    assert manager.get_conn_ids_for_game("g1") == [conn]
+
+    assert len(ws.sent_texts) == 1
+    payload = json.loads(ws.sent_texts[0])
+    assert payload["type"] == "event_batch"
+    assert payload["requestId"] == "r-200"
+    assert payload["events"] == [
+        {"event": "game_state", "data": {"game_id": "g1"}}
+    ]
+
+
 def test_on_message_internal_error_returns_error_with_request_id():
     manager = ConnectionManager()
     handler = make_handler(manager, dispatcher=DummyDispatcher(should_raise=True))
