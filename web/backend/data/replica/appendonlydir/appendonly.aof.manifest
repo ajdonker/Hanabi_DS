@@ -1,2 +1,0 @@
-file appendonly.aof.8.base.rdb seq 8 type b
-file appendonly.aof.8.incr.aof seq 8 type i
