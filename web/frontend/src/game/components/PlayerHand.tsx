@@ -59,6 +59,12 @@ export default function PlayerHand({
   let cardsData: HandCard[] = [];
   if (nameSide === "top"){
     cardsData = [...handCards].reverse();
+    cardHintsByCard = Object.fromEntries(
+      Object.entries(cardHintsByCard ?? {}).map(([idx, hints]) => [
+        String(handCards.length - 1 - Number(idx)),
+        hints,
+      ])
+    );
   } else {
     cardsData = handCards;
   }
