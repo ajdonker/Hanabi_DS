@@ -103,9 +103,8 @@ class WebSocketHandler:
             )
             return
 
-        self._sync_connections(conn_id, events)
-        events = self._delete_useless_events(events)
-        game_id = self.connection_manager.get_game_for_connection(conn_id)    
+        self._sync_connections(conn_id, message, events)
+        game_id = self.connection_manager.get_game_for_connection(conn_id)  
         if game_id and self._should_broadcast_to_game(events):
             await self.broadcast_to_game(game_id, events, request_id=message.request_id)
         else:
@@ -136,31 +135,23 @@ class WebSocketHandler:
         
         payload = self._event_batch_payload(events, request_id=request_id)
         connections = self.connection_manager.get_game_connections(game_id)
-
         for websocket in connections:
             await websocket.send_text(self.serialize(payload))
 
 
-    def _sync_connections(self, conn_id: str, events: list[Event]) -> None:
+    def _sync_connections(self, conn_id: str, message: CommandMessage, events: list[Event]) -> None:
         for event in events:
             if event.event == "player_logged":
                 player_id = event.data.get("playerId")
                 if isinstance(player_id, str) and player_id:
                     self.connection_manager.bind_player(conn_id, player_id)
 
-            elif event.event == "player_joined_game":
-                player_id = event.data.get("player_name")
+            elif event.event == "game_state":
                 game_id = event.data.get("game_id")
+                player_id = message.data.get("playerName")
                 if isinstance(player_id, str) and player_id and isinstance(game_id, str) and game_id:
                     self.connection_manager.bind_player(conn_id, player_id)
-                    self.connection_manager.join_game(player_id, game_id)
-
-    def _delete_useless_events(self, events: list[Event]) -> list[Event]:
-        return [
-            event
-            for event in events
-            if event.event != "player_joined_game"
-        ]
+                    self.connection_manager.join_game(conn_id, game_id)
 
     def _should_broadcast_to_game(self, events: list[Event]) -> bool:
         return not any(event.event == "game_state" for event in events)

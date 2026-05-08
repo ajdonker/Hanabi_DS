@@ -36,15 +36,7 @@ class GetGameStateHandler(IHandler):
             if game is None:
                 raise GameNotFoundException()
 
-            events = []
-            if command.player_name:
-                events.append(Event("player_joined_game", {
-                    "player_name": command.player_name,
-                    "game_id": command.game_id,
-                }))
-
-            events.append(Event("game_state", GameSerializer.to_dict(game)))
-            return events
+            return [Event("game_state", GameSerializer.to_dict(game))]
 
         except GameException as ex:
             return ExceptionMapper.to_events(ex)

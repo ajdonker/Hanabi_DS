@@ -76,8 +76,8 @@ def test_connection_manager_bind_join_leave_flow():
     manager.bind_player(conn1, "P1")
     manager.bind_player(conn2, "P2")
 
-    manager.join_game("P1", "g1")
-    manager.join_game("P2", "g1")
+    manager.join_game(conn1, "g1")
+    manager.join_game(conn2, "g1")
 
     assert set(manager.get_conn_ids_for_game("g1")) == {conn1, conn2}
     assert set(manager.get_game_connections("g1")) == {ws1, ws2}
@@ -96,7 +96,7 @@ def test_connection_manager_unbind_and_remove_cleanup():
     ws = DummyWebSocket()
     conn = manager.add_connection(ws)
     manager.bind_player(conn, "P1")
-    manager.join_game("P1", "g2")
+    manager.join_game(conn, "g2")
 
     manager.unbind_player("P1")
     assert manager.get_connection("P1") is None
@@ -104,7 +104,7 @@ def test_connection_manager_unbind_and_remove_cleanup():
     assert manager.get_conn_ids_for_game("g2") == []
 
     manager.bind_player(conn, "P1")
-    manager.join_game("P1", "g2")
+    manager.join_game(conn, "g2")
     manager.remove_connection(conn)
 
     assert manager.get_connection_by_id(conn) is None
@@ -200,10 +200,9 @@ def test_on_message_player_logged_binds_player_and_returns_event_batch():
     assert manager.get_connection(player_id) is ws
 
 
-def test_on_message_player_joined_game_binds_player_without_returning_internal_event():
+def test_on_message_game_state_binds_player_and_returns_state():
     manager = ConnectionManager()
     events = [
-        Event("player_joined_game", {"player_name": "P1", "game_id": "g1"}),
         Event("game_state", {"game_id": "g1"}),
     ]
     handler = make_handler(manager, events=events)
@@ -236,7 +235,6 @@ def test_on_message_player_joined_game_binds_player_without_returning_internal_e
 def test_on_message_game_state_is_only_sent_to_requesting_connection():
     manager = ConnectionManager()
     events = [
-        Event("player_joined_game", {"player_name": "P1", "game_id": "g1"}),
         Event("game_state", {"game_id": "g1"}),
     ]
     handler = make_handler(manager, events=events)
@@ -247,7 +245,7 @@ def test_on_message_game_state_is_only_sent_to_requesting_connection():
     conn2 = manager.add_connection(ws2)
 
     manager.bind_player(conn2, "P2")
-    manager.join_game("P2", "g1")
+    manager.join_game(conn2, "g1")
 
     raw = json.dumps(
         {
@@ -284,8 +282,8 @@ def test_on_message_game_action_events_still_broadcast_to_game():
 
     manager.bind_player(conn1, "P1")
     manager.bind_player(conn2, "P2")
-    manager.join_game("P1", "g1")
-    manager.join_game("P2", "g1")
+    manager.join_game(conn1, "g1")
+    manager.join_game(conn2, "g1")
 
     raw = json.dumps(
         {

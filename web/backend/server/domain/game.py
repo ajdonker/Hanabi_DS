@@ -160,7 +160,7 @@ class Game(GameInterface):
             board.discardMisfire()
             result.setMisfire(board.misfires) #not an exception anymore --> it's a result
 
-        if(value == board._piles[color] + 1) : #Card correctly placed
+        elif(value == board._piles[color] + 1) : #Card correctly placed
             result.setSuccess(True)
             board.updatePiles(card)
         else : # Wrong order --> mistake
@@ -185,7 +185,7 @@ class Game(GameInterface):
         
         #check gameover
         score = self.checkGameOver()
-        if score :
+        if score is not None:
             result.setGameOver(score)
         
         #change turn
