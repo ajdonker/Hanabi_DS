@@ -106,7 +106,7 @@ class WebSocketHandler:
         self._sync_connections(conn_id, events)
         events = self._delete_useless_events(events)
         game_id = self.connection_manager.get_game_for_connection(conn_id)    
-        if game_id:
+        if game_id and self._should_broadcast_to_game(events):
             await self.broadcast_to_game(game_id, events, request_id=message.request_id)
         else:
             await self.broadcast(conn_id, events, request_id=message.request_id)
@@ -161,6 +161,9 @@ class WebSocketHandler:
             for event in events
             if event.event != "player_joined_game"
         ]
+
+    def _should_broadcast_to_game(self, events: list[Event]) -> bool:
+        return not any(event.event == "game_state" for event in events)
             
     def _event_batch_payload(
         self,

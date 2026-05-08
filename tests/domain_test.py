@@ -217,6 +217,9 @@ def test_check_end_conditions(): #ok
     game._board._misfires = 3
     assert game.checkGameOver() is not None
 
+    game._board._misfires = 4
+    assert game.checkGameOver() is not None
+
     # full board
     game = Game._create_initial_game("g1", ["P1", "P2"])
     game._board._piles = {c: 5 for c in Color}
@@ -314,7 +317,6 @@ def test_serialization_after_discard(game): #ok
 
     assert len(restored._board._discards) == len(game._board._discards)
     assert restored._board._token == game._board._token
-
 
 
 

@@ -114,6 +114,10 @@ class RedisRepository(IGameRepository, IUserRepository):
             data = json.loads(raw)
             return data.get("game_id")
         return None
+
+    def delete_player_game_mapping(self, player_id: str):
+        key = f"hanabi:player_game:{player_id}"
+        self._retry(lambda: self.redis.delete(key))
     
     #-----------------------------------------USER -----------------------------------------
     def load_user(self, username : str) -> User | None:

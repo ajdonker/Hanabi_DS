@@ -233,6 +233,75 @@ def test_on_message_player_joined_game_binds_player_without_returning_internal_e
     ]
 
 
+def test_on_message_game_state_is_only_sent_to_requesting_connection():
+    manager = ConnectionManager()
+    events = [
+        Event("player_joined_game", {"player_name": "P1", "game_id": "g1"}),
+        Event("game_state", {"game_id": "g1"}),
+    ]
+    handler = make_handler(manager, events=events)
+
+    ws1 = DummyWebSocket()
+    ws2 = DummyWebSocket()
+    conn1 = manager.add_connection(ws1)
+    conn2 = manager.add_connection(ws2)
+
+    manager.bind_player(conn2, "P2")
+    manager.join_game("P2", "g1")
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "game.get_state",
+            "requestId": "r-state",
+            "data": {"gameId": "g1", "playerName": "P1"},
+        }
+    )
+    asyncio.run(handler.on_message(conn1, raw))
+
+    assert manager.get_player_for_connection(conn1) == "P1"
+    assert set(manager.get_conn_ids_for_game("g1")) == {conn1, conn2}
+
+    assert len(ws1.sent_texts) == 1
+    payload = json.loads(ws1.sent_texts[0])
+    assert payload["requestId"] == "r-state"
+    assert payload["events"] == [
+        {"event": "game_state", "data": {"game_id": "g1"}}
+    ]
+
+    assert ws2.sent_texts == []
+
+
+def test_on_message_game_action_events_still_broadcast_to_game():
+    manager = ConnectionManager()
+    events = [Event("turn_change", {"next_player": "P2"})]
+    handler = make_handler(manager, events=events)
+
+    ws1 = DummyWebSocket()
+    ws2 = DummyWebSocket()
+    conn1 = manager.add_connection(ws1)
+    conn2 = manager.add_connection(ws2)
+
+    manager.bind_player(conn1, "P1")
+    manager.bind_player(conn2, "P2")
+    manager.join_game("P1", "g1")
+    manager.join_game("P2", "g1")
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "game.play_card",
+            "requestId": "r-action",
+            "data": {"gameId": "g1", "playerId": "P1", "cardIndex": 0},
+        }
+    )
+    asyncio.run(handler.on_message(conn1, raw))
+
+    assert len(ws1.sent_texts) == 1
+    assert len(ws2.sent_texts) == 1
+    assert json.loads(ws1.sent_texts[0]) == json.loads(ws2.sent_texts[0])
+
+
 def test_on_message_internal_error_returns_error_with_request_id():
     manager = ConnectionManager()
     handler = make_handler(manager, dispatcher=DummyDispatcher(should_raise=True))

@@ -15,3 +15,6 @@ class IGameRepository(ABC):
     @abstractmethod
     def save_game(self, game):
         pass
+    @abstractmethod
+    def delete_player_game_mapping(self, player_id):
+        pass
