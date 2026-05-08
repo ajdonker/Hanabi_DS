@@ -219,6 +219,9 @@ def test_check_end_conditions(): #ok
     game._board._misfires = 3
     assert game.checkGameOver() is not None
 
+    game._board._misfires = 4
+    assert game.checkGameOver() is not None
+
     # full board
     game = Game._create_initial_game("g1", ["P1", "P2"])
     game._board._piles = {c: 5 for c in Color}
@@ -479,8 +482,6 @@ def test_change_turn_cycles_back_to_first_player(game):
     game.changeTurn()
     assert game.playerTurn == "P1"
 
-
-
 def test_change_turn_sets_timer_fields(game):
     game.changeTurn()
 
@@ -621,5 +622,3 @@ def test_play_card_game_over_when_piles_completed():
 
     assert game._board.completedPiles() is True
     assert result.game_over == 25
-
-

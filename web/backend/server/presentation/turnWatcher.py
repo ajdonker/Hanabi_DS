@@ -24,8 +24,8 @@ class TurnWatcher:
                         payload = {
                             "type": "event_batch",
                             "events": [ {
-                                    "event": "turn_changed",
-                                    "data": {"nextPlayer": game.playerTurn}
+                                    "event": "turn_change",
+                                    "data": {"next_player": game.playerTurn}
                                     }]
                         }
 

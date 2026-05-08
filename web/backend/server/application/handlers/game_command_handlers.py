@@ -21,6 +21,11 @@ def create_card_drawn_event(player_id: str, result) -> Event | None:
     })
 
 
+def delete_player_game_mappings(repo: IGameRepository, game) -> None:
+    for player_id in game.players.keys():
+        repo.delete_player_game_mapping(player_id)
+
+
 class GetGameStateHandler(IHandler):
     def __init__(self, repo: IGameRepository):
         self.repo = repo
@@ -31,15 +36,7 @@ class GetGameStateHandler(IHandler):
             if game is None:
                 raise GameNotFoundException()
 
-            events = []
-            if command.player_name:
-                events.append(Event("player_joined_game", {
-                    "player_name": command.player_name,
-                    "game_id": command.game_id,
-                }))
-
-            events.append(Event("game_state", GameSerializer.to_dict(game)))
-            return events
+            return [Event("game_state", GameSerializer.to_dict(game))]
 
         except GameException as ex:
             return ExceptionMapper.to_events(ex)
@@ -74,6 +71,7 @@ class PlayCardHandler(IHandler):
                 events.append(drawn_card_event)
             
             if result.game_over is not None:
+                delete_player_game_mappings(self.repo, game)
                 events.append(Event("game_over", {"score" : result.game_over}))
                 return events
 
@@ -115,6 +113,7 @@ class DiscardCardHandler(IHandler):
                 events.append(drawn_card_event)
             
             if result.game_over is not None :
+                delete_player_game_mappings(self.repo, game)
                 events.append(Event("game_over", {"score" : result.game_over}))
                     
             events.append(Event("turn_change", {"next_player" : result.next_player}))
@@ -167,6 +166,7 @@ class GiveHintHandler(IHandler):
                 }))
 
             if result.game_over is not None:
+                delete_player_game_mappings(self.repo, game)
                 events.append(Event("game_over", {"score": result.game_over}))
 
             events.append(Event("turn_change", {"next_player": result.next_player}))

@@ -304,11 +304,10 @@ class Game(GameInterface):
         #started timer
         now = time.time()
         self._turnStartedAt = now
-        self._turnDeadline = now + 60
+        self._turnDeadline = now + 600
         
     def checkGameOver(self) -> int | None: 
-        
-        if self._board._misfires == 3:
+        if self._board._misfires >= 3:
             return self._board.calculateScore()
 
         if self._board.completedPiles():
