@@ -12,11 +12,29 @@ def generate_id():
     return str(uuid.uuid4())[:8]
 
 
+def find_unfinished_game_id(matchmaking_service: MatchmakingService, player_name: str) -> str | None:
+    return matchmaking_service.repo.get_player_game_mapping(player_name)
+
+
+def player_already_playing_event(game_id: str) -> Event:
+    return Event("error", {
+        "message": "Player is already playing an unfinished game",
+        "gameId": game_id,
+    })
+
+
 class CreateLobbyHandler:
     def __init__(self, matchmaking_service: MatchmakingService):
         self.matchmaking_service = matchmaking_service
 
     def execute(self, command: CreateLobbyCommand) -> list[Event]:
+        game_id = find_unfinished_game_id(
+            self.matchmaking_service,
+            command.user_creator,
+        )
+        if game_id:
+            return [player_already_playing_event(game_id)]
+
         player = WaitingPlayer(
             player_id=generate_id(),
             name=command.user_creator,
@@ -75,6 +93,13 @@ class JoinLobbyHandler:
         self.matchmaking_service = matchmaking_service
 
     def execute(self, command: JoinLobbyCommand) -> list[Event]:
+        game_id = find_unfinished_game_id(
+            self.matchmaking_service,
+            command.user_joined,
+        )
+        if game_id:
+            return [player_already_playing_event(game_id)]
+
         player = WaitingPlayer(
             player_id=generate_id(),
             name=command.user_joined,
