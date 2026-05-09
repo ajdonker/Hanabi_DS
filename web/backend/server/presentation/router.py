@@ -21,6 +21,17 @@ IS_GAME_SERVER = os.getenv("IS_GAME_SERVER") == "1" or os.getenv("GAME_ID") is n
 # Only the main backend should create MatchmakingService,
 # because MatchmakingService creates GameServerManager, which needs Docker socket.
 matchmaking_service = None if IS_GAME_SERVER else MatchmakingService()
+
+
+@ws_router.post("/internal/games/{game_id}/finished")
+async def game_finished(game_id: str):
+    matchmaking_service.remove_game(game_id)
+    return {
+        "game_id": game_id,
+        "status": "cleanup_requested",
+    }
+
+
 @ws_router.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
     repo = websocket.app.state.repo 
