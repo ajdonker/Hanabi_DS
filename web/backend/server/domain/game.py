@@ -268,7 +268,7 @@ class Game(GameInterface):
             player.setLastTurn(True)
             
         if(cardDrawn != None):
-            player.addCardAt(cardIndex,HandCard(cardDrawn))
+            player.addCardAt(0,HandCard(cardDrawn))
             result.setDrawnCard(cardDrawn, 0)
 
         #check gameover
@@ -304,7 +304,7 @@ class Game(GameInterface):
         #started timer
         now = time.time()
         self._turnStartedAt = now
-        self._turnDeadline = now + 600
+        self._turnDeadline = now + 600 #TODO : make it 60s in production
         
     def checkGameOver(self) -> int | None: 
         if self._board._misfires >= 3:

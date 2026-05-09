@@ -22,6 +22,7 @@ export type DiscardCounts = Record<CardValue, number>;
 export type DiscardTableData = Record<CardColor, DiscardCounts>;
 
 export type FlyingCard = {
+  animationId: number;
   color: CardColor;
   value: CardValue;
   fromRect: {

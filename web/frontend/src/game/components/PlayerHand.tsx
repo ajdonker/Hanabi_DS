@@ -56,29 +56,25 @@ export default function PlayerHand({
       : undefined;
   const effectiveCardRotation = isCurrentPlayer ? 0 : cardRotationDeg;
   const effectiveNumberRotation = numberRotationDeg ?? -effectiveCardRotation;
-  let cardsData: HandCard[] = [];
-  if (nameSide === "top"){
-    cardsData = [...handCards].reverse();
-    cardHintsByCard = Object.fromEntries(
-      Object.entries(cardHintsByCard ?? {}).map(([idx, hints]) => [
-        String(handCards.length - 1 - Number(idx)),
-        hints,
-      ])
-    );
+  let cardsData: Array<{ card: HandCard; cardIndex: number }> = [];
+  if (nameSide === "top") {
+    cardsData = handCards
+      .map((card, cardIndex) => ({ card, cardIndex }))
+      .reverse();
   } else {
-    cardsData = handCards;
+    cardsData = handCards.map((card, cardIndex) => ({ card, cardIndex }));
   }
 
   const renderedCards = (
     <div className="hand-cards">
-      {cardsData.map((demoCard, idx) => {
-        const cardHints = cardHintsByCard?.[idx];
+      {cardsData.map(({ card: demoCard, cardIndex }) => {
+        const cardHints = cardHintsByCard?.[cardIndex];
         const hasCardHint = Boolean(cardHints?.numberHint || cardHints?.colorHint);
         const hintColorClass = cardHints?.colorHint
           ? `hint-${cardHints.colorHint.toLowerCase()}`
           : "hint-neutral";
-        const sameColorCount = cardsData.filter((card) => card.color === demoCard.color).length;
-        const sameValueCount = cardsData.filter((card) => card.value === demoCard.value).length;
+        const sameColorCount = cardsData.filter(({ card }) => card.color === demoCard.color).length;
+        const sameValueCount = cardsData.filter(({ card }) => card.value === demoCard.value).length;
         const handleSelect = (anchorRect: DOMRect) => {
           onCardSelect({
             color: demoCard.color,
@@ -92,7 +88,7 @@ export default function PlayerHand({
                   ? "left"
                   : "below",
             player,
-            cardIndex: idx,
+            cardIndex,
             anchorRect,
           });
         };
@@ -127,8 +123,9 @@ export default function PlayerHand({
 
         return (
           <div
-            key={idx}
+            key={cardIndex}
             className={`card-hover-wrap hover-${hoverShift}`.trim()}
+            data-card-index={cardIndex}
             onClick={handleCardClick}
           >
             {hasCardHint && (

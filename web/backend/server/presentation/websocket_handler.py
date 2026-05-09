@@ -1,4 +1,7 @@
 import json
+import asyncio
+import os
+import urllib.request
 from dataclasses import dataclass
 from typing import Any, Optional
 from uuid import uuid4
@@ -109,6 +112,7 @@ class WebSocketHandler:
             await self.broadcast_to_game(game_id, events, request_id=message.request_id)
         else:
             await self.broadcast(conn_id, events, request_id=message.request_id)
+        self._schedule_game_finished_notification(game_id, events)
 
     def _handle_command(self, message: CommandMessage) -> list[Event]:
         command = self.command_factory.create(message)
@@ -155,6 +159,34 @@ class WebSocketHandler:
 
     def _should_broadcast_to_game(self, events: list[Event]) -> bool:
         return not any(event.event == "game_state" for event in events)
+
+    def _schedule_game_finished_notification(
+        self,
+        game_id: Optional[str],
+        events: list[Event],
+    ) -> None:
+        if not any(event.event == "game_over" for event in events):
+            return
+
+        asyncio.create_task(self._notify_game_finished(game_id))
+
+    async def _notify_game_finished(self, game_id: str) -> None:
+        await asyncio.sleep(2)
+        try:
+            await asyncio.to_thread(self._post_game_finished, game_id)
+        except Exception as error:
+            print(f"[GameFinished] Failed to notify matchmaker for {game_id}: {error}", flush=True)
+
+    def _post_game_finished(self, game_id: str) -> None:
+        base_url = os.getenv("MATCHMAKER_CALLBACK_URL", "http://hanabi-server:8000").rstrip("/")
+        request = urllib.request.Request(
+            f"{base_url}/internal/games/{game_id}/finished",
+            data=b"{}",
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=2) as response:
+            response.read()
             
     def _event_batch_payload(
         self,

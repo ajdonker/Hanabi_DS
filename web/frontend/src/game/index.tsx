@@ -11,7 +11,12 @@ import GameHeader from "./components/GameHeader";
 import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
-import { toRectShape, animateOwnCardAction, drawCardToPlayerHand } from "./animate";
+import {
+  toRectShape,
+  animateOwnCardAction,
+  drawCardToPlayerHand,
+  waitForNextPaint,
+} from "./animate";
 import { useGameState } from "./useGameState";
 import type {
   CardColor,
@@ -19,8 +24,10 @@ import type {
   Player,
   FlyingCard,
   SelectedOwnCardAction,
-  Direction
+  Direction,
+  FireworkValue,
 } from "./types";
+import { colors } from "./config";
 
 type SelectedCardHint = {
   color: CardColor;
@@ -87,6 +94,7 @@ export default function Game() {
     discardCard,
     refreshGameState,
     setHandCardsByPlayer,
+    setFireworkValues
   } = useGameState(routeGameId);
   const currentPlayer = players[0];
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
@@ -139,6 +147,13 @@ export default function Game() {
     return player?.id ?? null;
   }, [players]);
 
+  const getCardAnchorRect = useCallback((direction: Direction, cardIndex: number) => {
+    const cardElement = document.querySelector<HTMLElement>(
+      `.player-hand.seat-${direction} .card-hover-wrap[data-card-index="${cardIndex}"]`,
+    );
+    return cardElement ? toRectShape(cardElement.getBoundingClientRect()) : null;
+  }, []);
+
   const removeCardFromPlayer = useCallback((playerId: number, cardIndex: number) => {
     setHandCardsByPlayer((current) => {
       const cards = current[playerId] ?? [];
@@ -167,14 +182,6 @@ export default function Game() {
       };
     });
   }, [setHandCardsByPlayer]);
-
-  const waitForNextPaint = useCallback(() => {
-    return new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => resolve());
-      });
-    });
-  }, []);
 
   const handleOtherCardSelect = ({
     color,
@@ -265,9 +272,20 @@ export default function Game() {
           removeCardFromPlayer(playerId, cardAction.removedCardIndex);
         }
       }
-      const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
-      await playAnimationPromise;
       const playedWrongCard = result.events.some((event) => event.event === "card_wrong");
+      const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard, actionType === "play" && !playedWrongCard);
+      await playAnimationPromise;
+      if (actionType === "play" && !playedWrongCard) {
+        setFireworkValues((current) => {
+          const newValues = [...current];
+          const colorIndex = colors.indexOf(ownCardAction.color);
+          if (colorIndex !== -1) {
+            newValues[colorIndex] = ownCardAction.value as FireworkValue;
+          }
+          return newValues;
+        });
+      }
+      
       if (actionType === "play" && playedWrongCard) {
         const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
         await discardAnimationPromise;
@@ -311,10 +329,50 @@ export default function Game() {
       return;
     }
 
+    const actionCard = handCardsByPlayer[playerId]?.[lastCardAction.removedCardIndex] ?? null;
+    const actionAnchorRect = getCardAnchorRect(
+      playerDirection,
+      lastCardAction.removedCardIndex,
+    );
+
     removeCardFromPlayer(playerId, lastCardAction.removedCardIndex);
 
     void (async () => {
-      await waitForNextPaint();
+      if (actionCard && actionAnchorRect) {
+        const animatedActionCard: SelectedOwnCardAction = {
+          color: actionCard.color,
+          value: actionCard.value,
+          cardIndex: lastCardAction.removedCardIndex,
+          left: actionAnchorRect.left,
+          top: actionAnchorRect.top,
+          anchorRect: actionAnchorRect,
+        };
+
+        await animateOwnCardAction(
+          lastCardAction.actionType,
+          animatedActionCard,
+          setFlyingCard,
+          lastCardAction.actionType === "play" && lastCardAction.playSucceeded === true,
+        );
+
+        if (lastCardAction.actionType === "play" && lastCardAction.playSucceeded === true) {
+          setFireworkValues((current) => {
+            const newValues = [...current];
+            const colorIndex = colors.indexOf(actionCard.color);
+            if (colorIndex !== -1) {
+              newValues[colorIndex] = actionCard.value as FireworkValue;
+            }
+            return newValues;
+          });
+        }
+
+        if (lastCardAction.actionType === "play" && lastCardAction.playSucceeded === false) {
+          await animateOwnCardAction("discard", animatedActionCard, setFlyingCard);
+        }
+      } else {
+        await waitForNextPaint();
+      }
+
       if (lastCardAction.drawnCard) {
         await drawCardToPlayerHand(lastCardAction.drawnCard.card, playerDirection, setFlyingCard);
         addCardToPlayer(
@@ -329,12 +387,14 @@ export default function Game() {
     });
   }, [
     addCardToPlayer,
+    getCardAnchorRect,
     getPlayerDirection,
     getPlayerIdByName,
+    handCardsByPlayer,
     lastCardAction,
     refreshGameState,
     removeCardFromPlayer,
-    waitForNextPaint,
+    setFireworkValues,
   ]);
 
   useEffect(() => {
@@ -491,7 +551,7 @@ export default function Game() {
           }}
         />
       )}
-      {flyingCard && <FlyingCardComponent {...flyingCard} />}
+      {flyingCard && <FlyingCardComponent key={flyingCard.animationId} {...flyingCard} />}
     </section>
   );
 }
