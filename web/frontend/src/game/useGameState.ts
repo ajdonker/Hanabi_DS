@@ -38,6 +38,7 @@ export type CardActionAnimationEvent = {
   actionType: "play" | "discard";
   drawnCard: DrawnCardEvent | null;
   playerName: string;
+  playSucceeded: boolean | null;
   removedCardIndex: number;
   sequence: number;
 };
@@ -332,6 +333,7 @@ export function useGameState(routeGameId: string | undefined) {
   ): HandledGameEvents => {
     let actionType: "play" | "discard" | null = null;
     let actionPlayerName = "";
+    let playSucceeded: boolean | null = null;
     let removedCardIndex: number | null = null;
     let cardAction: CardActionAnimationEvent | null = null;
     let drawnCard: DrawnCardEvent | null = null;
@@ -354,6 +356,7 @@ export function useGameState(routeGameId: string | undefined) {
         if (typeof data.playerId === "string" && typeof data.cardIndex === "number") {
           actionType = "play";
           actionPlayerName = data.playerId;
+          playSucceeded = true;
           removedCardIndex = data.cardIndex;
         }
         setLastGameEventMessage("Card played.");
@@ -364,6 +367,7 @@ export function useGameState(routeGameId: string | undefined) {
         if (typeof data.playerId === "string" && typeof data.cardIndex === "number") {
           actionType = "play";
           actionPlayerName = data.playerId;
+          playSucceeded = false;
           removedCardIndex = data.cardIndex;
         }
         setLastGameEventMessage("Card misfired.");
@@ -374,6 +378,7 @@ export function useGameState(routeGameId: string | undefined) {
         if (typeof data.playerId === "string" && typeof data.cardIndex === "number") {
           actionType = "discard";
           actionPlayerName = data.playerId;
+          playSucceeded = null;
           removedCardIndex = data.cardIndex;
         }
         setLastGameEventMessage("Card discarded.");
@@ -414,6 +419,7 @@ export function useGameState(routeGameId: string | undefined) {
       }
 
       if (event === "turn_change" && typeof data.next_player === "string") {
+        // todo: it seems that there is a bug here
         setActivePlayerName(data.next_player);
         return;
       }
@@ -433,6 +439,7 @@ export function useGameState(routeGameId: string | undefined) {
         actionType,
         drawnCard,
         playerName: actionPlayerName,
+        playSucceeded,
         removedCardIndex,
         sequence: nextSequence,
       };
