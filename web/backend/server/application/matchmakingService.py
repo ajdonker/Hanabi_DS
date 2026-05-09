@@ -114,6 +114,7 @@ class MatchmakingService:
         game_id = str(uuid.uuid4())[:8]
 
         self.create_game(lobby_players, game_id)
+        self.lobbies.pop(lobby_id, None)
             
         return "MATCH_FOUND"
     

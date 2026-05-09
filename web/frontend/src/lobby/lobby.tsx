@@ -49,10 +49,17 @@ export default function Lobby() {
 
   useEffect(() => {
     let isMounted = true;
+    let isRequestInFlight = false;
 
-    async function loadLobbies() {
+    async function loadLobbies(showLoading = false) {
+      if (isRequestInFlight) {
+        return;
+      }
+      isRequestInFlight = true;
       try {
-        setIsLoadingTables(true);
+        if (showLoading && isMounted) {
+          setIsLoadingTables(true);
+        }
         const events = await wsClient.command<Record<string, never>>(
           LOBBY_LIST_COMMAND,
           {},
@@ -69,15 +76,21 @@ export default function Lobby() {
           setMessage(error instanceof Error ? error.message : "Unable to load lobbies.");
         }
       } finally {
-        if (isMounted) {
+        isRequestInFlight = false;
+        if (showLoading && isMounted) {
           setIsLoadingTables(false);
         }
       }
     }
 
-    void loadLobbies();
+    void loadLobbies(true);
+    const timer = window.setInterval(() => {
+      void loadLobbies();
+    }, 5000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(timer);
     };
   }, []);
 
