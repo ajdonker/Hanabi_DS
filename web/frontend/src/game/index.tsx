@@ -11,7 +11,12 @@ import GameHeader from "./components/GameHeader";
 import type { CardSelectPayload } from "./components/PlayerHand";
 import PlayerHand from "./components/PlayerHand";
 import TeamStatusPanel from "./components/TeamStatusPanel";
-import { toRectShape, animateOwnCardAction, drawCardToPlayerHand } from "./animate";
+import {
+  toRectShape,
+  animateOwnCardAction,
+  drawCardToPlayerHand,
+  waitForNextPaint,
+} from "./animate";
 import { useGameState } from "./useGameState";
 import type {
   CardColor,
@@ -170,14 +175,6 @@ export default function Game() {
       };
     });
   }, [setHandCardsByPlayer]);
-
-  const waitForNextPaint = useCallback(() => {
-    return new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => resolve());
-      });
-    });
-  }, []);
 
   const handleOtherCardSelect = ({
     color,
@@ -348,7 +345,6 @@ export default function Game() {
     lastCardAction,
     refreshGameState,
     removeCardFromPlayer,
-    waitForNextPaint,
   ]);
 
   useEffect(() => {
@@ -505,7 +501,7 @@ export default function Game() {
           }}
         />
       )}
-      {flyingCard && <FlyingCardComponent {...flyingCard} />}
+      {flyingCard && <FlyingCardComponent key={flyingCard.animationId} {...flyingCard} />}
     </section>
   );
 }

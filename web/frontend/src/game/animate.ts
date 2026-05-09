@@ -2,6 +2,7 @@ import {CARD_WIDTH, CARD_HEIGHT, CARD_GAP} from "./config";
 
 const OWN_CARD_FLY_DURATION_MS = 420;
 const OWN_CARD_FADE_DURATION_MS = 180;
+let nextFlyingCardAnimationId = 1;
 
 import type {
   CardColor,
@@ -14,6 +15,20 @@ import type {
 function wait(durationMs: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, durationMs);
+  });
+}
+
+function createFlyingCardAnimationId(): number {
+  const animationId = nextFlyingCardAnimationId;
+  nextFlyingCardAnimationId += 1;
+  return animationId;
+}
+
+export function waitForNextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => resolve());
+    });
   });
 }
 
@@ -146,6 +161,7 @@ export const drawCardToPlayerHand = async (
       rotationDeg = -90;
     }
     setFlyingCard({
+      animationId: createFlyingCardAnimationId(),
       color: newCard.color,
       value: newCard.value,
       fromRect,
@@ -155,9 +171,7 @@ export const drawCardToPlayerHand = async (
       faceDown: true,
     });
 
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => resolve());
-    });
+    await waitForNextPaint();
     setFlyingCard((current) => (current ? { ...current, state: "moving" } : null));
     await wait(OWN_CARD_FLY_DURATION_MS * 1);
     setFlyingCard((current) => (current ? { ...current, state: "fading" } : null));
@@ -174,6 +188,7 @@ export const animateOwnCardAction = async (
     const toRect = resolveOwnCardTargetRect(actionType, ownCard.color, fromRect);
 
     setFlyingCard({
+      animationId: createFlyingCardAnimationId(),
       color: ownCard.color,
       value: ownCard.value,
       fromRect,
@@ -182,9 +197,7 @@ export const animateOwnCardAction = async (
       faceDown: false,
     });
 
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => resolve());
-    });
+    await waitForNextPaint();
     if (skipFade) {
       setFlyingCard((current) => (current ? { ...current, state: "moving" } : null));
       await wait(OWN_CARD_FLY_DURATION_MS * 1);
