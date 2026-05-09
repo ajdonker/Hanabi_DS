@@ -269,7 +269,7 @@ export default function Game() {
         }
       }
       const playedWrongCard = result.events.some((event) => event.event === "card_wrong");
-      const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
+      const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard, actionType === "play" && !playedWrongCard);
       await playAnimationPromise;
       if (actionType === "play" && !playedWrongCard) {
         setFireworkValues((current) => {

@@ -816,6 +816,11 @@
     grid-row: auto;
   }
 
+  .discard-panel {
+    position: fixed;
+    bottom: 5rem;
+  }
+
   .seat-left,
   .seat-right {
     transform: none;

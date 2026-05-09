@@ -168,6 +168,7 @@ export const animateOwnCardAction = async (
     actionType: "play" | "discard",
     ownCard: SelectedOwnCardAction,
     setFlyingCard: React.Dispatch<React.SetStateAction<FlyingCard | null>>,
+    skipFade = false,
   ) => {
     const fromRect = ownCard.anchorRect;
     const toRect = resolveOwnCardTargetRect(actionType, ownCard.color, fromRect);
@@ -184,6 +185,12 @@ export const animateOwnCardAction = async (
     await new Promise<void>((resolve) => {
       window.requestAnimationFrame(() => resolve());
     });
+    if (skipFade) {
+      setFlyingCard((current) => (current ? { ...current, state: "moving" } : null));
+      await wait(OWN_CARD_FLY_DURATION_MS * 1);
+      setFlyingCard(null);
+      return;
+    }
     setFlyingCard((current) => (current ? { ...current, state: "moving" } : null));
     await wait(OWN_CARD_FLY_DURATION_MS * 1);
     setFlyingCard((current) => (current ? { ...current, state: "fading" } : null));
