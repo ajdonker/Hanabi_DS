@@ -268,7 +268,7 @@ class Game(GameInterface):
             player.setLastTurn(True)
             
         if(cardDrawn != None):
-            player.addCardAt(cardIndex,HandCard(cardDrawn))
+            player.addCardAt(0,HandCard(cardDrawn))
             result.setDrawnCard(cardDrawn, 0)
 
         #check gameover

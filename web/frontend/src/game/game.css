@@ -25,14 +25,14 @@
 }
 
 .tutorial-icon {
-  width: 58px;
+  width: 48px;
   height: 48px;
-  border-radius: 18px;
-  background: #3b82f6;
   color: #fff;
   display: grid;
   place-items: center;
   font-size: 1.4rem;
+  background: url("../../images/favicon.png");
+  background-size: 48px 48px;
 }
 
 .tutorial-text {
@@ -73,8 +73,8 @@
 
 .game-event-message {
   position: absolute;
-  top: 6.65rem;
-  right: 1rem;
+  top: 4.25rem;
+  left: 0.45rem;
   z-index: 12;
   max-width: min(360px, calc(100vw - 2rem));
   padding: 0.42rem 0.65rem;

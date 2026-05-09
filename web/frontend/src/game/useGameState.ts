@@ -306,7 +306,7 @@ export function useGameState(routeGameId: string | undefined) {
     setFireworkValues(
       colors.map((color) => {
         const pileValue = gameState.board.piles[color] ?? 0;
-        return Math.max(0, Math.min(5, pileValue)) as FireworkValue;
+        return pileValue as FireworkValue;
       }),
     );
     setDiscardByColor(nextDiscardByColor);
@@ -625,5 +625,6 @@ export function useGameState(routeGameId: string | undefined) {
     refreshGameState,
     setCardHintsByPlayer,
     setHandCardsByPlayer,
+    setFireworkValues,
   };
 }

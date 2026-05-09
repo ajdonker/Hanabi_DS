@@ -1,4 +1,3 @@
-# python -m uvicorn server.main:app --reload --host 0.0.0.0 --port 8000
 import asyncio
 
 from fastapi import FastAPI

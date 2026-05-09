@@ -19,8 +19,10 @@ import type {
   Player,
   FlyingCard,
   SelectedOwnCardAction,
-  Direction
+  Direction,
+  FireworkValue,
 } from "./types";
+import { colors } from "./config";
 
 type SelectedCardHint = {
   color: CardColor;
@@ -87,6 +89,7 @@ export default function Game() {
     discardCard,
     refreshGameState,
     setHandCardsByPlayer,
+    setFireworkValues
   } = useGameState(routeGameId);
   const currentPlayer = players[0];
   const [selectedHint, setSelectedHint] = useState<SelectedCardHint | null>(null);
@@ -265,9 +268,20 @@ export default function Game() {
           removeCardFromPlayer(playerId, cardAction.removedCardIndex);
         }
       }
+      const playedWrongCard = result.events.some((event) => event.event === "card_wrong");
       const playAnimationPromise = animateOwnCardAction(actionType, ownCardAction, setFlyingCard);
       await playAnimationPromise;
-      const playedWrongCard = result.events.some((event) => event.event === "card_wrong");
+      if (actionType === "play" && !playedWrongCard) {
+        setFireworkValues((current) => {
+          const newValues = [...current];
+          const colorIndex = colors.indexOf(ownCardAction.color);
+          if (colorIndex !== -1) {
+            newValues[colorIndex] = ownCardAction.value as FireworkValue;
+          }
+          return newValues;
+        });
+      }
+      
       if (actionType === "play" && playedWrongCard) {
         const discardAnimationPromise = animateOwnCardAction('discard', ownCardAction, setFlyingCard);
         await discardAnimationPromise;
