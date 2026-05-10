@@ -286,6 +286,19 @@
   margin: 0 0 0.2rem;
   font-size: 0.95rem;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  line-height: 1;
+  display: flex;
+}
+
+.active-player-indicator {
+  width: 1.35rem;
+  height: 1.35rem;
+  object-fit: contain;
+  flex: 0 0 auto;
 }
 
 .player-name.side-top {
@@ -311,6 +324,7 @@
   text-orientation: mixed;
   margin-right: var(--side-name-extra-gap);
   color: #0ea5e9;
+  gap: 0.35rem;
 }
 
 .player-name.side-right {
@@ -318,6 +332,7 @@
   text-orientation: mixed;
   margin-left: var(--side-name-extra-gap);
   color: #facc15;
+  gap: 0.35rem;
 }
 
 .player-hand-main {

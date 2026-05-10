@@ -58,6 +58,8 @@ class GameSerializer:
         )
 
         game.setFinalTurn(data["final_turn"])
+        game._turnStartedAt = data["turn_started_at"]
+        game._turnDeadline = data["turn_deadline"]
         return game
 
     @staticmethod
@@ -66,6 +68,8 @@ class GameSerializer:
                 "game_id": game.gameID,
                 "player_turn": game.playerTurn,
                 "final_turn": game.finalTurn,
+                "turn_started_at": game._turnStartedAt,
+                "turn_deadline": game._turnDeadline,
 
                 "players": [
                     {

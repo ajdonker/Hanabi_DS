@@ -11,8 +11,6 @@ import type {
   Player,
 } from "./types";
 
-export type GameSocketStatus = "missing" | "connecting" | "connected" | "closed" | "error";
-
 export type GameCommandResult = {
   cardAction: CardActionAnimationEvent | null;
   drawnCard: DrawnCardEvent | null;
@@ -253,15 +251,12 @@ export function useGameState(routeGameId: string | undefined) {
     createEmptyDiscardByColor(),
   );
   const [activePlayerName, setActivePlayerName] = useState("");
-  const [gameSocketStatus, setGameSocketStatus] =
-    useState<GameSocketStatus>("connecting");
-  const [gameSocketUrl, setGameSocketUrl] = useState("");
   const [gameActionError, setGameActionError] = useState("");
+  const [gameOverScore, setGameOverScore] = useState<number | null>(null);
   const [lastGameEventMessage, setLastGameEventMessage] = useState("");
   const [lastCardAction, setLastCardAction] = useState<CardActionAnimationEvent | null>(null);
 
   const applyGameState = useCallback((gameState: BackendGameState) => {
-    console.log("dale Received game state:", gameState);
     const orderedBackendPlayers = rotatePlayersForCurrentUser(
       gameState.players,
       getCurrentPlayerName(),
@@ -419,13 +414,13 @@ export function useGameState(routeGameId: string | undefined) {
       }
 
       if (event === "turn_change" && typeof data.next_player === "string") {
-        // todo: it seems that there is a bug here
         setActivePlayerName(data.next_player);
         return;
       }
 
       if (event === "game_over") {
         gameOverScore = typeof data.score === "number" ? data.score : null;
+        setGameOverScore(gameOverScore);
         setLastGameEventMessage(
           gameOverScore === null ? "Game over." : `Game over. Score: ${gameOverScore}`,
         );
@@ -494,7 +489,7 @@ export function useGameState(routeGameId: string | undefined) {
     const gameId = routeGameId;
 
     if (!storedGameWsUrl || !gameId) {
-      setGameSocketStatus("missing");
+      setGameActionError("Game WebSocket is not ready.");
       return;
     }
 
@@ -504,30 +499,28 @@ export function useGameState(routeGameId: string | undefined) {
     const unsubscribe = client.subscribe((events) => {
       const result = handleReturnedGameEvents(events, { publishCardAction: true });
       if (!result.hasError && result.shouldRefreshGameState) {
-        console.log("dale call game state after broadcast because event did not include game state or card action");
         void loadLatestGameState(client).catch((error) => {
           console.error("Failed to refresh game state after broadcast:", error);
-          setGameSocketStatus("error");
+          setGameActionError(
+            error instanceof Error ? error.message : "Failed to refresh game state.",
+          );
         });
       }
     });
-
-    setGameSocketUrl(storedGameWsUrl);
-    setGameSocketStatus("connecting");
 
     void loadLatestGameState(client)
       .then(() => {
         if (!isMounted) {
           return;
         }
-        setGameSocketStatus("connected");
+        setGameActionError("");
       })
       .catch((error) => {
         if (!isMounted) {
           return;
         }
         console.error("Failed to load game state:", error);
-        setGameSocketStatus("error");
+        setGameActionError(error instanceof Error ? error.message : "Failed to load game state.");
       });
 
     return () => {
@@ -565,7 +558,6 @@ export function useGameState(routeGameId: string | undefined) {
         throw new Error(result.errorMessage || "Game command failed.");
       }
       if (!result.hasGameState && options.refreshAfter !== false) {
-        console.log("dale call game state after send command because no game state or card action was included in response");
         await loadLatestGameState(client);
       }
 
@@ -618,8 +610,7 @@ export function useGameState(routeGameId: string | undefined) {
     discardByColor,
     fireworkValues,
     gameActionError,
-    gameSocketStatus,
-    gameSocketUrl,
+    gameOverScore,
     handCardsByPlayer,
     hints,
     lastCardAction,
@@ -631,6 +622,7 @@ export function useGameState(routeGameId: string | undefined) {
     playCard,
     refreshGameState,
     setCardHintsByPlayer,
+    setGameActionError,
     setHandCardsByPlayer,
     setFireworkValues,
   };

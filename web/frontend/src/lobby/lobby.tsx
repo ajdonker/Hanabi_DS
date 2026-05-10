@@ -43,10 +43,6 @@ export default function Lobby() {
   const [isCreatingTable, setIsCreatingTable] = useState(false);
   const [joiningLobbyId, setJoiningLobbyId] = useState<string | null>(null);
 
-  function generateLobbyId(): string {
-    return `table-${crypto.randomUUID().slice(0, 8)}`;
-  }
-
   useEffect(() => {
     let isMounted = true;
     let isRequestInFlight = false;
@@ -169,18 +165,17 @@ export default function Lobby() {
     try {
       setIsCreatingTable(true);
       setMessage("");
-      const lobbyId = generateLobbyId();
       const events = await wsClient.command<{
-        lobbyId: string;
         maxUsers: number;
         userCreator: string;
       }>(
         LOBBY_CREATE_COMMAND,
-        { lobbyId, maxUsers: requestedPlayers, userCreator: username },
+        { maxUsers: requestedPlayers, userCreator: username },
       );
       const created = getEventData<LobbyWire>(events, LOBBY_CREATED_EVENT);
       if (!created) {
-        throw new Error("Create lobby failed: missing lobby_created event.");
+        const errorMsg = getEventData<{ message: string }>(events, "error");
+        throw new Error(errorMsg ? errorMsg.message : "Unknown error creating lobby.");
       }
 
       setTables((current) => {
@@ -232,7 +227,7 @@ export default function Lobby() {
             disabled={joiningLobbyId === table.lobbyId}
             onClick={() => joinTable(table)}
           >
-            <h3>GameId: {table.lobbyId.replace("table-", "")}</h3>
+            <h3>GameId: {table.lobbyId}</h3>
             <p>
               Players: {table.numUser}/{table.maxUser}
             </p>

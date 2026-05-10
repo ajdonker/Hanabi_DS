@@ -29,6 +29,7 @@ type PlayerHandProps = {
   popupPlacement?: "auto" | "right-of-card" | "left-of-card";
   hintPosition?: "top" | "bottom" | "left" | "right";
   cardHintsByCard?: Record<number, CardHintMarkers>;
+  isActivePlayer?: boolean;
   onCardSelect: (payload: CardSelectPayload) => void;
 };
 
@@ -46,6 +47,7 @@ export default function PlayerHand({
   popupPlacement = "auto",
   hintPosition = "top",
   cardHintsByCard,
+  isActivePlayer = false,
   onCardSelect,
 }: PlayerHandProps) {
   const handClasses = `player-hand ${orientation} ${className}`.trim();
@@ -148,38 +150,35 @@ export default function PlayerHand({
     </div>
   );
 
+  const renderPlayerName = (side: "top" | "bottom" | "left" | "right") => (
+    <h3
+      className={`player-name side-${side} ${isActivePlayer ? "is-active" : ""}`.trim()}
+      style={nameStyle}
+    >
+      <span className="player-name-text">{playerLabel}</span>
+      {isActivePlayer && (
+        <img
+          className="active-player-indicator"
+          src="/images/active_player.gif"
+          alt="active player"
+        />
+      )}
+    </h3>
+  );
+
   return (
     <article className={`${handClasses}`.trim()}>
       {nameSide === "top" || nameSide === "bottom" ? (
         <>
-          {nameSide === "top" && (
-            <h3 className={`player-name side-top`} style={nameStyle}>
-              {playerLabel}
-            </h3>
-          )}
+          {nameSide === "top" && renderPlayerName("top")}
           {renderedCards}
-          {nameSide === "bottom" && (
-            <h3 className={`player-name side-bottom`} style={nameStyle}>
-              {playerLabel}
-            </h3>
-          )}
+          {nameSide === "bottom" && renderPlayerName("bottom")}
         </>
       ) : (
         <div className={`player-hand-main`}>
-          {nameSide === "left" && (
-            <h3 className={`player-name side-left`} style={nameStyle}>
-              {playerLabel}
-            </h3>
-          )}
+          {nameSide === "left" && renderPlayerName("left")}
           {renderedCards}
-          {nameSide === "right" && (
-            <h3
-              className={`player-name side-right`}
-              style={nameStyle}
-            >
-              {playerLabel}
-            </h3>
-          )}
+          {nameSide === "right" && renderPlayerName("right")}
         </div>
       )}
     </article>

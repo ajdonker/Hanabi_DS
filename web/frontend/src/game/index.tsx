@@ -81,8 +81,7 @@ export default function Game() {
     discardByColor,
     fireworkValues,
     gameActionError,
-    gameSocketStatus,
-    gameSocketUrl,
+    gameOverScore,
     giveHint,
     handCardsByPlayer,
     hints,
@@ -93,6 +92,7 @@ export default function Game() {
     players,
     discardCard,
     refreshGameState,
+    setGameActionError,
     setHandCardsByPlayer,
     setFireworkValues
   } = useGameState(routeGameId);
@@ -119,6 +119,7 @@ export default function Game() {
     rightPlayer = players[3];
   }
 
+  const isGameOver = gameOverScore !== null;
   const activePlayer = activePlayerName || topPlayer?.name || currentPlayer.name;
   const currentPlayerCards = handCardsByPlayer[currentPlayer.id] ?? [];
   const topPlayerCards = topPlayer ? handCardsByPlayer[topPlayer.id] ?? [] : [];
@@ -228,9 +229,19 @@ export default function Game() {
     setSelectedHint(null);
   };
 
+  const showGameOverMessage = () => {
+    setGameActionError("the game is over");
+    setSelectedHint(null);
+    setSelectedOwnCard(null);
+  };
   
 
   const submitHint = async (hintType: "color" | "number") => {
+    if (isGameOver) {
+      showGameOverMessage();
+      return;
+    }
+
     if (!selectedHint || isSendingHint) {
       return;
     }
@@ -254,6 +265,11 @@ export default function Game() {
   };
 
   const submitOwnCardAction = async (actionType: "play" | "discard") => {
+    if (isGameOver) {
+      showGameOverMessage();
+      return;
+    }
+
     if (!selectedOwnCard || isSendingOwnCardAction) {
       return;
     }
@@ -302,7 +318,6 @@ export default function Game() {
           addCardToPlayer(playerId, cardAction.drawnCard.cardIndex, cardAction.drawnCard.card);
         }
       }
-      console.log("dale call game state after animation because own card action was performed");
       await refreshGameState();
     } catch (error) {
       console.log("in catch block, before animation");
@@ -439,11 +454,7 @@ export default function Game() {
 
   return (
     <section className="game-page">
-      <GameHeader activePlayer={activePlayer} />
-      <div className={`game-socket-status is-${gameSocketStatus}`}>
-        Game server: {gameSocketStatus}
-        {gameSocketUrl ? ` (${gameSocketUrl})` : ""}
-      </div>
+      <GameHeader activePlayer={activePlayer} gameOverScore={gameOverScore} />
       {(gameActionError || lastGameEventMessage) && (
         <div className={`game-event-message ${gameActionError ? "is-error" : ""}`.trim()}>
           {gameActionError || lastGameEventMessage}
@@ -463,6 +474,7 @@ export default function Game() {
             nameRotationDeg={180}
             hoverShift="right"
             popupPlacement="right-of-card"
+            isActivePlayer={!isGameOver && activePlayerName === leftPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-left"
           />
@@ -475,6 +487,7 @@ export default function Game() {
             hintPosition="bottom"
             orientation="horizontal"
             hoverShift="down"
+            isActivePlayer={!isGameOver && activePlayerName === topPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-top"
           />
@@ -491,6 +504,7 @@ export default function Game() {
             nameRotationDeg={0}
             hoverShift="left"
             popupPlacement="left-of-card"
+            isActivePlayer={!isGameOver && activePlayerName === rightPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-right"
           />
@@ -511,6 +525,7 @@ export default function Game() {
           isCurrentPlayer
           orientation="horizontal"
           hoverShift="up"
+          isActivePlayer={!isGameOver && activePlayerName === currentPlayer.name}
           onCardSelect={handleCurrentCardSelect}
           className="seat-bottom"
         />

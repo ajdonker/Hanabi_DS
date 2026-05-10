@@ -3,8 +3,7 @@ from server.application.waitingPlayer import WaitingPlayer
 from server.application.matchmakingService import MatchmakingService
 
 class CreateLobbyCommand():
-    def __init__(self, lobby_id: str, max_users: int, user_creator: str):
-        self.lobby_id = lobby_id
+    def __init__(self, max_users: int, user_creator: str):
         self.max_users = max_users
         self.user_creator = user_creator
 

@@ -278,6 +278,8 @@ def test_game_serialization_roundtrip(game): #ok
     assert restored._gameID == game._gameID
     assert restored._playerTurn == game._playerTurn
     assert restored._finalTurn == game._finalTurn
+    assert restored._turnStartedAt == game._turnStartedAt
+    assert restored._turnDeadline == game._turnDeadline
 
     # players
     assert set(restored._players.keys()) == set(game._players.keys())
@@ -485,6 +487,12 @@ def test_change_turn_cycles_back_to_first_player(game):
 def test_change_turn_sets_timer_fields(game):
     game.changeTurn()
 
+    assert game._turnStartedAt is not None
+    assert game._turnDeadline is not None
+    assert game._turnDeadline > game._turnStartedAt
+
+
+def test_initial_game_sets_timer_fields(game):
     assert game._turnStartedAt is not None
     assert game._turnDeadline is not None
     assert game._turnDeadline > game._turnStartedAt

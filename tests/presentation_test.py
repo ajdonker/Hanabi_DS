@@ -300,6 +300,40 @@ def test_on_message_game_action_events_still_broadcast_to_game():
     assert json.loads(ws1.sent_texts[0]) == json.loads(ws2.sent_texts[0])
 
 
+def test_on_message_game_error_is_only_sent_to_requester():
+    manager = ConnectionManager()
+    events = [Event("error", {"message": "Not your turn"})]
+    handler = make_handler(manager, events=events)
+
+    ws1 = DummyWebSocket()
+    ws2 = DummyWebSocket()
+    conn1 = manager.add_connection(ws1)
+    conn2 = manager.add_connection(ws2)
+
+    manager.bind_player(conn1, "P1")
+    manager.bind_player(conn2, "P2")
+    manager.join_game(conn1, "g1")
+    manager.join_game(conn2, "g1")
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "game.play_card",
+            "requestId": "r-action",
+            "data": {"gameId": "g1", "playerId": "P1", "cardIndex": 0},
+        }
+    )
+    asyncio.run(handler.on_message(conn1, raw))
+
+    assert len(ws1.sent_texts) == 1
+    assert ws2.sent_texts == []
+    assert json.loads(ws1.sent_texts[0]) == {
+        "type": "event_batch",
+        "events": [{"event": "error", "data": {"message": "Not your turn"}}],
+        "requestId": "r-action",
+    }
+
+
 def test_on_message_internal_error_returns_error_with_request_id():
     manager = ConnectionManager()
     handler = make_handler(manager, dispatcher=DummyDispatcher(should_raise=True))
