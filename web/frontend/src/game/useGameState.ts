@@ -11,8 +11,6 @@ import type {
   Player,
 } from "./types";
 
-export type GameSocketStatus = "missing" | "connecting" | "connected" | "closed" | "error";
-
 export type GameCommandResult = {
   cardAction: CardActionAnimationEvent | null;
   drawnCard: DrawnCardEvent | null;
@@ -253,9 +251,6 @@ export function useGameState(routeGameId: string | undefined) {
     createEmptyDiscardByColor(),
   );
   const [activePlayerName, setActivePlayerName] = useState("");
-  const [gameSocketStatus, setGameSocketStatus] =
-    useState<GameSocketStatus>("connecting");
-  const [gameSocketUrl, setGameSocketUrl] = useState("");
   const [gameActionError, setGameActionError] = useState("");
   const [lastGameEventMessage, setLastGameEventMessage] = useState("");
   const [lastCardAction, setLastCardAction] = useState<CardActionAnimationEvent | null>(null);
@@ -492,7 +487,7 @@ export function useGameState(routeGameId: string | undefined) {
     const gameId = routeGameId;
 
     if (!storedGameWsUrl || !gameId) {
-      setGameSocketStatus("missing");
+      setGameActionError("Game WebSocket is not ready.");
       return;
     }
 
@@ -504,27 +499,26 @@ export function useGameState(routeGameId: string | undefined) {
       if (!result.hasError && result.shouldRefreshGameState) {
         void loadLatestGameState(client).catch((error) => {
           console.error("Failed to refresh game state after broadcast:", error);
-          setGameSocketStatus("error");
+          setGameActionError(
+            error instanceof Error ? error.message : "Failed to refresh game state.",
+          );
         });
       }
     });
-
-    setGameSocketUrl(storedGameWsUrl);
-    setGameSocketStatus("connecting");
 
     void loadLatestGameState(client)
       .then(() => {
         if (!isMounted) {
           return;
         }
-        setGameSocketStatus("connected");
+        setGameActionError("");
       })
       .catch((error) => {
         if (!isMounted) {
           return;
         }
         console.error("Failed to load game state:", error);
-        setGameSocketStatus("error");
+        setGameActionError(error instanceof Error ? error.message : "Failed to load game state.");
       });
 
     return () => {
@@ -614,8 +608,6 @@ export function useGameState(routeGameId: string | undefined) {
     discardByColor,
     fireworkValues,
     gameActionError,
-    gameSocketStatus,
-    gameSocketUrl,
     handCardsByPlayer,
     hints,
     lastCardAction,

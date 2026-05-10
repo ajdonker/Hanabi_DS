@@ -81,8 +81,6 @@ export default function Game() {
     discardByColor,
     fireworkValues,
     gameActionError,
-    gameSocketStatus,
-    gameSocketUrl,
     giveHint,
     handCardsByPlayer,
     hints,
@@ -439,10 +437,6 @@ export default function Game() {
   return (
     <section className="game-page">
       <GameHeader activePlayer={activePlayer} />
-      <div className={`game-socket-status is-${gameSocketStatus}`}>
-        Game server: {gameSocketStatus}
-        {gameSocketUrl ? ` (${gameSocketUrl})` : ""}
-      </div>
       {(gameActionError || lastGameEventMessage) && (
         <div className={`game-event-message ${gameActionError ? "is-error" : ""}`.trim()}>
           {gameActionError || lastGameEventMessage}
@@ -462,6 +456,7 @@ export default function Game() {
             nameRotationDeg={180}
             hoverShift="right"
             popupPlacement="right-of-card"
+            isActivePlayer={activePlayerName === leftPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-left"
           />
@@ -474,6 +469,7 @@ export default function Game() {
             hintPosition="bottom"
             orientation="horizontal"
             hoverShift="down"
+            isActivePlayer={activePlayerName === topPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-top"
           />
@@ -490,6 +486,7 @@ export default function Game() {
             nameRotationDeg={0}
             hoverShift="left"
             popupPlacement="left-of-card"
+            isActivePlayer={activePlayerName === rightPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-right"
           />
@@ -510,6 +507,7 @@ export default function Game() {
           isCurrentPlayer
           orientation="horizontal"
           hoverShift="up"
+          isActivePlayer={activePlayerName === currentPlayer.name}
           onCardSelect={handleCurrentCardSelect}
           className="seat-bottom"
         />
