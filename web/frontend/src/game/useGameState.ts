@@ -261,7 +261,6 @@ export function useGameState(routeGameId: string | undefined) {
   const [lastCardAction, setLastCardAction] = useState<CardActionAnimationEvent | null>(null);
 
   const applyGameState = useCallback((gameState: BackendGameState) => {
-    console.log("dale Received game state:", gameState);
     const orderedBackendPlayers = rotatePlayersForCurrentUser(
       gameState.players,
       getCurrentPlayerName(),
@@ -419,7 +418,6 @@ export function useGameState(routeGameId: string | undefined) {
       }
 
       if (event === "turn_change" && typeof data.next_player === "string") {
-        // todo: it seems that there is a bug here
         setActivePlayerName(data.next_player);
         return;
       }
@@ -504,7 +502,6 @@ export function useGameState(routeGameId: string | undefined) {
     const unsubscribe = client.subscribe((events) => {
       const result = handleReturnedGameEvents(events, { publishCardAction: true });
       if (!result.hasError && result.shouldRefreshGameState) {
-        console.log("dale call game state after broadcast because event did not include game state or card action");
         void loadLatestGameState(client).catch((error) => {
           console.error("Failed to refresh game state after broadcast:", error);
           setGameSocketStatus("error");
@@ -565,7 +562,6 @@ export function useGameState(routeGameId: string | undefined) {
         throw new Error(result.errorMessage || "Game command failed.");
       }
       if (!result.hasGameState && options.refreshAfter !== false) {
-        console.log("dale call game state after send command because no game state or card action was included in response");
         await loadLatestGameState(client);
       }
 

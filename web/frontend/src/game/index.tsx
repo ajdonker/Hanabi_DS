@@ -302,7 +302,6 @@ export default function Game() {
           addCardToPlayer(playerId, cardAction.drawnCard.cardIndex, cardAction.drawnCard.card);
         }
       }
-      console.log("dale call game state after animation because own card action was performed");
       await refreshGameState();
     } catch (error) {
       console.log("in catch block, before animation");

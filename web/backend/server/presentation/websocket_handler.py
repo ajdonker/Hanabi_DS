@@ -158,7 +158,7 @@ class WebSocketHandler:
                     self.connection_manager.join_game(conn_id, game_id)
 
     def _should_broadcast_to_game(self, events: list[Event]) -> bool:
-        return not any(event.event == "game_state" for event in events)
+        return not any(event.event in ("game_state", "error") for event in events)
 
     def _schedule_game_finished_notification(
         self,

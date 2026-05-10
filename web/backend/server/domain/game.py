@@ -305,7 +305,7 @@ class Game(GameInterface):
         #started timer
         now = time.time()
         self._turnStartedAt = now
-        self._turnDeadline = now + 60 #TODO : make it 60s in production
+        self._turnDeadline = now + 60
         
     def checkGameOver(self) -> int | None: 
         if self._board._misfires >= 3:
