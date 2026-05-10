@@ -132,4 +132,6 @@ class JoinLobbyHandler:
                 "host": game.host,
                 "port": game.port
             })]
+        if result == "ALREADY_IN_QUEUE":
+            return [Event("error", {"message": "Player is already in the queue for a game"})]
         return [Event("error", {"message": "Unknown matchmaking result"})]
