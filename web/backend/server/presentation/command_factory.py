@@ -52,7 +52,6 @@ class CommandFactory:
 
         if message.action == "lobby.create":
             return CreateLobbyCommand(
-                lobby_id=message.data["lobbyId"],
                 max_users=message.data["maxUsers"],
                 user_creator=message.data["userCreator"],
             )

@@ -12,6 +12,13 @@ def generate_id():
     return str(uuid.uuid4())[:8]
 
 
+def generate_lobby_id(matchmaking_service: MatchmakingService) -> str:
+    while True:
+        lobby_id = generate_id()
+        if lobby_id not in matchmaking_service.lobbies:
+            return lobby_id
+
+
 def find_unfinished_game_id(matchmaking_service: MatchmakingService, player_name: str) -> str | None:
     return matchmaking_service.repo.get_player_game_mapping(player_name)
 
@@ -35,21 +42,22 @@ class CreateLobbyHandler:
         if game_id:
             return [player_already_playing_event(game_id)]
 
+        lobby_id = generate_lobby_id(self.matchmaking_service)
         player = WaitingPlayer(
             player_id=generate_id(),
             name=command.user_creator,
-            lobby_id=command.lobby_id,
+            lobby_id=lobby_id,
         )
 
         self.matchmaking_service.create_lobby(
-            command.lobby_id,
+            lobby_id,
             command.max_users,
-            player.name,   # or player, depending on your actual create_lobby signature
+            player.name,
         )
 
         return [Event("lobby_created", {
-            "lobbyId": command.lobby_id,
-            "name": f"Game {command.lobby_id}",
+            "lobbyId": lobby_id,
+            "name": f"Game {lobby_id}",
             "maxUser": command.max_users,
             "numUser": 1,
             "currentUsers": [player.name],

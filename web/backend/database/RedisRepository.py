@@ -118,6 +118,22 @@ class RedisRepository(IGameRepository, IUserRepository):
     def delete_player_game_mapping(self, player_id: str):
         key = f"hanabi:player_game:{player_id}"
         self._retry(lambda: self.redis.delete(key))
+
+    def delete_player_game_mappings(self):
+        cursor = 0
+        pattern = "hanabi:player_game:*"
+        keys_to_delete = []
+        while True:
+            cursor, keys = self._retry(
+                lambda: self.redis.scan(cursor=cursor, match=pattern, count=100)
+            )
+            if keys:
+                keys_to_delete.extend(keys)
+            if int(cursor) == 0:
+                break
+
+        if keys_to_delete:
+            self._retry(lambda: self.redis.delete(*keys_to_delete))
     
     #-----------------------------------------USER -----------------------------------------
     def load_user(self, username : str) -> User | None:
