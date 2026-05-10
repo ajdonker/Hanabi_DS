@@ -18,9 +18,18 @@ app = create_app()
 
 @app.on_event("startup")
 async def startup():
-    watcher = TurnWatcher(repo, _connection_manager)
+    if os.getenv("IS_GAME_SERVER") != "1":
+        print("[Server] TurnWatcher skipped in hanabi-server container")
+        return
+
+    game_id = os.getenv("GAME_ID")
+    if not game_id:
+        print("[Server] TurnWatcher skipped: GAME_ID missing")
+        return
+
+    watcher = TurnWatcher(repo, _connection_manager, game_id)
     asyncio.create_task(watcher.start())
-    print("[Server] TurnWatcher started")
+    print(f"[Server] TurnWatcher started for game {game_id}")
 
 
 @app.on_event("shutdown")

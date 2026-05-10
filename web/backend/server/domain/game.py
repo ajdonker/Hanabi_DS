@@ -75,8 +75,9 @@ class Game(GameInterface):
         self._turnOrder = [p._username for p in players] #list of usernames in the order of the turns
         self._playerTurn = playerTurn 
         self._finalTurn = False
-        self._turnStartedAt: float
-        self._turnDeadline: float
+        now = time.time()
+        self._turnStartedAt = now
+        self._turnDeadline = now + 60
 
     @property
     def gameID(self) -> int:
