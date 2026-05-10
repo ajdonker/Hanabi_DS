@@ -252,6 +252,7 @@ export function useGameState(routeGameId: string | undefined) {
   );
   const [activePlayerName, setActivePlayerName] = useState("");
   const [gameActionError, setGameActionError] = useState("");
+  const [gameOverScore, setGameOverScore] = useState<number | null>(null);
   const [lastGameEventMessage, setLastGameEventMessage] = useState("");
   const [lastCardAction, setLastCardAction] = useState<CardActionAnimationEvent | null>(null);
 
@@ -419,6 +420,7 @@ export function useGameState(routeGameId: string | undefined) {
 
       if (event === "game_over") {
         gameOverScore = typeof data.score === "number" ? data.score : null;
+        setGameOverScore(gameOverScore);
         setLastGameEventMessage(
           gameOverScore === null ? "Game over." : `Game over. Score: ${gameOverScore}`,
         );
@@ -608,6 +610,7 @@ export function useGameState(routeGameId: string | undefined) {
     discardByColor,
     fireworkValues,
     gameActionError,
+    gameOverScore,
     handCardsByPlayer,
     hints,
     lastCardAction,
@@ -619,6 +622,7 @@ export function useGameState(routeGameId: string | undefined) {
     playCard,
     refreshGameState,
     setCardHintsByPlayer,
+    setGameActionError,
     setHandCardsByPlayer,
     setFireworkValues,
   };

@@ -81,6 +81,7 @@ export default function Game() {
     discardByColor,
     fireworkValues,
     gameActionError,
+    gameOverScore,
     giveHint,
     handCardsByPlayer,
     hints,
@@ -91,6 +92,7 @@ export default function Game() {
     players,
     discardCard,
     refreshGameState,
+    setGameActionError,
     setHandCardsByPlayer,
     setFireworkValues
   } = useGameState(routeGameId);
@@ -117,6 +119,7 @@ export default function Game() {
     rightPlayer = players[3];
   }
 
+  const isGameOver = gameOverScore !== null;
   const activePlayer = activePlayerName || topPlayer?.name || currentPlayer.name;
   const currentPlayerCards = handCardsByPlayer[currentPlayer.id] ?? [];
   const topPlayerCards = topPlayer ? handCardsByPlayer[topPlayer.id] ?? [] : [];
@@ -226,9 +229,19 @@ export default function Game() {
     setSelectedHint(null);
   };
 
+  const showGameOverMessage = () => {
+    setGameActionError("the game is over");
+    setSelectedHint(null);
+    setSelectedOwnCard(null);
+  };
   
 
   const submitHint = async (hintType: "color" | "number") => {
+    if (isGameOver) {
+      showGameOverMessage();
+      return;
+    }
+
     if (!selectedHint || isSendingHint) {
       return;
     }
@@ -252,6 +265,11 @@ export default function Game() {
   };
 
   const submitOwnCardAction = async (actionType: "play" | "discard") => {
+    if (isGameOver) {
+      showGameOverMessage();
+      return;
+    }
+
     if (!selectedOwnCard || isSendingOwnCardAction) {
       return;
     }
@@ -436,7 +454,7 @@ export default function Game() {
 
   return (
     <section className="game-page">
-      <GameHeader activePlayer={activePlayer} />
+      <GameHeader activePlayer={activePlayer} gameOverScore={gameOverScore} />
       {(gameActionError || lastGameEventMessage) && (
         <div className={`game-event-message ${gameActionError ? "is-error" : ""}`.trim()}>
           {gameActionError || lastGameEventMessage}
@@ -456,7 +474,7 @@ export default function Game() {
             nameRotationDeg={180}
             hoverShift="right"
             popupPlacement="right-of-card"
-            isActivePlayer={activePlayerName === leftPlayer.name}
+            isActivePlayer={!isGameOver && activePlayerName === leftPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-left"
           />
@@ -469,7 +487,7 @@ export default function Game() {
             hintPosition="bottom"
             orientation="horizontal"
             hoverShift="down"
-            isActivePlayer={activePlayerName === topPlayer.name}
+            isActivePlayer={!isGameOver && activePlayerName === topPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-top"
           />
@@ -486,7 +504,7 @@ export default function Game() {
             nameRotationDeg={0}
             hoverShift="left"
             popupPlacement="left-of-card"
-            isActivePlayer={activePlayerName === rightPlayer.name}
+            isActivePlayer={!isGameOver && activePlayerName === rightPlayer.name}
             onCardSelect={handleOtherCardSelect}
             className="seat-right"
           />
@@ -507,7 +525,7 @@ export default function Game() {
           isCurrentPlayer
           orientation="horizontal"
           hoverShift="up"
-          isActivePlayer={activePlayerName === currentPlayer.name}
+          isActivePlayer={!isGameOver && activePlayerName === currentPlayer.name}
           onCardSelect={handleCurrentCardSelect}
           className="seat-bottom"
         />
