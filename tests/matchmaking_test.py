@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 from server.application.matchmakingService import MatchmakingService
 from server.application.waitingPlayer import WaitingPlayer
+from server.domain.exceptions import LobbyException
 import threading, random, time
 
 @pytest.fixture
@@ -150,10 +151,14 @@ def test_concurrent_overflow_players(matchmaking):
     matchmaking.create_lobby("l1", 2, "alice")
 
     results = []
+    errors = []
 
     def join(name):
-        res = matchmaking.join_lobby("l1", WaitingPlayer(name, name, "l1"))
-        results.append(res)
+        try:
+            res = matchmaking.join_lobby("l1", WaitingPlayer(name, name, "l1"))
+            results.append(res)
+        except LobbyException as error:
+            errors.append(error)
 
     threads = [
         threading.Thread(target=join, args=(name,))
@@ -170,7 +175,12 @@ def test_concurrent_overflow_players(matchmaking):
     total_players_in_games = sum(len(g.players) for g in matchmaking.active_games.values())
     assert total_players_in_games == 2
 
-    assert len(matchmaking.waiting_players) == 1
+    assert "MATCH_FOUND" in results
+    assert "ALREADY_IN_QUEUE" in results
+    assert len(errors) == 1
+    assert str(errors[0]) == "Lobby does not exist"
+    assert len(matchmaking.waiting_players) == 0
+    assert "l1" not in matchmaking.lobbies
 
 def test_high_concurrency_with_delays(matchmaking):
     lobby_size = 4
@@ -178,14 +188,21 @@ def test_high_concurrency_with_delays(matchmaking):
 
     matchmaking.create_lobby("l1", lobby_size, "p0")
 
+    results = []
+    errors = []
+
     def join(i):
         time.sleep(random.uniform(0, 0.01))  # simulate network jitter
         name = f"p{i}"
-        matchmaking.join_lobby("l1", WaitingPlayer(str(i), name, "l1"))
+        try:
+            result = matchmaking.join_lobby("l1", WaitingPlayer(str(i), name, "l1"))
+            results.append(result)
+        except LobbyException as error:
+            errors.append(error)
 
     threads = [
         threading.Thread(target=join, args=(i,))
-        for i in range(total_players)
+        for i in range(1, total_players)
     ]
 
     for t in threads:
@@ -193,12 +210,17 @@ def test_high_concurrency_with_delays(matchmaking):
     for t in threads:
         t.join()
 
-    expected_games = total_players // lobby_size
+    assert len(matchmaking.active_games) == 1
 
-    assert len(matchmaking.active_games) == expected_games
-
-    for game in matchmaking.active_games.values():
-        assert len(game.players) == lobby_size
+    game = next(iter(matchmaking.active_games.values()))
+    assert len(game.players) == lobby_size
+    assert "p0" in [player.name for player in game.players]
+    assert "MATCH_FOUND" in results
+    assert results.count("WAITING") == lobby_size - 2
+    assert len(errors) == total_players - lobby_size
+    assert all(str(error) == "Lobby does not exist" for error in errors)
+    assert len(matchmaking.waiting_players) == 0
+    assert "l1" not in matchmaking.lobbies
 
 def test_no_duplicate_players(matchmaking):
     lobby_size = 3
@@ -206,13 +228,18 @@ def test_no_duplicate_players(matchmaking):
 
     matchmaking.create_lobby("l1", lobby_size, "p0")
 
+    errors = []
+
     def join(i):
         name = f"p{i}"
-        matchmaking.join_lobby("l1", WaitingPlayer(str(i), name, "l1"))
+        try:
+            matchmaking.join_lobby("l1", WaitingPlayer(str(i), name, "l1"))
+        except LobbyException as error:
+            errors.append(error)
 
     threads = [
         threading.Thread(target=join, args=(i,))
-        for i in range(total_players)
+        for i in range(1, total_players)
     ]
 
     for t in threads:
@@ -228,3 +255,5 @@ def test_no_duplicate_players(matchmaking):
     all_players.extend([p.name for p in matchmaking.waiting_players])
 
     assert len(all_players) == len(set(all_players))
+    assert len(errors) == total_players - lobby_size
+    assert all(str(error) == "Lobby does not exist" for error in errors)
