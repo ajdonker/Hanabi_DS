@@ -208,5 +208,6 @@ export const animateOwnCardAction = async (
     await wait(OWN_CARD_FLY_DURATION_MS * 1);
     setFlyingCard((current) => (current ? { ...current, state: "fading" } : null));
     await wait(OWN_CARD_FADE_DURATION_MS * 1);
+    ownCard.anchorRect = toRect;
     setFlyingCard(null);
   };

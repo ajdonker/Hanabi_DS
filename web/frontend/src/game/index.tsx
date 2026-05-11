@@ -41,7 +41,7 @@ type SelectedCardHint = {
 };
 
 
-const HINT_POPUP_WIDTH = 200;
+const HINT_POPUP_WIDTH = 210;
 const HINT_POPUP_HEIGHT = 82;
 const ACTION_POPUP_WIDTH = 200;
 const ACTION_POPUP_HEIGHT = 82;
