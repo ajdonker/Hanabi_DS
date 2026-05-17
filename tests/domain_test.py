@@ -545,6 +545,18 @@ def test_discard_with_empty_deck_does_not_draw_card_and_sets_final_turn(game):
     assert player._lastTurn is True
 
 
+def test_discard_game_over_can_return_zero_score(game):
+    game = Game._create_initial_game("g1", ["P1", "P2"])
+    game._board._deck._cards = []
+    game.getPlayer("P2")._lastTurn = True
+
+    result = game.discardCard("P1", 0)
+
+    assert game.getPlayer("P1")._lastTurn is True
+    assert game.getPlayer("P2")._lastTurn is True
+    assert result.game_over == 0
+
+
 def test_play_card_with_empty_deck_does_not_draw_card(game):
     game = Game._create_initial_game("g1", ["P1", "P2"])
     game._board._deck._cards = []

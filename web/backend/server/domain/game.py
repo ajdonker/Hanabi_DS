@@ -171,8 +171,8 @@ class Game(GameInterface):
         
         #check gameover
         score = self.checkGameOver()
-        if score :
-            result.setGameOver(True)
+        if score is not None:
+            result.setGameOver(score)
 
         #unless game is over, the player must draw a card (regardless of his action)
         cardDrawn = board.drawCard() #update board
@@ -236,7 +236,7 @@ class Game(GameInterface):
 
         #check gameover
         score = self.checkGameOver()
-        if score :
+        if score is not None:
             result.setGameOver(score)
         
         #change turn
@@ -274,7 +274,7 @@ class Game(GameInterface):
 
         #check gameover
         score = self.checkGameOver()
-        if score :
+        if score is not None:
             result.setGameOver(score)
         
         self.changeTurn()

@@ -27,6 +27,13 @@ class MatchmakingService:
         if self._gameServerManager is None:
             self._gameServerManager = GameServerManager()
         return self._gameServerManager
+
+    def _player_name(self, player) -> str:
+        return player.name if hasattr(player, "name") else str(player)
+
+    def _player_names(self, players) -> list[str]:
+        return [self._player_name(player) for player in players]
+
     #added
     def create_lobby(self, lobby_id: str, max_users: int, user_creator : str) -> str:
         with self.lock:
@@ -144,6 +151,41 @@ class MatchmakingService:
             
             self.active_games[game_id] = game
             return game
+
+    def ensure_game_server(self, game_id: str) -> dict | None:
+        with self.lock:
+            game = self.active_games.get(game_id)
+            if game is None:
+                game = self.repo.load_game_information(game_id)
+
+            if game is None:
+                return None
+
+            player_names = self._player_names(game.players)
+            host, port, container_name = self.gameServerManager.ensure_server_container(
+                game_id,
+                player_names,
+                game.container_name,
+            )
+
+            game.host = host
+            game.port = port
+            game.container_name = container_name
+            game.timestamp = time.time()
+            self.repo.save_game_information(game)
+            self.active_games[game_id] = game
+
+            for player_name in player_names:
+                self.active_player_names[player_name] = {
+                    "status": "active",
+                    "game_id": game_id,
+                }
+
+            return {
+                "game_id": game_id,
+                "host": host,
+                "port": port,
+            }
     
     def remove_game(self, game_id):
         with self.lock:
@@ -152,7 +194,7 @@ class MatchmakingService:
                 return
             
             for p in game.players:
-                self.active_player_names.pop(p.name, None)
+                self.active_player_names.pop(self._player_name(p), None)
 
         removed = self.gameServerManager.remove_container(game.container_name)
         if not removed:
@@ -176,7 +218,7 @@ class MatchmakingService:
         for game_id in to_remove:
             print(f"[MATCHMAKER] Cleaning up expired/dead game {game_id}")
             self.remove_game(game_id)
-            
+
     def remove_waiting_player(self, player_name: str):
         with self.lock:
             self.waiting_players = [
@@ -190,7 +232,7 @@ class MatchmakingService:
             if game is None:
                 return None
 
-            player_names = [p.name for p in game.players]
+            player_names = self._player_names(game.players)
             if player_name not in player_names:
                 return None
             return game
@@ -198,7 +240,7 @@ class MatchmakingService:
     def find_game_by_player(self, player_name):
         with self.lock:
             for game in self.active_games.values():
-                player_names = [p.name for p in game.players]
+                player_names = self._player_names(game.players)
                 print(player_names)
                 if player_name in player_names:
                     print(f"Game found for player {player_name}")

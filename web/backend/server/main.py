@@ -2,6 +2,7 @@ import asyncio
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from server.presentation.router import _connection_manager, ws_router
 from database.RedisRepository import RedisRepository
 from server.presentation.turnWatcher import TurnWatcher
@@ -10,6 +11,12 @@ repo = RedisRepository()
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Hanabi Backend")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.state.repo = repo
     app.include_router(ws_router)
     return app
