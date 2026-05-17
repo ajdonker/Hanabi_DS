@@ -71,9 +71,13 @@ class RedisRepository(IGameRepository, IUserRepository):
     #-----------------------------------------GAME INFO-----------------------------------------
     def save_game_information(self,game_info: GameInformation):
         key = f"hanabi:game_info:{game_info.game_id}"
+        player_names = [
+            p.name if hasattr(p, "name") else str(p)
+            for p in game_info.players
+        ]
     
         payload = json.dumps({
-            "players": [p.name for p in game_info.players],
+            "players": player_names,
             "container": game_info.container_name,
             "timestamp": game_info.timestamp,
             "host": game_info.host,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { resolveGameServer, toGameWsUrl } from "../network/gameServer";
 import { getEventData, HanabiWsClient, type ServerEvent } from "../network/wsClient";
 import { colors } from "./config";
 import type {
@@ -113,6 +114,14 @@ const VALUE_TO_BACKEND: Record<CardValue, string> = {
   4: "FOUR",
   5: "FIVE",
 };
+
+const MAX_RECONNECT_ATTEMPTS = 5;
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
 
 function createPlaceholderHandsByPlayer(players: Player[]): Record<number, HandCard[]> {
   return players.reduce<Record<number, HandCard[]>>((hands, player) => {
@@ -232,6 +241,7 @@ function rotatePlayersForCurrentUser(
 export function useGameState(routeGameId: string | undefined) {
   const clientRef = useRef<HanabiWsClient | null>(null);
   const cardActionSequenceRef = useRef(0);
+  const gameOverScoreRef = useRef<number | null>(null);
   const placeholderPlayers: Player[] = [{
     id: 1,
     name: "Placeholder Player",
@@ -255,6 +265,10 @@ export function useGameState(routeGameId: string | undefined) {
   const [gameOverScore, setGameOverScore] = useState<number | null>(null);
   const [lastGameEventMessage, setLastGameEventMessage] = useState("");
   const [lastCardAction, setLastCardAction] = useState<CardActionAnimationEvent | null>(null);
+
+  useEffect(() => {
+    gameOverScoreRef.current = gameOverScore;
+  }, [gameOverScore]);
 
   const applyGameState = useCallback((gameState: BackendGameState) => {
     const orderedBackendPlayers = rotatePlayersForCurrentUser(
@@ -420,6 +434,7 @@ export function useGameState(routeGameId: string | undefined) {
 
       if (event === "game_over") {
         gameOverScore = typeof data.score === "number" ? data.score : null;
+        gameOverScoreRef.current = gameOverScore;
         setGameOverScore(gameOverScore);
         setLastGameEventMessage(
           gameOverScore === null ? "Game over." : `Game over. Score: ${gameOverScore}`,
@@ -494,6 +509,7 @@ export function useGameState(routeGameId: string | undefined) {
     }
 
     let isMounted = true;
+    let reconnecting = false;
     const client = new HanabiWsClient(storedGameWsUrl);
     clientRef.current = client;
     const unsubscribe = client.subscribe((events) => {
@@ -506,6 +522,52 @@ export function useGameState(routeGameId: string | undefined) {
           );
         });
       }
+    });
+    const reconnectGameServer = async () => {
+      if (reconnecting || !gameId || gameOverScoreRef.current !== null) {
+        return;
+      }
+
+      reconnecting = true;
+      try {
+        for (let attempt = 1; attempt <= MAX_RECONNECT_ATTEMPTS && isMounted; attempt += 1) {
+          try {
+            setGameActionError(
+              `Game server disconnected. Reconnecting (${attempt}/${MAX_RECONNECT_ATTEMPTS})...`,
+            );
+            const server = await resolveGameServer(gameId);
+            const nextWsUrl = toGameWsUrl(server);
+            localStorage.setItem("hanabi.gameWsUrl", nextWsUrl);
+            client.setEndpoint(nextWsUrl);
+            await loadLatestGameState(client);
+
+            if (!isMounted) {
+              return;
+            }
+
+            setGameActionError("");
+            setLastGameEventMessage("Reconnected to game server.");
+            return;
+          } catch (error) {
+            console.error("Failed to reconnect game server:", error);
+            if (attempt < MAX_RECONNECT_ATTEMPTS) {
+              await wait(Math.min(attempt * 1000, 3000));
+            }
+          }
+        }
+
+        if (isMounted) {
+          setGameActionError("Game server disconnected. Could not reconnect.");
+        }
+      } finally {
+        reconnecting = false;
+      }
+    };
+    const unsubscribeClose = client.onClose(() => {
+      if (!isMounted || gameOverScoreRef.current !== null) {
+        return;
+      }
+      void reconnectGameServer();
     });
 
     void loadLatestGameState(client)
@@ -529,6 +591,7 @@ export function useGameState(routeGameId: string | undefined) {
         clientRef.current = null;
       }
       unsubscribe();
+      unsubscribeClose();
       client.close();
     };
   }, [handleReturnedGameEvents, loadLatestGameState, routeGameId]);

@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
+from server.application.gameInformation import GameInformation
 from server.application.matchmakingService import MatchmakingService
 from server.application.waitingPlayer import WaitingPlayer
 from server.domain.exceptions import LobbyException
@@ -108,6 +109,67 @@ def test_cleanup_removes_dead_game(matchmaking):
     matchmaking.cleanup_games()
 
     assert len(matchmaking.active_games) == 0
+
+def test_ensure_game_server_updates_existing_game(matchmaking):
+    matchmaking.create_lobby("l1", 2, "alice")
+    matchmaking.join_lobby("l1", WaitingPlayer("2", "bob", "l1"))
+    game = next(iter(matchmaking.active_games.values()))
+    matchmaking.gameServerManager.ensure_server_container.return_value = (
+        "127.0.0.1",
+        6666,
+        "hanabi-game-recovered",
+    )
+
+    server = matchmaking.ensure_game_server(game.game_id)
+
+    assert server == {
+        "game_id": game.game_id,
+        "host": "127.0.0.1",
+        "port": 6666,
+    }
+    matchmaking.gameServerManager.ensure_server_container.assert_called_once_with(
+        game.game_id,
+        ["alice", "bob"],
+        "test-container",
+    )
+    assert matchmaking.active_games[game.game_id].port == 6666
+    assert matchmaking.active_games[game.game_id].container_name == "hanabi-game-recovered"
+
+def test_ensure_game_server_can_restore_game_info_from_redis():
+    manager = MagicMock()
+    manager.ensure_server_container.return_value = (
+        "127.0.0.1",
+        7777,
+        "hanabi-game-g1",
+    )
+    repo = MagicMock()
+    repo.load_game_information.return_value = GameInformation(
+        game_id="g1",
+        container_name="old-container",
+        players=["alice", "bob"],
+        timestamp=123,
+        host="127.0.0.1",
+        port=5555,
+    )
+    matchmaking = MatchmakingService(repo=repo, game_server_manager=manager)
+
+    server = matchmaking.ensure_game_server("g1")
+
+    assert server == {
+        "game_id": "g1",
+        "host": "127.0.0.1",
+        "port": 7777,
+    }
+    manager.ensure_server_container.assert_called_once_with(
+        "g1",
+        ["alice", "bob"],
+        "old-container",
+    )
+    assert matchmaking.active_games["g1"].port == 7777
+    assert matchmaking.active_player_names["alice"] == {
+        "status": "active",
+        "game_id": "g1",
+    }
 
 def test_find_game_by_player(matchmaking):
     matchmaking.create_lobby("l1", 2, "alice")

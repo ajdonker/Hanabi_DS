@@ -25,6 +25,7 @@ type PendingRequest = {
 };
 
 export type EventListener = (events: ServerEvent[]) => void;
+export type CloseListener = (event: CloseEvent) => void;
 
 type EndpointProvider = string | (() => string);
 
@@ -41,8 +42,13 @@ export class HanabiWsClient {
   private connecting: Promise<WebSocket> | null = null;
   private pending = new Map<string, PendingRequest>();
   private listeners = new Set<EventListener>();
+  private closeListeners = new Set<CloseListener>();
 
   constructor(private endpoint?: EndpointProvider) {}
+
+  setEndpoint(endpoint: EndpointProvider): void {
+    this.endpoint = endpoint;
+  }
 
   private getEndpoint(): string {
     if (typeof this.endpoint === "function") {
@@ -83,7 +89,7 @@ export class HanabiWsClient {
         }
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (this.socket === socket) {
           this.socket = null;
         }
@@ -92,6 +98,7 @@ export class HanabiWsClient {
         }
         this.connecting = null;
         this.rejectAllPending("WebSocket connection closed.");
+        this.emitClose(event);
       };
     });
 
@@ -158,6 +165,12 @@ export class HanabiWsClient {
     }
   }
 
+  private emitClose(event: CloseEvent): void {
+    for (const listener of this.closeListeners) {
+      listener(event);
+    }
+  }
+
   private rejectAllPending(message: string): void {
     for (const [, pending] of this.pending) {
       window.clearTimeout(pending.timer);
@@ -170,6 +183,13 @@ export class HanabiWsClient {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
+    };
+  }
+
+  onClose(listener: CloseListener): () => void {
+    this.closeListeners.add(listener);
+    return () => {
+      this.closeListeners.delete(listener);
     };
   }
 

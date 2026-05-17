@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, HTTPException, WebSocket
 import os
 from server.presentation.connection_manager import ConnectionManager
 from server.presentation.websocket_handler import WebSocketHandler
@@ -30,6 +30,15 @@ async def game_finished(game_id: str):
         "game_id": game_id,
         "status": "cleanup_requested",
     }
+
+
+@ws_router.get("/games/{game_id}/server")
+async def resolve_game_server(game_id: str):
+    server = matchmaking_service.ensure_game_server(game_id)
+    if server is None:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    return server
 
 
 @ws_router.websocket("/ws")
