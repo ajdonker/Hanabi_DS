@@ -115,6 +115,7 @@ class DiscardCardHandler(IHandler):
             if result.game_over is not None :
                 delete_player_game_mappings(self.repo, game)
                 events.append(Event("game_over", {"score" : result.game_over}))
+                return events
                     
             events.append(Event("turn_change", {"next_player" : result.next_player}))
                         
@@ -168,6 +169,7 @@ class GiveHintHandler(IHandler):
             if result.game_over is not None:
                 delete_player_game_mappings(self.repo, game)
                 events.append(Event("game_over", {"score": result.game_over}))
+                return events
 
             events.append(Event("turn_change", {"next_player": result.next_player}))
             return events
