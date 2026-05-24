@@ -37,6 +37,10 @@ function getDefaultEndpoint(): string {
   return "ws://localhost:8000/ws";
 }
 
+function getAuthToken(): string | null {
+  return localStorage.getItem("hanabi.authToken");
+}
+
 export class HanabiWsClient {
   private socket: WebSocket | null = null;
   private connecting: Promise<WebSocket> | null = null;
@@ -228,6 +232,7 @@ export class HanabiWsClient {
         type: "command",
         action,
         requestId,
+        token: getAuthToken(),
         data,
       }),
     );

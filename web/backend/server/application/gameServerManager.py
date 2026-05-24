@@ -38,6 +38,7 @@ class GameServerManager:
                 "SENTINEL_NODES": os.getenv("SENTINEL_NODES", "sentinel:26379"),
                 "SENTINEL_MASTER_NAME": os.getenv("SENTINEL_MASTER_NAME", "mymaster"),
                 "MATCHMAKER_CALLBACK_URL": os.getenv("MATCHMAKER_CALLBACK_URL", "http://hanabi-server:8000"),
+                "AUTH_TOKEN_SECRET": os.getenv("AUTH_TOKEN_SECRET"),
                 "PYTHONUNBUFFERED": "1",
             },
             ports={f"{container_port}/tcp": None},

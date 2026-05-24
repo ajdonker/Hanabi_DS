@@ -7,3 +7,5 @@ class CommandMessage:
     data: dict[str, Any]
     request_id: Optional[str] = None
     connection_id: Optional[str] = None
+    token: Optional[str] = None
+    authenticated_user: Optional[str] = None
