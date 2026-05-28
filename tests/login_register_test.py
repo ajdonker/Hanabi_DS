@@ -1,7 +1,11 @@
+import base64
+import json
+
 import pytest
 
 from server.application.commands.auth_commands import RegisterCommand, LoginCommand
 from server.application.handlers.auth_handlers import RegisterHandler, LoginHandler
+from server.application.auth_service import AuthenticationService
 from database.RedisRepository import RedisRepository
 from database.mockRedis import MockRedisRepository
 
@@ -59,7 +63,8 @@ def test_login_success():
     repo = RedisRepository(redis_client=mock_db)
 
     register_handler = RegisterHandler(repository=repo)
-    login_handler = LoginHandler(repository=repo)
+    auth_service = AuthenticationService(secret="test-secret")
+    login_handler = LoginHandler(repository=repo, auth_service=auth_service)
 
     register_command = RegisterCommand(
         full_name="Mario Rossi",
@@ -77,6 +82,7 @@ def test_login_success():
     events = login_handler.execute(login_command)
 
     assert events[0].event == "login_success"
+    assert auth_service.validate_token(events[0].data["token"]) == "mario88"
 
 
 def test_login_wrong_password():
@@ -84,7 +90,7 @@ def test_login_wrong_password():
     repo = RedisRepository(redis_client=mock_db)
 
     register_handler = RegisterHandler(repository=repo)
-    login_handler = LoginHandler(repository=repo)
+    login_handler = LoginHandler(repository=repo, auth_service=AuthenticationService(secret="test-secret"))
 
     register_command = RegisterCommand(
         full_name="Mario Rossi",
@@ -109,7 +115,7 @@ def test_login_user_not_found():
     mock_db = MockRedisRepository()
     repo = RedisRepository(redis_client=mock_db)
 
-    login_handler = LoginHandler(repository=repo)
+    login_handler = LoginHandler(repository=repo, auth_service=AuthenticationService(secret="test-secret"))
 
     login_command = LoginCommand(
         username="mario88",
@@ -120,3 +126,14 @@ def test_login_user_not_found():
 
     assert events[0].event == "error"
     assert "not found" in events[0].data["message"]
+
+
+def test_authentication_service_rejects_tampered_token():
+    auth_service = AuthenticationService(secret="test-secret")
+    token = auth_service.generate_token("mario88")
+    payload = json.loads(base64.b64decode(token.encode("utf-8")).decode("utf-8"))
+    payload["username"] = "luigi77"
+    tampered_token = base64.b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
+
+    assert auth_service.validate_token(token) == "mario88"
+    assert auth_service.validate_token(tampered_token) is None

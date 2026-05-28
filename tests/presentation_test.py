@@ -7,8 +7,11 @@ from fastapi import WebSocketDisconnect
 from server.presentation.connection_manager import ConnectionManager
 from server.presentation.command_factory import CommandFactory
 from server.presentation.websocket_handler import CommandError, WebSocketHandler
+from server.application.auth_service import AuthenticationService
 from server.application.command_dispatcher import CommandDispatcher
 from server.events import Event
+
+AUTH_SECRET = "unibo-cesena-secret"
 
 
 class DummyWebSocket:
@@ -51,17 +54,24 @@ class DummyDispatcher:
     def __init__(self, events=None, should_raise=False):
         self.events = events or []
         self.should_raise = should_raise
+        self.dispatched = []
 
     def dispatch(self, command):
         if self.should_raise:
             raise RuntimeError("boom")
+        self.dispatched.append(command)
         return self.events
 
 
-def make_handler(manager, events=None, factory=None, dispatcher=None):
+def make_handler(manager, events=None, factory=None, dispatcher=None, auth_service=None):
     factory = factory or DummyFactory()
     dispatcher = dispatcher or DummyDispatcher(events=events or [])
-    return WebSocketHandler(manager, dispatcher, factory)
+    auth_service = auth_service or AuthenticationService(secret=AUTH_SECRET)
+    return WebSocketHandler(manager, dispatcher, factory, auth_service=auth_service)
+
+
+def auth_token(username: str) -> str:
+    return AuthenticationService(secret=AUTH_SECRET).generate_token(username)
 
 
 def test_connection_manager_bind_join_leave_flow():
@@ -141,6 +151,23 @@ def test_deserialize_valid_payload_and_request_id_trim():
     assert message.request_id == "req-1"
 
 
+def test_deserialize_reads_token():
+    manager = ConnectionManager()
+    handler = make_handler(manager)
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "game.get_state",
+            "token": "token-123",
+            "data": {"gameId": "g1", "playerName": "alice"},
+        }
+    )
+    message = handler.deserialize(raw)
+
+    assert message.token == "token-123"
+
+
 def test_deserialize_invalid_payload_raises_command_error():
     manager = ConnectionManager()
     handler = make_handler(manager)
@@ -179,7 +206,7 @@ def test_on_message_player_logged_binds_player_and_returns_event_batch():
     raw = json.dumps(
         {
             "type": "command",
-            "action": "anything",
+            "action": "player.login",
             "requestId": "r-100",
             "data": {"username": "P1"},
         }
@@ -213,8 +240,9 @@ def test_on_message_game_state_binds_player_and_returns_state():
     raw = json.dumps(
         {
             "type": "command",
-            "action": "anything",
+            "action": "game.get_state",
             "requestId": "r-200",
+            "token": auth_token("P1"),
             "data": {"gameId": "g1", "playerName": "P1"},
         }
     )
@@ -252,6 +280,7 @@ def test_on_message_game_state_is_only_sent_to_requesting_connection():
             "type": "command",
             "action": "game.get_state",
             "requestId": "r-state",
+            "token": auth_token("P1"),
             "data": {"gameId": "g1", "playerName": "P1"},
         }
     )
@@ -290,6 +319,7 @@ def test_on_message_game_action_events_still_broadcast_to_game():
             "type": "command",
             "action": "game.play_card",
             "requestId": "r-action",
+            "token": auth_token("P1"),
             "data": {"gameId": "g1", "playerId": "P1", "cardIndex": 0},
         }
     )
@@ -320,6 +350,7 @@ def test_on_message_game_error_is_only_sent_to_requester():
             "type": "command",
             "action": "game.play_card",
             "requestId": "r-action",
+            "token": auth_token("P1"),
             "data": {"gameId": "g1", "playerId": "P1", "cardIndex": 0},
         }
     )
@@ -334,6 +365,93 @@ def test_on_message_game_error_is_only_sent_to_requester():
     }
 
 
+def test_protected_command_without_token_returns_auth_error():
+    manager = ConnectionManager()
+    auth_service = AuthenticationService(secret="test-secret")
+    dispatcher = DummyDispatcher(events=[Event("turn_change", {"next_player": "P2"})])
+    handler = make_handler(manager, dispatcher=dispatcher, auth_service=auth_service)
+
+    ws = DummyWebSocket()
+    conn = manager.add_connection(ws)
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "game.play_card",
+            "requestId": "r-auth",
+            "data": {"gameId": "g1", "playerId": "P1", "cardIndex": 0},
+        }
+    )
+    asyncio.run(handler.on_message(conn, raw))
+
+    assert dispatcher.dispatched == []
+    assert json.loads(ws.sent_texts[0]) == {
+        "type": "error",
+        "message": "Authentication required.",
+        "details": {"field": "token"},
+        "requestId": "r-auth",
+    }
+
+
+def test_protected_command_with_valid_token_is_dispatched():
+    manager = ConnectionManager()
+    auth_service = AuthenticationService(secret="test-secret")
+    dispatcher = DummyDispatcher(events=[Event("turn_change", {"next_player": "P2"})])
+    handler = make_handler(manager, dispatcher=dispatcher, auth_service=auth_service)
+    token = auth_service.generate_token("P1")
+
+    ws = DummyWebSocket()
+    conn = manager.add_connection(ws)
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "game.play_card",
+            "requestId": "r-auth",
+            "token": token,
+            "data": {"gameId": "g1", "playerId": "P1", "cardIndex": 0},
+        }
+    )
+    asyncio.run(handler.on_message(conn, raw))
+
+    assert len(dispatcher.dispatched) == 1
+    assert json.loads(ws.sent_texts[0]) == {
+        "type": "event_batch",
+        "events": [{"event": "turn_change", "data": {"next_player": "P2"}}],
+        "requestId": "r-auth",
+    }
+
+
+def test_protected_command_with_other_user_token_returns_authorization_error():
+    manager = ConnectionManager()
+    auth_service = AuthenticationService(secret="test-secret")
+    dispatcher = DummyDispatcher(events=[Event("turn_change", {"next_player": "P2"})])
+    handler = make_handler(manager, dispatcher=dispatcher, auth_service=auth_service)
+    token = auth_service.generate_token("P2")
+
+    ws = DummyWebSocket()
+    conn = manager.add_connection(ws)
+
+    raw = json.dumps(
+        {
+            "type": "command",
+            "action": "game.play_card",
+            "requestId": "r-auth",
+            "token": token,
+            "data": {"gameId": "g1", "playerId": "P1", "cardIndex": 0},
+        }
+    )
+    asyncio.run(handler.on_message(conn, raw))
+
+    assert dispatcher.dispatched == []
+    assert json.loads(ws.sent_texts[0]) == {
+        "type": "error",
+        "message": "Not authorized for this user.",
+        "details": {"user": "P2"},
+        "requestId": "r-auth",
+    }
+
+
 def test_on_message_internal_error_returns_error_with_request_id():
     manager = ConnectionManager()
     handler = make_handler(manager, dispatcher=DummyDispatcher(should_raise=True))
@@ -344,7 +462,7 @@ def test_on_message_internal_error_returns_error_with_request_id():
     raw = json.dumps(
         {
             "type": "command",
-            "action": "anything",
+            "action": "player.login",
             "requestId": "r-500",
             "data": {"username": "P2"},
         }

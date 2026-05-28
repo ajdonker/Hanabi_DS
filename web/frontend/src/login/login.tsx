@@ -11,10 +11,12 @@ import "./login.css";
 type LoginSuccessEvent = {
   message: string;
   player_name: string;
+  token: string;
 };
 
 type PlayerReconnectedEvent = {
   player_name: string;
+  token: string;
   game_id: string;
   host: string;
   port: number;
@@ -55,6 +57,7 @@ export default function Login() {
       if (login) {
         localStorage.setItem("hanabi.playerId", login.player_name);
         localStorage.setItem("hanabi.username", login.player_name);
+        localStorage.setItem("hanabi.authToken", login.token);
         navigate("/lobby");
         return;
       }
@@ -66,6 +69,7 @@ export default function Login() {
       if (reconnect) {
         localStorage.setItem("hanabi.playerId", reconnect.player_name);
         localStorage.setItem("hanabi.username", reconnect.player_name);
+        localStorage.setItem("hanabi.authToken", reconnect.token);
         localStorage.setItem(
           "hanabi.gameWsUrl",
           `ws://${reconnect.host}:${reconnect.port}/ws`,

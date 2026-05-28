@@ -3,6 +3,7 @@ import os
 from server.presentation.connection_manager import ConnectionManager
 from server.presentation.websocket_handler import WebSocketHandler
 from server.application.command_dispatcher import CommandDispatcher
+from server.application.auth_service import AuthenticationService
 from database.RedisRepository import RedisRepository
 from server.application.commands.game_commands import PlayCardCommand,DiscardCardCommand,GiveHintCommand,GetGameStateCommand
 from server.application.commands.auth_commands import RegisterCommand,LoginCommand
@@ -17,6 +18,7 @@ ws_router = APIRouter()
 
 _connection_manager = ConnectionManager()
 _command_factory = CommandFactory()
+_auth_service = AuthenticationService()
 IS_GAME_SERVER = os.getenv("IS_GAME_SERVER") == "1" or os.getenv("GAME_ID") is not None
 # Only the main backend should create MatchmakingService,
 # because MatchmakingService creates GameServerManager, which needs Docker socket.
@@ -52,7 +54,7 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         GetGameStateCommand: GetGameStateHandler(repo),
 
         RegisterCommand: RegisterHandler(repo),
-        LoginCommand: LoginHandler(repo),
+        LoginCommand: LoginHandler(repo, _auth_service),
     }
 
     # Add lobby handlers ONLY in the main backend container.
@@ -68,6 +70,7 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         connection_manager=_connection_manager,
         dispatcher=_dispatcher,
         command_factory=_command_factory,
+        auth_service=_auth_service,
     )
 
     

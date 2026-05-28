@@ -90,6 +90,7 @@ services:
       SENTINEL_NODES: "sentinel:26379"
       SENTINEL_MASTER_NAME: "mymaster"
       DOCKER_NETWORK: "backend_hanabi_net"
+      AUTH_TOKEN_SECRET: "unibo-hanabi-secret"
       PYTHONUNBUFFERED: "1"
     ports:
       - "8000:8000"
@@ -97,4 +98,3 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - hanabi_net
-

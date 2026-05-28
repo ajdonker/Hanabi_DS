@@ -5,6 +5,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any, Optional
 from uuid import uuid4
+from server.application.auth_service import AuthenticationService
 from server.application.command_dispatcher import CommandDispatcher
 from server.presentation.command_factory import CommandFactory
 from server.presentation.command_message import CommandMessage
@@ -24,12 +25,23 @@ class CommandMessage:
     data: dict[str, Any]
     request_id: Optional[str] = None
     connection_id: Optional[str] = None
+    token: Optional[str] = None
+    authenticated_user: Optional[str] = None
 
 class WebSocketHandler:
-    def __init__(self, connection_manager: ConnectionManager, dispatcher: CommandDispatcher, command_factory: CommandFactory) -> None:
+    PUBLIC_ACTIONS = {"player.login", "player.register"}
+
+    def __init__(
+        self,
+        connection_manager: ConnectionManager,
+        dispatcher: CommandDispatcher,
+        command_factory: CommandFactory,
+        auth_service: AuthenticationService,
+    ) -> None:
         self.connection_manager = connection_manager
         self.dispatcher = dispatcher
         self.command_factory = command_factory
+        self.auth_service = auth_service
 
     def deserialize(self, raw_text: str) -> CommandMessage:
         try:
@@ -65,6 +77,7 @@ class WebSocketHandler:
             action=action.strip(),
             data=data,
             request_id=request_id,
+            token=payload.get("token"),
         )
 
     def serialize(self, message: dict[str, Any]) -> str:
@@ -96,7 +109,16 @@ class WebSocketHandler:
         message.connection_id = conn_id
 
         try:
+            self._authenticate_and_authorize(message)
             events = self._handle_command(message)
+        except CommandError as error:
+            await self._send_error(
+                conn_id,
+                error.message,
+                details=error.details,
+                request_id=message.request_id,
+            )
+            return
         except Exception as error:
             await self._send_error(
                 conn_id,
@@ -117,6 +139,39 @@ class WebSocketHandler:
     def _handle_command(self, message: CommandMessage) -> list[Event]:
         command = self.command_factory.create(message)
         return self.dispatcher.dispatch(command)
+
+    def _authenticate_and_authorize(self, message: CommandMessage) -> None:
+        if message.action in self.PUBLIC_ACTIONS:
+            return
+
+        username = self.auth_service.validate_token(message.token)
+        if username is None:
+            raise CommandError("Authentication required.", details={"field": "token"})
+
+        message.authenticated_user = username
+        expected_user = self._expected_user_for_action(message)
+        if expected_user is not None and expected_user != username:
+            raise CommandError("Not authorized for this user.", details={"user": username})
+
+    def _expected_user_for_action(self, message: CommandMessage) -> Optional[str]:
+        user_fields = {
+            "game.play_card": "playerId",
+            "game.discard_card": "playerId",
+            "game.give_hint": "fromPlayerId",
+            "game.get_state": "playerName",
+            "lobby.create": "userCreator",
+            "lobby.join": "userJoined",
+            "lobby.detail": "playerName",
+        }
+        field = user_fields.get(message.action)
+        if field is None:
+            return None
+
+        user = message.data.get(field)
+        if not isinstance(user, str) or not user:
+            raise CommandError("Not authorized for this user.", details={"field": field})
+
+        return user
     
     async def broadcast(
         self,
