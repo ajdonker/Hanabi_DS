@@ -92,6 +92,7 @@ services:
       DOCKER_NETWORK: "backend_hanabi_net"
       AUTH_TOKEN_SECRET: "unibo-hanabi-secret"
       PYTHONUNBUFFERED: "1"
+      PUBLIC_HOST: "13.51.174.85"
     ports:
       - "8000:8000"
     volumes:

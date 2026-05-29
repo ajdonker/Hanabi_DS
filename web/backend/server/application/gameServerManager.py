@@ -61,7 +61,7 @@ class GameServerManager:
 
         host = port_info[0]["HostIp"]
         if host == "0.0.0.0":
-            host = "127.0.0.1"
+            host = os.getenv("PUBLIC_HOST", host)
 
         port = int(port_info[0]["HostPort"])
         return host, port, container_name
@@ -77,7 +77,7 @@ class GameServerManager:
 
             host = port_info[0]["HostIp"]
             if host == "0.0.0.0":
-                host = "127.0.0.1"
+                host = os.getenv("PUBLIC_HOST", host)
 
             return host, int(port_info[0]["HostPort"])
         except Exception as e:
