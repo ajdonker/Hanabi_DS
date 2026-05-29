@@ -41,6 +41,28 @@ function getAuthToken(): string | null {
   return localStorage.getItem("hanabi.authToken");
 }
 
+function createRequestId(): string {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  if (globalThis.crypto?.getRandomValues) {
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+    return [
+      hex.slice(0, 4).join(""),
+      hex.slice(4, 6).join(""),
+      hex.slice(6, 8).join(""),
+      hex.slice(8, 10).join(""),
+      hex.slice(10).join(""),
+    ].join("-");
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export class HanabiWsClient {
   private socket: WebSocket | null = null;
   private connecting: Promise<WebSocket> | null = null;
@@ -212,7 +234,7 @@ export class HanabiWsClient {
     timeoutMs = 8000,
   ): Promise<ServerEvent[]> {
     const socket = await this.ensureConnection();
-    const requestId = crypto.randomUUID();
+    const requestId = createRequestId();
 
     const promise = new Promise<ServerEvent[]>((resolve, reject) => {
       const timer = window.setTimeout(() => {
