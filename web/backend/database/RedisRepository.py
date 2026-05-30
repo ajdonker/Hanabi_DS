@@ -64,6 +64,11 @@ class RedisRepository(IGameRepository, IUserRepository):
         
         self._retry(lambda: self.redis.set(key, payload)) 
         self._games[game.gameID] = game    
+
+    def delete_game(self, game_id):
+        key = f"hanabi:game:{game_id}"
+        self._retry(lambda: self.redis.delete(key))
+        self._games.pop(game_id, None)
     
     def get_all_games(self) -> list[Game]:
         return list(self._games.values())        
@@ -104,6 +109,10 @@ class RedisRepository(IGameRepository, IUserRepository):
             host=data.get("host"),
             port=data.get("port"),
         )  
+
+    def delete_game_information(self, game_id):
+        key = f"hanabi:game_info:{game_id}"
+        self._retry(lambda: self.redis.delete(key))
    
     #-----------------------------------------PLAYER-GAME MAPPING----------------------------------------- 
     def save_player_game_mapping(self, player_id: str, game_id: str):
