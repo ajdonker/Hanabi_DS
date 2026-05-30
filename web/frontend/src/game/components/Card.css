@@ -17,27 +17,63 @@
   border: 0;
 }
 
-.card-section {
-  position: absolute;
-  inset: 0;
-  background-repeat: no-repeat;
-  background-size: 500% 700%;
+.hanabi-card.card-red {
+  background: #7f0613;
 }
 
-.card-background {
-  background-image: url("../../../images/cards.png");
-  filter: saturate(1.1) contrast(1.05);
-  transform: rotate(180deg);
-  transform-origin: center;
+.hanabi-card.card-yellow {
+  background: #8a7b25;
+}
+
+.hanabi-card.card-green {
+  background: #246c4b;
+}
+
+.hanabi-card.card-blue {
+  background: #087895;
+}
+
+.hanabi-card.card-white {
+  background: #8f8f8f;
 }
 
 .card-number {
-  inset: auto 0 0 0;
-  height: 43%;
-  background-image: url("../../../images/cards-numbers.webp");
-  opacity: 1;
-  border-radius: 10px;
+  inset: 0;
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transform-origin: center;
+  pointer-events: none;
+  font-family: "Trebuchet MS", "Comic Sans MS", system-ui, sans-serif;
+  font-size: calc(var(--player-card-width) * 0.92);
+  font-weight: 900;
+  line-height: 1;
+  -webkit-text-stroke: 1px rgba(15, 23, 42, 0.32);
+  text-shadow:
+    0 2px 0 rgba(15, 23, 42, 0.22),
+    0 4px 8px rgba(15, 23, 42, 0.32);
+}
+
+.card-number-red {
+  color: #ed0037;
+}
+
+.card-number-yellow {
+  color: #feea65;
+}
+
+.card-number-green {
+  color: #38ae78;
+}
+
+.card-number-blue {
+  color: #12acea;
+}
+
+.card-number-white {
+  color: #ffffff;
 }
 
 .hanabi-card.rotated-card {

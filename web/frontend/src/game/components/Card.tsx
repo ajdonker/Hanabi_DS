@@ -10,18 +10,6 @@ type CardProps = {
   numberRotationDeg?: number;
 };
 
-const COLOR_ROW_INDEX: Record<CardColor, number> = {
-  Red: 0,
-  Yellow: 1,
-  Green: 2,
-  Blue: 3,
-  White: 4,
-};
-
-function toSpritePercent(index: number, maxIndex: number): string {
-  return `${(index / maxIndex) * 100}%`;
-}
-
 export default function Card({
   color,
   value,
@@ -29,8 +17,6 @@ export default function Card({
   rotationDeg = 0,
   numberRotationDeg = 0,
 }: CardProps) {
-  const xPos = toSpritePercent(value - 1, 4);
-  const yPos = toSpritePercent(COLOR_ROW_INDEX[color], 6);
   const baseStyle: CSSProperties = {
     transform: rotationDeg ? `rotate(${rotationDeg}deg)` : undefined,
   };
@@ -46,20 +32,17 @@ export default function Card({
 
   return (
     <div
-      className={`hanabi-card face-up ${rotationDeg ? "rotated-card" : ""}`.trim()}
+      className={`hanabi-card face-up card-${color.toLowerCase()} ${rotationDeg ? "rotated-card" : ""}`.trim()}
       style={baseStyle}
     >
       <div
-        className="card-section card-background"
-        style={{ backgroundPosition: `${xPos} ${yPos}` }}
-      />
-      <div
-        className="card-section card-number"
+        className={`card-number card-number-${color.toLowerCase()}`.trim()}
         style={{
-          backgroundPosition: `${xPos} ${yPos}`,
           transform: numberRotationDeg ? `rotate(${numberRotationDeg}deg)` : undefined,
         }}
-      />
+      >
+        {value}
+      </div>
     </div>
   );
 }
