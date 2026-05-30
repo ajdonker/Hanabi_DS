@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./game.css";
 import CardActionPopup from "./components/CardActionPopup";
 import CardHintPopup from "./components/CardHintPopup";
@@ -74,6 +74,7 @@ function computePopupPosition(
 
 export default function Game() {
   const { tableId: routeGameId } = useParams();
+  const navigate = useNavigate();
   const {
     activePlayerName,
     cardHintsByPlayer,
@@ -458,6 +459,17 @@ export default function Game() {
       {(gameActionError || lastGameEventMessage) && (
         <div className={`game-event-message ${gameActionError ? "is-error" : ""}`.trim()}>
           {gameActionError || lastGameEventMessage}
+        </div>
+      )}
+      {isGameOver && (
+        <div className="game-over-actions">
+          <button
+            className="game-over-action"
+            type="button"
+            onClick={() => navigate("/lobby")}
+          >
+            Back to Lobby
+          </button>
         </div>
       )}
 
