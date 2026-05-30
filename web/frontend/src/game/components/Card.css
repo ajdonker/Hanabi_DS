@@ -2,124 +2,75 @@
   position: relative;
   width: var(--player-card-width);
   height: var(--player-card-height);
-  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
   overflow: hidden;
   flex: 0 0 auto;
-  background: #24164a;
+  border: 2px solid rgba(15, 23, 42, 0.28);
   box-shadow: 0 1px 2px rgba(2, 6, 23, 0.35);
 }
 
 .hanabi-card.face-down {
-  background: url("../../images/card-back.svg") center / cover no-repeat;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      #1f2937 0,
+      #1f2937 8px,
+      #334155 8px,
+      #334155 16px
+    );
+  border-color: #0f172a;
 }
 
 .hanabi-card.face-up {
-  display: grid;
-  place-items: center;
-  border: 2px solid rgba(15, 23, 42, 0.22);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.18)),
-    var(--card-color);
-  color: var(--card-text);
-}
-
-.hanabi-card.face-up::before {
-  content: "";
-  position: absolute;
-  inset: 9px;
-  border: 2px solid rgba(255, 255, 255, 0.72);
-  border-radius: 7px;
-  pointer-events: none;
+  background: var(--card-bg);
+  color: var(--card-fg);
 }
 
 .hanabi-card.color-red {
-  --card-color: #dc2626;
-  --card-text: #fff7ed;
+  --card-bg: #dc2626;
+  --card-fg: #ffffff;
 }
 
 .hanabi-card.color-yellow {
-  --card-color: #eab308;
-  --card-text: #1f2937;
+  --card-bg: #facc15;
+  --card-fg: #111827;
 }
 
 .hanabi-card.color-green {
-  --card-color: #16a34a;
-  --card-text: #f0fdf4;
+  --card-bg: #16a34a;
+  --card-fg: #ffffff;
 }
 
 .hanabi-card.color-blue {
-  --card-color: #2563eb;
-  --card-text: #eff6ff;
+  --card-bg: #2563eb;
+  --card-fg: #ffffff;
 }
 
 .hanabi-card.color-white {
-  --card-color: #f8fafc;
-  --card-text: #111827;
-}
-
-.card-symbol {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2.35rem;
-  height: 2.35rem;
-  display: grid;
-  place-items: center;
-  transform: translate(-50%, -50%);
-  font-size: 1.2rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.card-symbol::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  transform: rotate(45deg);
-  border: 2px solid currentColor;
-  background: rgba(255, 255, 255, 0.24);
+  --card-bg: #f8fafc;
+  --card-fg: #111827;
+  border-color: #94a3b8;
 }
 
 .card-value {
-  position: relative;
-  z-index: 1;
   display: grid;
   place-items: center;
-  width: 2.7rem;
-  height: 2.7rem;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.78);
-  color: #fff;
-  font-size: 1.9rem;
+  width: 74%;
+  height: 58%;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid currentColor;
+  font-size: 2.55rem;
   font-weight: 900;
   line-height: 1;
   transform-origin: center;
 }
 
-.card-corner {
-  position: absolute;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 1.15rem;
-  height: 1.15rem;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.86);
-  color: #111827;
-  font-size: 0.76rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.card-corner-top {
-  top: 0.35rem;
-  left: 0.35rem;
-}
-
-.card-corner-bottom {
-  right: 0.35rem;
-  bottom: 0.35rem;
+.hanabi-card.color-yellow .card-value,
+.hanabi-card.color-white .card-value {
+  background: rgba(15, 23, 42, 0.06);
 }
 
 .hanabi-card.rotated-card {

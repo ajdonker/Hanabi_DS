@@ -159,7 +159,7 @@ export default function PlayerHand({
       {isActivePlayer && (
         <img
           className="active-player-indicator"
-          src="/images/active_player.svg"
+          src="/images/active_player.gif"
           alt="active player"
         />
       )}

@@ -10,14 +10,6 @@ type CardProps = {
   numberRotationDeg?: number;
 };
 
-const COLOR_SYMBOL: Record<CardColor, string> = {
-  Red: "R",
-  Yellow: "Y",
-  Green: "G",
-  Blue: "B",
-  White: "W",
-};
-
 export default function Card({
   color,
   value,
@@ -33,6 +25,7 @@ export default function Card({
     return (
       <div
         className={`hanabi-card face-down ${rotationDeg ? "rotated-card" : ""}`.trim()}
+        aria-label="Hidden card"
         style={baseStyle}
       />
     );
@@ -41,10 +34,9 @@ export default function Card({
   return (
     <div
       className={`hanabi-card face-up color-${color.toLowerCase()} ${rotationDeg ? "rotated-card" : ""}`.trim()}
+      aria-label={`${color} ${value}`}
       style={baseStyle}
     >
-      <span className="card-corner card-corner-top">{value}</span>
-      <span className="card-symbol" aria-hidden="true">{COLOR_SYMBOL[color]}</span>
       <span
         className="card-value"
         style={{
@@ -53,7 +45,6 @@ export default function Card({
       >
         {value}
       </span>
-      <span className="card-corner card-corner-bottom">{value}</span>
     </div>
   );
 }
