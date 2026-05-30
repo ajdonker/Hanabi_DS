@@ -186,15 +186,23 @@ class MatchmakingService:
                 "host": host,
                 "port": port,
             }
-    
+
     def remove_game(self, game_id):
         with self.lock:
             game = self.active_games.pop(game_id, None)
             if not game:
-                return
+                game = self.repo.load_game_information(game_id)
             
-            for p in game.players:
-                self.active_player_names.pop(self._player_name(p), None)
+            if game:
+                for p in game.players:
+                    player_name = self._player_name(p)
+                    self.active_player_names.pop(player_name, None)
+
+        self.repo.delete_game_information(game_id)
+        self.repo.delete_game(game_id)
+
+        if not game:
+            return
 
         removed = self.gameServerManager.remove_container(game.container_name)
         if not removed:
