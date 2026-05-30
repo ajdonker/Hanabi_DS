@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LOBBY_CREATE_COMMAND,
@@ -34,6 +34,24 @@ type MatchFoundEvent = {
   port: number;
 };
 
+type ErrorEvent = {
+  message?: string;
+};
+
+function isAuthErrorMessage(message?: string): boolean {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("authentication required") ||
+    normalized.includes("token expired") ||
+    normalized.includes("missing token") ||
+    normalized.includes("invalid token")
+  );
+}
+
 export default function Lobby() {
   const navigate = useNavigate();
   const [tables, setTables] = useState<Table[]>([]);
@@ -42,6 +60,23 @@ export default function Lobby() {
   const [isLoadingTables, setIsLoadingTables] = useState(true);
   const [isCreatingTable, setIsCreatingTable] = useState(false);
   const [joiningLobbyId, setJoiningLobbyId] = useState<string | null>(null);
+
+  const redirectToLogin = useCallback(() => {
+    localStorage.removeItem("hanabi.playerId");
+    localStorage.removeItem("hanabi.username");
+    localStorage.removeItem("hanabi.authToken");
+    localStorage.removeItem("hanabi.gameWsUrl");
+    navigate("/login");
+  }, [navigate]);
+
+  const redirectToLoginIfAuthError = useCallback((errorMessage?: string) => {
+    if (!isAuthErrorMessage(errorMessage)) {
+      return false;
+    }
+
+    redirectToLogin();
+    return true;
+  }, [redirectToLogin]);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,6 +95,11 @@ export default function Lobby() {
           LOBBY_LIST_COMMAND,
           {},
         );
+        const errorMsg = getEventData<ErrorEvent>(events, "error");
+        if (redirectToLoginIfAuthError(errorMsg?.message)) {
+          return;
+        }
+
         const payload = getEventData<LobbyListEvent>(events, LOBBY_LIST_EVENT);
         if (!payload) {
           throw new Error("Unable to parse lobby list.");
@@ -69,7 +109,11 @@ export default function Lobby() {
         }
       } catch (error) {
         if (isMounted) {
-          setMessage(error instanceof Error ? error.message : "Unable to load lobbies.");
+          const errorMessage = error instanceof Error ? error.message : undefined;
+          if (redirectToLoginIfAuthError(errorMessage)) {
+            return;
+          }
+          setMessage(errorMessage || "Unable to load lobbies.");
         }
       } finally {
         isRequestInFlight = false;
@@ -88,13 +132,13 @@ export default function Lobby() {
       isMounted = false;
       window.clearInterval(timer);
     };
-  }, []);
+  }, [redirectToLoginIfAuthError]);
 
   async function joinTable(table: Table) {
     const playerId = localStorage.getItem("hanabi.playerId");
     if (!playerId) {
       setMessage("Please login before joining a lobby.");
-      navigate("/login");
+      redirectToLogin();
       return;
     }
     const username = localStorage.getItem("hanabi.username") || playerId;
@@ -125,15 +169,22 @@ export default function Lobby() {
 
       const waiting = getEventData<Record<string, never>>(events, WAITING_EVENT);
       if (!waiting) {
-        const errorMsg = getEventData<{ message: string }>(events, "error");
-        setMessage(errorMsg ? errorMsg.message : "Unknown error joining lobby.");
+        const errorMsg = getEventData<ErrorEvent>(events, "error");
+        if (redirectToLoginIfAuthError(errorMsg?.message)) {
+          return;
+        }
+        setMessage(errorMsg?.message || "Unknown error joining lobby.");
         return;
       }
 
       navigate(`/waiting/${table.lobbyId}/${table.maxUser}`);
     } catch (error) {
       console.error("Failed to join lobby:", error);
-      setMessage(error instanceof Error ? error.message : "Unable to join lobby.");
+      const errorMessage = error instanceof Error ? error.message : undefined;
+      if (redirectToLoginIfAuthError(errorMessage)) {
+        return;
+      }
+      setMessage(errorMessage || "Unable to join lobby.");
     } finally {
       setJoiningLobbyId(null);
     }
@@ -154,7 +205,7 @@ export default function Lobby() {
     }
     if (!playerId) {
       setMessage("Please login before creating a lobby.");
-      navigate("/login");
+      redirectToLogin();
       return;
     }
     const username = localStorage.getItem("hanabi.username") || playerId;
@@ -174,7 +225,10 @@ export default function Lobby() {
       );
       const created = getEventData<LobbyWire>(events, LOBBY_CREATED_EVENT);
       if (!created) {
-        const errorMsg = getEventData<{ message: string }>(events, "error");
+        const errorMsg = getEventData<ErrorEvent>(events, "error");
+        if (redirectToLoginIfAuthError(errorMsg?.message)) {
+          return;
+        }
         throw new Error(errorMsg ? errorMsg.message : "Unknown error creating lobby.");
       }
 
@@ -185,7 +239,11 @@ export default function Lobby() {
       navigate(`/waiting/${created.lobbyId}/${created.maxUser}`);
     } catch (error) {
       console.error("Failed to create table:", error);
-      setMessage(error instanceof Error ? error.message : "Unable to reach backend.");
+      const errorMessage = error instanceof Error ? error.message : undefined;
+      if (redirectToLoginIfAuthError(errorMessage)) {
+        return;
+      }
+      setMessage(errorMessage || "Unable to reach backend.");
     } finally {
       setIsCreatingTable(false);
     }
