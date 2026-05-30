@@ -10,34 +10,116 @@
 }
 
 .hanabi-card.face-down {
-  background: url("../../../images/default.webp") center / cover no-repeat;
+  background: url("../../images/card-back.svg") center / cover no-repeat;
 }
 
 .hanabi-card.face-up {
-  border: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(15, 23, 42, 0.22);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.18)),
+    var(--card-color);
+  color: var(--card-text);
 }
 
-.card-section {
+.hanabi-card.face-up::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  border-radius: 7px;
+  pointer-events: none;
+}
+
+.hanabi-card.color-red {
+  --card-color: #dc2626;
+  --card-text: #fff7ed;
+}
+
+.hanabi-card.color-yellow {
+  --card-color: #eab308;
+  --card-text: #1f2937;
+}
+
+.hanabi-card.color-green {
+  --card-color: #16a34a;
+  --card-text: #f0fdf4;
+}
+
+.hanabi-card.color-blue {
+  --card-color: #2563eb;
+  --card-text: #eff6ff;
+}
+
+.hanabi-card.color-white {
+  --card-color: #f8fafc;
+  --card-text: #111827;
+}
+
+.card-symbol {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.35rem;
+  height: 2.35rem;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  font-size: 1.2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.card-symbol::before {
+  content: "";
   position: absolute;
   inset: 0;
-  background-repeat: no-repeat;
-  background-size: 500% 700%;
+  z-index: -1;
+  transform: rotate(45deg);
+  border: 2px solid currentColor;
+  background: rgba(255, 255, 255, 0.24);
 }
 
-.card-background {
-  background-image: url("../../../images/cards.webp");
-  filter: saturate(1.1) contrast(1.05);
-  transform: rotate(180deg);
+.card-value {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #fff;
+  font-size: 1.9rem;
+  font-weight: 900;
+  line-height: 1;
   transform-origin: center;
 }
 
-.card-number {
-  inset: auto 0 0 0;
-  height: 43%;
-  background-image: url("../../../images/cards-numbers.webp");
-  opacity: 1;
-  border-radius: 10px;
-  transform-origin: center;
+.card-corner {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #111827;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.card-corner-top {
+  top: 0.35rem;
+  left: 0.35rem;
+}
+
+.card-corner-bottom {
+  right: 0.35rem;
+  bottom: 0.35rem;
 }
 
 .hanabi-card.rotated-card {

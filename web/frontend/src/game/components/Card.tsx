@@ -10,17 +10,13 @@ type CardProps = {
   numberRotationDeg?: number;
 };
 
-const COLOR_ROW_INDEX: Record<CardColor, number> = {
-  Red: 0,
-  Yellow: 1,
-  Green: 2,
-  Blue: 3,
-  White: 4,
+const COLOR_SYMBOL: Record<CardColor, string> = {
+  Red: "R",
+  Yellow: "Y",
+  Green: "G",
+  Blue: "B",
+  White: "W",
 };
-
-function toSpritePercent(index: number, maxIndex: number): string {
-  return `${(index / maxIndex) * 100}%`;
-}
 
 export default function Card({
   color,
@@ -29,8 +25,6 @@ export default function Card({
   rotationDeg = 0,
   numberRotationDeg = 0,
 }: CardProps) {
-  const xPos = toSpritePercent(value - 1, 4);
-  const yPos = toSpritePercent(COLOR_ROW_INDEX[color], 6);
   const baseStyle: CSSProperties = {
     transform: rotationDeg ? `rotate(${rotationDeg}deg)` : undefined,
   };
@@ -46,20 +40,20 @@ export default function Card({
 
   return (
     <div
-      className={`hanabi-card face-up ${rotationDeg ? "rotated-card" : ""}`.trim()}
+      className={`hanabi-card face-up color-${color.toLowerCase()} ${rotationDeg ? "rotated-card" : ""}`.trim()}
       style={baseStyle}
     >
-      <div
-        className="card-section card-background"
-        style={{ backgroundPosition: `${xPos} ${yPos}` }}
-      />
-      <div
-        className="card-section card-number"
+      <span className="card-corner card-corner-top">{value}</span>
+      <span className="card-symbol" aria-hidden="true">{COLOR_SYMBOL[color]}</span>
+      <span
+        className="card-value"
         style={{
-          backgroundPosition: `${xPos} ${yPos}`,
           transform: numberRotationDeg ? `rotate(${numberRotationDeg}deg)` : undefined,
         }}
-      />
+      >
+        {value}
+      </span>
+      <span className="card-corner card-corner-bottom">{value}</span>
     </div>
   );
 }

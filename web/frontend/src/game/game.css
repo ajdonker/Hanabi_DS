@@ -7,7 +7,7 @@
   --right-panel-width: 260px;
   position: relative;
   color: #101010;
-  background: url("../../images/back-main-games.webp") center / cover no-repeat;
+  background: url("../images/hanabi-background.svg") center / cover no-repeat;
   width: 100vw;
   height: 100vh; 
   box-sizing: border-box;
@@ -31,7 +31,7 @@
   display: grid;
   place-items: center;
   font-size: 1.4rem;
-  background: url("../../images/favicon.png");
+  background: url("/images/favicon.svg") center / cover no-repeat;
   background-size: 48px 48px;
 }
 
@@ -245,7 +245,7 @@
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  background: url("../../images/clue.webp") center / cover no-repeat;
+  background: url("../images/clue-token.svg") center / cover no-repeat;
 }
 
 .clue-count {
@@ -617,7 +617,7 @@
 .fireworks-panel {
   position: relative;
   display: block;
-  background: url("../../images/table-background.webp") center / cover no-repeat;
+  background: url("../images/table-surface.svg") center / cover no-repeat;
   background-position: 20px 50px;
   border-radius: 4px;
   padding: var(--fireworks-panel-pad-top) 2.3rem 2.9rem;
@@ -652,7 +652,7 @@
 .deck-card-skin {
   width: 100%;
   height: 100%;
-  background: url("../../images/default.webp") center / cover no-repeat;
+  background: url("../images/card-back.svg") center / cover no-repeat;
 }
 
 .deck-count-out {
