@@ -92,6 +92,34 @@
   color: #991b1b;
 }
 
+.game-over-actions {
+  position: absolute;
+  top: 6.8rem;
+  left: 0.45rem;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 112px;
+}
+
+.game-over-action {
+  border: 1px solid rgba(15, 23, 42, 0.28);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  padding: 0.46rem 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+}
+
+.game-over-action:hover {
+  background: #eef2ff;
+}
+
 .game-table {
   display: grid;
   grid-template-rows: auto auto auto auto;
