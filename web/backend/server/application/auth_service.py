@@ -6,7 +6,7 @@ import time
 
 
 class AuthenticationService:
-    def __init__(self, secret: str | None = None, duration_seconds: int = 24 * 60 * 60):
+    def __init__(self, secret: str | None = None, duration_seconds: int = 24 * 60 * 60 * 7):
         self.secret = secret or os.getenv("AUTH_TOKEN_SECRET")
         self.duration_seconds = duration_seconds
 
