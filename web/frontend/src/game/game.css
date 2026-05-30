@@ -7,7 +7,7 @@
   --right-panel-width: 260px;
   position: relative;
   color: #101010;
-  background: url("../../images/back-main-games.webp") center / cover no-repeat;
+  background: url("../../images/back-main-games.png") center / cover no-repeat;
   width: 100vw;
   height: 100vh; 
   box-sizing: border-box;
