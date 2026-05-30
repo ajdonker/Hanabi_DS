@@ -617,7 +617,7 @@
 .fireworks-panel {
   position: relative;
   display: block;
-  background: url("../../images/table-background.webp") center / cover no-repeat;
+  background: url("../../images/table-background.png") center / cover no-repeat;
   background-position: 20px 50px;
   border-radius: 4px;
   padding: var(--fireworks-panel-pad-top) 2.3rem 2.9rem;
