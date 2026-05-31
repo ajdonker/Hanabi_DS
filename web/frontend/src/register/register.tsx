@@ -157,7 +157,7 @@ export default function Register() {
         {message && (
           <p className={`login-message is-${messageType}`}>{message}</p>
         )}
-        <p className="register-switch">
+        <p className="login-register-link">
           Already registered? <Link to="/login">Log in</Link>
         </p>
       </div>
