@@ -33,11 +33,16 @@ export function waitForNextPaint(): Promise<void> {
 }
 
 export function toRectShape(rect: DOMRect) {
+  const width = Math.min(rect.width, rect.height);
+  const height = Math.max(rect.width, rect.height);
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
   return {
-    left: rect.left,
-    top: rect.top,
-    width: rect.width,
-    height: rect.height,
+    left: centerX - width / 2,
+    top: centerY - height / 2,
+    width,
+    height,
   };
 }
 
