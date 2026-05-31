@@ -177,6 +177,25 @@
   background: rgba(254, 242, 242, 0.9);
 }
 
+.login-register-link {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-family: "Sora", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.login-register-link a {
+  color: #0284c7;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.login-register-link a:hover {
+  text-decoration: underline;
+}
+
 @keyframes login-card-rise {
   from {
     opacity: 0;

@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getEventData, wsClient } from "../network/wsClient";
 import { PLAY_LOGIN_COMMAND } from "../network/commandTypes";
 import {
@@ -129,6 +129,9 @@ export default function Login() {
         {message && (
           <p className="login-message is-error">{message}</p>
         )}
+        <p className="login-register-link">
+          No account yet? <Link to="/register">Register</Link>
+        </p>
       </div>
     </section>
   );

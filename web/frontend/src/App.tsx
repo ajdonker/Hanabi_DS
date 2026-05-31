@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet, Link } from "react-router-dom";
+import { Routes, Route, Outlet, Link, Navigate } from "react-router-dom";
 import Login from "./login/login";
 import Register from "./register/register";
 import Lobby from "./lobby/lobby";
@@ -9,6 +9,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
+        <Route index element={<Navigate to="/login" replace />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="lobby" element={<Lobby />} />
